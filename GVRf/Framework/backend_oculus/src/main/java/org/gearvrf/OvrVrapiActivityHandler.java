@@ -39,6 +39,7 @@ import android.os.HandlerThread;
 import android.util.DisplayMetrics;
 import android.view.Choreographer;
 import android.view.Choreographer.FrameCallback;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
 /**
@@ -163,6 +164,13 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
                 Log.v(TAG, "----------------------------");
             }
         }
+
+        /*
+        Long vulkanCoreObj = NativeVulkanCore.getInstance(holder.getSurface());
+        if(vulkanCoreObj != null)
+            Log.i("Vulkan", "Vulkan Instance created at Vulkan Java Side");
+        else
+            Log.i("Vulkan", "Error : No Instance created at Vulkan Java Side");*/
     }
 
     private final EGLContextFactory mContextFactory = new EGLContextFactory() {
@@ -340,6 +348,8 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
             mConfig = config;
             nativeOnSurfaceCreated(mPtr);
             mCallbacks.onSurfaceCreated();
+
+
         }
 
         @Override
@@ -404,6 +414,12 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
 
             startChoreographerThreadIfNotStarted();
             mCallbacks.onSurfaceChanged(width, height);
+
+            Long vulkanCoreObj = NativeVulkanCore.getInstance(mSurfaceView.getHolder().getSurface());
+            if(vulkanCoreObj != null)
+                Log.i("Vulkan", "Vulkan Instance created at Vulkan Java Side");
+            else
+                Log.i("Vulkan", "Error : No Instance created at Vulkan Java Side");
         }
 
         @Override
@@ -440,4 +456,9 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
     private static final int VRAPI_INITIALIZE_PERMISSIONS_ERROR = -2;
 
     private static final String TAG = "OvrVrapiActivityHandler";
+}
+
+
+class NativeVulkanCore {
+    static native long getInstance(Surface surface);
 }

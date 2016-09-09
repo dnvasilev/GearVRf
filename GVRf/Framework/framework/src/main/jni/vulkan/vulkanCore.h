@@ -17,7 +17,11 @@
 #ifndef FRAMEWORK_VULKANCORE_H
 #define FRAMEWORK_VULKANCORE_H
 
+#define VK_USE_PLATFORM_ANDROID_KHR
+
+#include <android/native_window_jni.h>	// for native window JNI
 #include "vulkan/vulkan_wrapper.h"
+
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
 #define GVR_VK_SAMPLE_NAME "GVR Vulkan"
@@ -51,9 +55,9 @@ struct GVR_VK_Vertices {
 class VulkanCore {
 public:
     // Return NULL if Vulkan inititialisation failed. NULL denotes no Vulkan support for this device.
-    static VulkanCore* getInstance() {
+    static VulkanCore* getInstance(ANativeWindow * newNativeWindow = nullptr) {
         if (!theInstance) {
-            theInstance = new VulkanCore;
+            theInstance = new VulkanCore(newNativeWindow);
         }
         if (theInstance->m_Vulkan_Initialised)
             return theInstance;
@@ -61,14 +65,15 @@ public:
     }
 private:
     static VulkanCore* theInstance;
-    VulkanCore() : m_pPhysicalDevices(NULL){
+    VulkanCore(ANativeWindow * newNativeWindow) : m_pPhysicalDevices(NULL){
         m_Vulkan_Initialised = false;
-        initVulkanCore();
+        initVulkanCore(newNativeWindow);
     }
     bool CreateInstance();
     bool GetPhysicalDevices();
-    void initVulkanCore();
-    void InitDevice();
+    void initVulkanCore(ANativeWindow * newNativeWindow);
+    bool InitDevice();
+    void InitSurface();
     void InitSwapchain(uint32_t width, uint32_t height);
     bool GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
     void InitCommandbuffers();
@@ -78,10 +83,9 @@ private:
     void InitPipeline();
     void InitFrameBuffers();
     void InitSync();
-    void BuildCmdBuffer();
 
     bool m_Vulkan_Initialised;
-
+    ANativeWindow * m_androidWindow;
 
     VkInstance m_instance;
     VkPhysicalDevice* m_pPhysicalDevices;
