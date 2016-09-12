@@ -21,7 +21,7 @@
 
 #include <android/native_window_jni.h>	// for native window JNI
 #include "vulkan/vulkan_wrapper.h"
-
+#include <vector>
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
 #define GVR_VK_SAMPLE_NAME "GVR Vulkan"
@@ -127,6 +127,7 @@ private:
         initVulkanCore(newNativeWindow);
     }
     bool CreateInstance();
+    VkShaderModule CreateShaderModule(const uint32_t* code, uint32_t size);
     bool GetPhysicalDevices();
     void initVulkanCore(ANativeWindow * newNativeWindow);
     bool InitDevice();

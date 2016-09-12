@@ -421,7 +421,7 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
         vkGetBufferMemoryRequirements(m_device, m_outputBuffers[i].imageOutputBuffer, &memReqs);
 
         m_outputBuffers[i].size =  memReqs.size;
-        LOGE("Vulkan buffer size %u \t %u",  memReqs.size);
+        LOGE("Vulkan buffer size %u ",  memReqs.size);
 
         // Allocate Memory
         VkMemoryAllocateInfo memAlloc = {};
@@ -746,6 +746,23 @@ void VulkanCore::InitRenderPass(){
     ret = vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &m_renderPass);
     GVR_VK_CHECK(!ret);
 }
+VkShaderModule VulkanCore::CreateShaderModule(const uint32_t* code, uint32_t size)
+{
+    VkShaderModule module;
+    VkResult  err;
+
+    // Creating a shader is very simple once it's in memory as compiled SPIR-V.
+    VkShaderModuleCreateInfo moduleCreateInfo = {};
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.pNext = nullptr;
+    moduleCreateInfo.codeSize = size;
+    moduleCreateInfo.pCode = code;
+    moduleCreateInfo.flags = 0;
+    err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &module);
+    GVR_VK_CHECK(!err);
+
+    return module;
+}
 
 void VulkanCore::InitPipeline(){
 
@@ -931,10 +948,10 @@ void VulkanCore::InitSync(){
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     // Create in signaled state so we don't wait on first render of each command buffer
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    waitFences.resize(m_outputBuffers.size());
+    waitFences.resize(m_outputBuffers->size);
     for (auto& fence : waitFences)
     {
-        GVR_VK_CHECK(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+        GVR_VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence));
     }
 
 }
@@ -1109,8 +1126,8 @@ void VulkanCore::DrawFrame(){
     }
     GVR_VK_CHECK(!err);
 
-	GVR_VK_CHECK(vkWaitForFences(m_device, 1, &waitFences[currentBuffer], VK_TRUE, UINT64_MAX));
-    GVR_VK_CHECK(vkResetFences(m_device, 1, &waitFences[currentBuffer]));
+	GVR_VK_CHECK(vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, UINT64_MAX));
+    GVR_VK_CHECK(vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]));
     VkFence nullFence = VK_NULL_HANDLE;
 
     VkSubmitInfo submitInfo = {};
@@ -1198,7 +1215,7 @@ void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
         return;
     }
 
-    InitSwapchain();
+    InitSwapchain(1024,1024);
     InitCommandbuffers();
     InitVertexBuffers();
     InitLayouts();
