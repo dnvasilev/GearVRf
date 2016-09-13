@@ -204,7 +204,7 @@ bool VulkanCore::InitDevice() {
         extensionNames[enabledExtensionCount++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
     }
 
-    InitSurface();
+    //InitSurface();
 
     // Before we create our main Vulkan device, we must ensure our physical device
     // has queue families which can perform the actions we require. For this, we request
@@ -283,239 +283,148 @@ bool VulkanCore::InitDevice() {
 
 void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
     VkResult ret = VK_SUCCESS;
-    // By querying the supported formats of our surface, we can ensure that
-    // we use one that the device can work with.
-    uint32_t formatCount;
-    ret = vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatCount, nullptr);
-    GVR_VK_CHECK(!ret);
+       m_width = width;// 320;//surfaceCapabilities.currentExtent.width;
+       m_height = height;//240;//surfaceCapabilities.currentExtent.height;
 
-    VkSurfaceFormatKHR* surfFormats = new VkSurfaceFormatKHR[formatCount];
-    ret = vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatCount, surfFormats);
-    GVR_VK_CHECK(!ret);
+   VkImageCreateInfo imageCreateInfo = {};
+       imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+       imageCreateInfo.pNext = nullptr;
+       imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+       imageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;//VK_FORMAT_R8G8B8A8_UNORM;//m_surfaceFormat.format;//VK_FORMAT_R32G32B32A32_SFLOAT;
+       imageCreateInfo.extent = {m_width, m_height, 1};
+       imageCreateInfo .mipLevels = 1;
+       imageCreateInfo .arrayLayers = 1;
+       imageCreateInfo .samples = VK_SAMPLE_COUNT_1_BIT;
+       imageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+       imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT  | VK_IMAGE_USAGE_TRANSFER_SRC_BIT ;
+       imageCreateInfo .flags = 0;
+       imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    finaloutput = (uint8_t*)malloc(width * height *4 * sizeof(uint8_t));
-    // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-    // the surface has no preferred format.  Otherwise, at least one
-    // supported format will be returned. For the purposes of this sample,
-    // we use the first format returned.
-    if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED)
-    {
-        m_surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
-        m_surfaceFormat.colorSpace = surfFormats[0].colorSpace;
-    }
-    else
-    {
-        m_surfaceFormat = surfFormats[0];
-    }
+       //LOGI("Vulkan Format %d ", m_surfaceFormat.format);
+       // Create the image with details as imageCreateInfo
+       m_swapchainImageCount = 3;
+       m_swapchainBuffers = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
+       GVR_VK_CHECK(m_swapchainBuffers);
 
-    //m_surfaceFormat.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    delete [] surfFormats;
+       for(int i = 0; i < m_swapchainImageCount; i++) {
+           VkMemoryRequirements mem_reqs;
+           VkResult  err;
+           bool  pass;
 
-        LOGI("Vulkan Surface format %d %d", m_surfaceFormat.format, m_surfaceFormat.colorSpace);
+           ret = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_swapchainBuffers[i].image);
+           GVR_VK_CHECK(!ret);
 
-    // Now we obtain the surface capabilities, which contains details such as width and height.
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &surfaceCapabilities);
-    GVR_VK_CHECK(!ret);
-
-    m_width = surfaceCapabilities.currentExtent.width;
-    m_height = surfaceCapabilities.currentExtent.height;
-    m_width = width;
-    m_height = height;
-
-    // Now that we have selected formats and obtained ideal surface dimensions,
-    // we create the swapchain. We use FIFO mode, which is always present. This
-    // mode has a queue of images internally, that will be presented to the screen.
-    // The swapchain will be created and expose the number of images created
-    // in the queue, which will be at least the number specified in minImageCount.
-    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
-    swapchainCreateInfo.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.surface               = m_surface;
-    swapchainCreateInfo.minImageCount         = surfaceCapabilities.minImageCount;
-    swapchainCreateInfo.imageFormat           = m_surfaceFormat.format;
-    swapchainCreateInfo.imageColorSpace       = m_surfaceFormat.colorSpace;
-    swapchainCreateInfo.imageExtent.width     = m_width;
-    swapchainCreateInfo.imageExtent.height    = m_height;
-    swapchainCreateInfo.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;//surfaceCapabilities.supportedUsageFlags;
-    swapchainCreateInfo.preTransform          = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchainCreateInfo.imageArrayLayers      = 1;
-    swapchainCreateInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
-    swapchainCreateInfo.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchainCreateInfo.presentMode           = VK_PRESENT_MODE_FIFO_KHR;
-    swapchainCreateInfo.clipped               = VK_TRUE;
+           // discover what memory requirements are for this image.
+           vkGetImageMemoryRequirements(m_device, m_swapchainBuffers[i].image, &mem_reqs);
+           //LOGD("Vulkan image memreq %", mem_reqs.size);
+           m_swapchainBuffers[i].size = mem_reqs.size;
 
 
-    ret = vkCreateSwapchainKHR(m_device, &swapchainCreateInfo, nullptr, &m_swapchain);
-    GVR_VK_CHECK(!ret);
+           // Allocate memory according to requirements
+           VkMemoryAllocateInfo memoryAllocateInfo = {};
+           memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+           memoryAllocateInfo.pNext = nullptr;
+           memoryAllocateInfo.allocationSize = 0;
+           memoryAllocateInfo.memoryTypeIndex = 0;
+           memoryAllocateInfo.allocationSize = mem_reqs.size;
+           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+           GVR_VK_CHECK(pass);
+
+           err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_swapchainBuffers[i].mem);
+           GVR_VK_CHECK(!err);
+
+           // Bind memory to the image
+           err = vkBindImageMemory(m_device, m_swapchainBuffers[i].image, m_swapchainBuffers[i].mem, 0);
+           GVR_VK_CHECK(!err);
 
 
-    // Query the number of swapchain images. This is the number of images in the internal
-    // queue.
-    ret = vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_swapchainImageCount, nullptr);
-    GVR_VK_CHECK(!ret);
+           VkImageViewCreateInfo imageViewCreateInfo = {};
+           imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+           imageViewCreateInfo.pNext = nullptr;
+           imageViewCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;//VK_FORMAT_R8G8B8A8_UNORM;//m_surfaceFormat.format;
+           imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+           imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+           imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+           imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+           imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+           imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+           imageViewCreateInfo.subresourceRange.levelCount = 1;
+           imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+           imageViewCreateInfo.subresourceRange.layerCount = 1;
+           imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+           imageViewCreateInfo.flags = 0;
+           imageViewCreateInfo.image = m_swapchainBuffers[i].image;
 
-    LOGI("Swapchain Image Count: %d\n", m_swapchainImageCount);
-    //m_swapchainImageCount = 1;
+           err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_swapchainBuffers[i].view);
+           GVR_VK_CHECK(!err);
 
-    // Now we can retrieve these images, as to use them in rendering as our framebuffers.
-    VkImage* pSwapchainImages = new VkImage[m_swapchainImageCount];
-    ret = vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_swapchainImageCount, pSwapchainImages);
-    GVR_VK_CHECK(!ret);
+       }
 
-    // We prepare our own representation of the swapchain buffers, for keeping track
-    // of resources during rendering.
-    m_swapchainBuffers = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
-    GVR_VK_CHECK(m_swapchainBuffers);
+   m_depthBuffers = new GVR_VK_DepthBuffer[m_swapchainImageCount];
+       for (int i = 0; i < m_swapchainImageCount; i++) {
+           const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
 
-    m_outputBuffers = new OutputBuffer[m_swapchainImageCount];
+           VkImageCreateInfo imageCreateInfo = {};
+           imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+           imageCreateInfo.pNext = nullptr;
+           imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+           imageCreateInfo.format = depthFormat;
+           imageCreateInfo.extent = {m_width, m_height, 1};
+           imageCreateInfo .mipLevels = 1;
+           imageCreateInfo .arrayLayers = 1;
+           imageCreateInfo .samples = VK_SAMPLE_COUNT_1_BIT;
+           imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+           imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+           imageCreateInfo .flags = 0;
 
+           VkImageViewCreateInfo imageViewCreateInfo = {};
+           imageViewCreateInfo .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+           imageViewCreateInfo .pNext = nullptr;
+           imageViewCreateInfo .image = VK_NULL_HANDLE;
+           imageViewCreateInfo.format = depthFormat;
+           imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+           imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+           imageViewCreateInfo.subresourceRange.levelCount = 1;
+           imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+           imageViewCreateInfo.subresourceRange.layerCount = 1;
+           imageViewCreateInfo.flags = 0;
+           imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
-    // From the images obtained from the swapchain, we create image views.
-    // This gives us context into the image.
-    VkImageViewCreateInfo imageViewCreateInfo = {};
-    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.pNext = nullptr;
-    imageViewCreateInfo.format = m_surfaceFormat.format;
-    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
-    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
-    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
-    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
-    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
-    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewCreateInfo.flags = 0;
+           VkMemoryRequirements mem_reqs;
+           VkResult  err;
+           bool  pass;
 
+           m_depthBuffers[i].format = depthFormat;
 
-    VkMemoryRequirements memReqs;
+           // Create the image with details as imageCreateInfo
+           err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_depthBuffers[i].image);
+           GVR_VK_CHECK(!err);
 
-    for (uint32_t i = 0; i < m_swapchainImageCount; i++) {
-        VkResult err;
-        // We create an Imageview for each swapchain image, and track
-        // the view and image in our swapchainBuffers object.
-        m_swapchainBuffers[i].image = pSwapchainImages[i];
-        imageViewCreateInfo.image = pSwapchainImages[i];
+           // discover what memory requirements are for this image.
+           vkGetImageMemoryRequirements(m_device, m_depthBuffers[i].image, &mem_reqs);
 
-        err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_swapchainBuffers[i].view);
-        GVR_VK_CHECK(!err);
+           // Allocate memory according to requirements
+           VkMemoryAllocateInfo memoryAllocateInfo = {};
+           memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+           memoryAllocateInfo.pNext = nullptr;
+           memoryAllocateInfo.allocationSize = 0;
+           memoryAllocateInfo.memoryTypeIndex = 0;
+           memoryAllocateInfo.allocationSize = mem_reqs.size;
+           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, 0, &memoryAllocateInfo.memoryTypeIndex);
+           GVR_VK_CHECK(pass);
 
+           err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_depthBuffers[i].mem);
+           GVR_VK_CHECK(!err);
 
-        // Create Output VkBuffer for each image
+           // Bind memory to the image
+           err = vkBindImageMemory(m_device, m_depthBuffers[i].image, m_depthBuffers[i].mem, 0);
+           GVR_VK_CHECK(!err);
 
-        // Get Image Requirements from Swap Chain Images
-        vkGetBufferMemoryRequirements(m_device, m_swapchainBuffers[i].image, &memReqs);
-
-        VkBufferCreateInfo outputinfo = {};
-        outputinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        outputinfo.size = m_width*m_height*4* sizeof(uint8_t);//memReqs.size;
-        outputinfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        outputinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-
-
-        err = vkCreateBuffer(m_device, &outputinfo, nullptr, &m_outputBuffers[i].imageOutputBuffer);
-        GVR_VK_CHECK(!err);
-
-        vkGetBufferMemoryRequirements(m_device, m_outputBuffers[i].imageOutputBuffer, &memReqs);
-
-        m_outputBuffers[i].size =  memReqs.size;
-        LOGE("Vulkan buffer size %u ",  memReqs.size);
-
-        // Allocate Memory
-        VkMemoryAllocateInfo memAlloc = {};
-        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memAlloc.allocationSize = memReqs.size;
-        memAlloc.memoryTypeIndex = 0;
-
-        uint32_t memoryTypeIndex;
-        if(GetMemoryTypeFromProperties(memReqs.memoryTypeBits,  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryTypeIndex)!=true)
-            LOGE("Vulkan failed got memory requirements");
-
-        memAlloc.memoryTypeIndex = memoryTypeIndex;
-        err = vkAllocateMemory(m_device, &memAlloc, nullptr, &m_outputBuffers[i].memory);
-        GVR_VK_CHECK(!err);
-
-        // Bind our buffer to the memory.
-        err = vkBindBufferMemory(m_device, m_outputBuffers[i].imageOutputBuffer, m_outputBuffers[i].memory, 0);
-        GVR_VK_CHECK(!err);
-
-
-    }
-
-    // At this point, we have the references now in our swapchainBuffer object
-    delete [] pSwapchainImages;
-
-
-    // Now we create depth buffers for our swapchain images, which form part of
-    // our framebuffers later.
-    m_depthBuffers = new GVR_VK_DepthBuffer[m_swapchainImageCount];
-    for (int i = 0; i < m_swapchainImageCount; i++) {
-        const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
-
-        VkImageCreateInfo imageCreateInfo = {};
-        imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageCreateInfo.pNext = nullptr;
-        imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageCreateInfo.format = depthFormat;
-        imageCreateInfo.extent = {m_width, m_height, 1};
-        imageCreateInfo .mipLevels = 1;
-        imageCreateInfo .arrayLayers = 1;
-        imageCreateInfo .samples = VK_SAMPLE_COUNT_1_BIT;
-        imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageCreateInfo .flags = 0;
-
-        VkImageViewCreateInfo imageViewCreateInfo = {};
-        imageViewCreateInfo .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo .pNext = nullptr;
-        imageViewCreateInfo .image = VK_NULL_HANDLE;
-        imageViewCreateInfo.format = depthFormat;
-        imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-        imageViewCreateInfo.subresourceRange.levelCount = 1;
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewCreateInfo.subresourceRange.layerCount = 1;
-        imageViewCreateInfo.flags = 0;
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-
-        VkMemoryRequirements mem_reqs;
-        VkResult  err;
-        bool  pass;
-
-        m_depthBuffers[i].format = depthFormat;
-
-        // Create the image with details as imageCreateInfo
-        err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_depthBuffers[i].image);
-        GVR_VK_CHECK(!err);
-
-        // discover what memory requirements are for this image.
-        vkGetImageMemoryRequirements(m_device, m_depthBuffers[i].image, &mem_reqs);
-
-        // Allocate memory according to requirements
-        VkMemoryAllocateInfo memoryAllocateInfo = {};
-        memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memoryAllocateInfo.pNext = nullptr;
-        memoryAllocateInfo.allocationSize = 0;
-        memoryAllocateInfo.memoryTypeIndex = 0;
-        memoryAllocateInfo.allocationSize = mem_reqs.size;
-        pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, 0, &memoryAllocateInfo.memoryTypeIndex);
-        GVR_VK_CHECK(pass);
-
-        err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_depthBuffers[i].mem);
-        GVR_VK_CHECK(!err);
-
-        // Bind memory to the image
-        err = vkBindImageMemory(m_device, m_depthBuffers[i].image, m_depthBuffers[i].mem, 0);
-        GVR_VK_CHECK(!err);
-
-        // Create the view for this image
-        imageViewCreateInfo.image = m_depthBuffers[i].image;
-        err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_depthBuffers[i].view);
-        GVR_VK_CHECK(!err);
-    }
-
+           // Create the view for this image
+           imageViewCreateInfo.image = m_depthBuffers[i].image;
+           err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_depthBuffers[i].view);
+           GVR_VK_CHECK(!err);
+       }
  }
 
 bool VulkanCore::GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
@@ -915,7 +824,6 @@ void VulkanCore::InitFrameBuffers(){
     // only the attachments to the relevent image views change each time.
     for (uint32_t i = 0; i < m_swapchainImageCount; i++) {
         attachments[0] = m_swapchainBuffers[i].view;
-        //framebufferCreateInfo.pAttachments = &m_swapchainBuffers[i].view;
         attachments[1] = m_depthBuffers[i].view;
 
         LOGE("Vulkan view %d created", i);
@@ -930,6 +838,7 @@ void VulkanCore::InitFrameBuffers(){
 }
 
 void VulkanCore::InitSync(){
+    LOGI("Vulkan initsync start");
     VkResult ret = VK_SUCCESS;
     // For synchronization, we have semaphores for rendering and backbuffer signalling.
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
@@ -942,19 +851,21 @@ void VulkanCore::InitSync(){
     ret = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderCompleteSemaphore);
     GVR_VK_CHECK(!ret);
 
-
-    	// Fences (Used to check draw command buffer completion)
+    // Fences (Used to check draw command buffer completion)
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    // Create in signaled state so we don't wait on first render of each command buffer
-    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    waitFences.resize(m_outputBuffers->size);
+    fenceCreateInfo.flags = 0;
+
+    waitFences.resize(m_swapchainImageCount);
     for (auto& fence : waitFences)
     {
-        GVR_VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence));
+        ret = vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence);
+        GVR_VK_CHECK(!ret);
     }
 
+    LOGI("Vulkan initsync end");
 }
+
 void VulkanCore::BuildCmdBuffer()
 {
     // For the triangle sample, we pre-record our command buffer, as it is static.
@@ -969,20 +880,20 @@ void VulkanCore::BuildCmdBuffer()
         GVR_VK_CHECK(!err);
 
         VkCommandBufferInheritanceInfo cmd_buf_hinfo = {};
-        cmd_buf_hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-        cmd_buf_hinfo.pNext = nullptr;
-        cmd_buf_hinfo.renderPass = VK_NULL_HANDLE;
-        cmd_buf_hinfo.subpass = 0;
-        cmd_buf_hinfo.framebuffer = VK_NULL_HANDLE;
-        cmd_buf_hinfo.occlusionQueryEnable = VK_FALSE;
-        cmd_buf_hinfo.queryFlags = 0;
-        cmd_buf_hinfo.pipelineStatistics = 0;
+            cmd_buf_hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+            cmd_buf_hinfo.pNext = nullptr;
+            cmd_buf_hinfo.renderPass = VK_NULL_HANDLE;
+            cmd_buf_hinfo.subpass = 0;
+            cmd_buf_hinfo.framebuffer = VK_NULL_HANDLE;
+            cmd_buf_hinfo.occlusionQueryEnable = VK_FALSE;
+            cmd_buf_hinfo.queryFlags = 0;
+            cmd_buf_hinfo.pipelineStatistics = 0;
 
         VkCommandBufferBeginInfo cmd_buf_info = {};
-        cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        cmd_buf_info.pNext = nullptr;
-        cmd_buf_info.flags = 0;
-        cmd_buf_info.pInheritanceInfo = &cmd_buf_hinfo;
+            cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            cmd_buf_info.pNext = nullptr;
+            cmd_buf_info.flags = 0;
+            cmd_buf_info.pInheritanceInfo = &cmd_buf_hinfo;
 
         // By calling vkBeginCommandBuffer, cmdBuffer is put into the recording state.
         err = vkBeginCommandBuffer(cmdBuffer, &cmd_buf_info);
@@ -993,48 +904,48 @@ void VulkanCore::BuildCmdBuffer()
         // PRESENT mode is optimal for sending to the screen for users to see, so the
         // image will be set back to that mode after we have completed rendering.
         VkImageMemoryBarrier preRenderBarrier = {};
-        preRenderBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        preRenderBarrier.pNext = nullptr;
-        preRenderBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        preRenderBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        preRenderBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        preRenderBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        preRenderBarrier.image = m_swapchainBuffers[i].image;
-        preRenderBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        preRenderBarrier.subresourceRange.baseArrayLayer = 0;
-        preRenderBarrier.subresourceRange.baseMipLevel = 1;
-        preRenderBarrier.subresourceRange.layerCount = 0;
-        preRenderBarrier.subresourceRange.levelCount = 1;
+            preRenderBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            preRenderBarrier.pNext = nullptr;
+            preRenderBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+            preRenderBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            preRenderBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            preRenderBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            preRenderBarrier.image = m_swapchainBuffers[i].image;
+            preRenderBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            preRenderBarrier.subresourceRange.baseArrayLayer = 0;
+            preRenderBarrier.subresourceRange.baseMipLevel = 1;
+            preRenderBarrier.subresourceRange.layerCount = 0;
+            preRenderBarrier.subresourceRange.levelCount = 1;
 
         // Thie PipelineBarrier function can operate on memoryBarriers,
         // bufferMemory and imageMemory buffers. We only provide a single
         // imageMemoryBarrier.
         vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             0, 0, nullptr, 0, nullptr, 1, &preRenderBarrier);
+                                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        0, 0, nullptr, 0, nullptr, 1, &preRenderBarrier);
 
         // When starting the render pass, we can set clear values.
         VkClearValue clear_values[2] = {};
-        clear_values[0].color.float32[0] = 0.3f;
-        clear_values[0].color.float32[1] = 0.3f;
-        clear_values[0].color.float32[2] = 0.3f;
-        clear_values[0].color.float32[3] = 1.0f;
-        clear_values[1].depthStencil.depth = 1.0f;
-        clear_values[1].depthStencil.stencil = 0;
+            clear_values[0].color.float32[0] = 0.3f;
+            clear_values[0].color.float32[1] = 0.3f;
+            clear_values[0].color.float32[2] = 0.3f;
+            clear_values[0].color.float32[3] = 1.0f;
+            clear_values[1].depthStencil.depth = 1.0f;
+            clear_values[1].depthStencil.stencil = 0;
 
         VkRenderPassBeginInfo rp_begin = {};
-        rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        rp_begin.pNext = nullptr;
-        rp_begin.renderPass = m_renderPass;
-        rp_begin.framebuffer = m_frameBuffers[i];
-        rp_begin.renderArea.offset.x = 0;
-        rp_begin.renderArea.offset.y = 0;
-        rp_begin.renderArea.extent.width = m_width;
-        rp_begin.renderArea.extent.height = m_height;
-        rp_begin.clearValueCount = 2;
-        rp_begin.pClearValues = clear_values;
+            rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            rp_begin.pNext = nullptr;
+            rp_begin.renderPass = m_renderPass;
+            rp_begin.framebuffer = m_frameBuffers[i];
+            rp_begin.renderArea.offset.x = 0;
+            rp_begin.renderArea.offset.y = 0;
+            rp_begin.renderArea.extent.width = m_width;
+            rp_begin.renderArea.extent.height = m_height;
+            rp_begin.clearValueCount = 2;
+            rp_begin.pClearValues = clear_values;
 
         vkCmdBeginRenderPass(cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1049,149 +960,103 @@ void VulkanCore::BuildCmdBuffer()
         // Issue a draw command, with our 3 vertices.
         vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
 
-
-        // Copy Image to Buffer
-        VkOffset3D off = {};
-        off.x = 0;
-        off.y = 0;
-        off.z = 0;
-
-        VkExtent3D extent3D = {};
-        extent3D.width = m_width;
-        extent3D.height = m_height;
-
-        VkImageSubresourceLayers subResource = {};
-        subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        subResource.baseArrayLayer = 0;
-        subResource.mipLevel = 0;
-        subResource.layerCount = 1;
-
-        VkBufferImageCopy someDetails = {};
-        someDetails.bufferOffset = 0;
-        someDetails.bufferRowLength = 0;
-        someDetails.bufferImageHeight = 0;
-        someDetails.imageSubresource = subResource;
-        someDetails.imageOffset = off;
-        someDetails.imageExtent = extent3D;
-
-        VkBufferImageCopy region = { 0 };
-                 region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                 region.imageSubresource.layerCount = 1;
-                 region.imageExtent.width = m_width;
-                 region.imageExtent.height = m_height;
-                 region.imageExtent.depth = 1;
-
-
         // Now our render pass has ended.
         vkCmdEndRenderPass(cmdBuffer);
-        vkCmdCopyImageToBuffer(cmdBuffer, m_swapchainBuffers[i].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_outputBuffers[i].imageOutputBuffer, 1,  &region);
 
+            // As stated earlier, now transition the swapchain image to the PRESENT mode.
+            VkImageMemoryBarrier prePresentBarrier = {};
+            prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            prePresentBarrier.pNext = nullptr;
+            prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+            prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            prePresentBarrier.image = m_swapchainBuffers[i].image;
+            prePresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            prePresentBarrier.subresourceRange.baseArrayLayer = 0;
+            prePresentBarrier.subresourceRange.baseMipLevel = 1;
+            prePresentBarrier.subresourceRange.layerCount = 0;
 
+            vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
 
-        // As stated earlier, now transition the swapchain image to the PRESENT mode.
-        VkImageMemoryBarrier prePresentBarrier = {};
-        prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        prePresentBarrier.pNext = nullptr;
-        prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        prePresentBarrier.image = m_swapchainBuffers[i].image;
-        prePresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        prePresentBarrier.subresourceRange.baseArrayLayer = 0;
-        prePresentBarrier.subresourceRange.baseMipLevel = 1;
-        prePresentBarrier.subresourceRange.layerCount = 0;
+            // By ending the command buffer, it is put out of record mode.
+            err = vkEndCommandBuffer(cmdBuffer);
+            GVR_VK_CHECK(!err);
+        }
 
-        vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
-
-        // By ending the command buffer, it is put out of record mode.
-        err = vkEndCommandBuffer(cmdBuffer);
-        GVR_VK_CHECK(!err);
-    }
 }
+
+
+int VulkanCore::AcquireNextImage(){
+    imageIndex = (imageIndex + 1) % m_swapchainImageCount;
+    return imageIndex;
+}
+
 void VulkanCore::DrawFrame(){
 
     VkResult err;
     // Get the next image to render to, then queue a wait until the image is ready
-    err  = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_backBufferSemaphore, VK_NULL_HANDLE, &m_swapchainCurrentIdx);
-    LOGE("Vulkan acquired image %d ", m_swapchainCurrentIdx);
-    if (err == VK_ERROR_OUT_OF_DATE_KHR) {
-        LOGW("VK_ERROR_OUT_OF_DATE_KHR not handled in sample");
-    } else if (err == VK_SUBOPTIMAL_KHR) {
-        LOGW("VK_SUBOPTIMAL_KHR not handled in sample");
-    }
-    GVR_VK_CHECK(!err);
-
-	GVR_VK_CHECK(vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, UINT64_MAX));
-    GVR_VK_CHECK(vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]));
-    VkFence nullFence = VK_NULL_HANDLE;
+    int m_swapchainCurrentIdx = AcquireNextImage();
+    LOGI("Vulkna Swapchain Image number of %d", m_swapchainCurrentIdx);
+    VkFence nullFence = waitFences[m_swapchainCurrentIdx];
 
     VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = nullptr;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &m_backBufferSemaphore;
-    submitInfo.pWaitDstStageMask = nullptr;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_swapchainBuffers[m_swapchainCurrentIdx].cmdBuffer;
-    submitInfo.signalSemaphoreCount = 0;
-    submitInfo.pSignalSemaphores = nullptr;
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = nullptr;
+        submitInfo.waitSemaphoreCount = 0;
+        submitInfo.pWaitSemaphores = nullptr;//&m_backBufferSemaphore;
+        submitInfo.pWaitDstStageMask = nullptr;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &m_swapchainBuffers[m_swapchainCurrentIdx].cmdBuffer;
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores = nullptr;//&m_renderCompleteSemaphore;
 
+    LOGI("Vulkan after vkqueue before submit");
     err = vkQueueSubmit(m_queue, 1, &submitInfo,  waitFences[m_swapchainCurrentIdx]);
     GVR_VK_CHECK(!err);
+    LOGI("Vulkan after vkqueue submit %d", err);
+    err = vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, 4294967295U);
+    GVR_VK_CHECK(!err);
+    LOGI("Vulkan after vkWaitForFences submit %d", err);
 
-    err = vkQueueWaitIdle(m_queue);
-    if(err != VK_SUCCESS)
-        LOGE("Vulkan vkQueueWaitIdle submit failed");
-
-    LOGE("Vulkan vkQueueWaitIdle submitted");
-
-
-    uint8_t * data;
-    static bool printflag = true;
-    if(printflag){
-        uint8_t * data;
-        err = vkMapMemory(m_device, m_outputBuffers[m_swapchainCurrentIdx].memory, 0, m_outputBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
-        GVR_VK_CHECK(!err);
-
-        //void* data;
-
-        for(int i = 0; i < (320); i++)
-            finaloutput[i] = 0;
-
-        LOGE("Vulkna size of %d", sizeof(finaloutput));
-        //while(1) {
-        memcpy(finaloutput, data, (m_width*m_height*4* sizeof(uint8_t)));
-/*
-        LOGI("Vulkan memcpy map done");
-        float tt;
-        for (int i = 0; i < (m_width*m_height)-4; i++) {
-            //tt = (float) data[i];
-            LOGI("Vulkan Data %u, %u %u %u", finaloutput[i], finaloutput[i+1], finaloutput[i+2], finaloutput[i+3]);
-            i+=3;
-        }
-*/
-        LOGE("Vulkan data reading done");
-        vkUnmapMemory(m_device,m_outputBuffers[m_swapchainCurrentIdx].memory);
-
-
-        printflag = false;
+    static bool memoryAlloc = false;
+    if(memoryAlloc == false){
+        finaloutput = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
+        memoryAlloc = true;
     }
 
+    uint8_t * data;
+    err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
+    GVR_VK_CHECK(!err);
+
+    LOGI("Vulkna size of %d", sizeof(finaloutput));
+    memcpy(finaloutput, data, (m_width*m_height*4* sizeof(uint8_t)));
+
+    LOGI("Vulkan memcpy map done");
+
+    for (int i = 0; i < (m_width*m_height)-4; i++) {
+        LOGI("Vulkan Data %u, %u %u %u", data[i], data[i+1], data[i+2], data[i+3]);
+        i+=3;
+        break;
+    }
+
+    texDataVulkan = data;//finaloutput;
+    LOGI("Vulkan data reading done");
+    vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
+
+    // Makes Fence Un-signalled
+    err = vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]);
+    GVR_VK_CHECK(!err);
+    LOGI("Vulkan after vkResetFences submit");
 }
 
 void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
     m_Vulkan_Initialised = true;
     m_androidWindow = newNativeWindow;
-
-    if(newNativeWindow == NULL)
-        LOGE("Vulkan Bad native window");
-    else
-        LOGE("Vulkan Good native window");
 
     LOGE("Vulkan Before init methods");
     if(InitVulkan() != 1){
@@ -1226,8 +1091,5 @@ void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
 
     // Initialize our command buffers
     BuildCmdBuffer();
-
-
-
-
+    //DrawFrame();
 }

@@ -143,6 +143,7 @@ private:
     void InitSync();
     void BuildCmdBuffer();
     void DrawFrame();
+    int AcquireNextImage();
     bool m_Vulkan_Initialised;
     ANativeWindow * m_androidWindow;
 
@@ -179,6 +180,8 @@ private:
     VkPipeline m_pipeline;
     OutputBuffer* m_outputBuffers;
     uint8_t * texDataVulkan;
+    int imageIndex = 0;
+    uint8_t *finaloutput;
 };
 
 

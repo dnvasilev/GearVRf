@@ -41,11 +41,12 @@ import android.view.Choreographer;
 import android.view.Choreographer.FrameCallback;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 /**
  * Keep Oculus-specifics here
  */
-class OvrVrapiActivityHandler implements OvrActivityHandler {
+class OvrVrapiActivityHandler implements OvrActivityHandler, SurfaceHolder.Callback {
 
     private final GVRActivity mActivity;
     private long mPtr;
@@ -142,6 +143,7 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
         mSurfaceView.setRenderer(mRenderer);
         mSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
+
         mActivity.setContentView(mSurfaceView);
 
         final DisplayMetrics metrics = new DisplayMetrics();
@@ -164,13 +166,6 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
                 Log.v(TAG, "----------------------------");
             }
         }
-
-        /*
-        Long vulkanCoreObj = NativeVulkanCore.getInstance(holder.getSurface());
-        if(vulkanCoreObj != null)
-            Log.i("Vulkan", "Vulkan Instance created at Vulkan Java Side");
-        else
-            Log.i("Vulkan", "Error : No Instance created at Vulkan Java Side");*/
     }
 
     private final EGLContextFactory mContextFactory = new EGLContextFactory() {
@@ -414,12 +409,6 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
 
             startChoreographerThreadIfNotStarted();
             mCallbacks.onSurfaceChanged(width, height);
-
-            Long vulkanCoreObj = NativeVulkanCore.getInstance(mSurfaceView.getHolder().getSurface());
-            if(vulkanCoreObj != null)
-                Log.i("Vulkan", "Vulkan Instance created at Vulkan Java Side");
-            else
-                Log.i("Vulkan", "Error : No Instance created at Vulkan Java Side");
         }
 
         @Override
@@ -429,6 +418,20 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
             mCallbacks.onAfterDrawEyes();
         }
     };
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+
+    }
 
 
     @SuppressWarnings("serial")
@@ -456,9 +459,4 @@ class OvrVrapiActivityHandler implements OvrActivityHandler {
     private static final int VRAPI_INITIALIZE_PERMISSIONS_ERROR = -2;
 
     private static final String TAG = "OvrVrapiActivityHandler";
-}
-
-
-class NativeVulkanCore {
-    static native long getInstance(Surface surface);
 }

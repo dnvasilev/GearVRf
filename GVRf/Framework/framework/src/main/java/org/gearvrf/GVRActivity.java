@@ -40,6 +40,7 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -144,6 +145,12 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
         mDockEventReceiver.start();
 
         mActivityNative = mDelegate.getActivityNative();
+
+        Long vulkanCoreObj = NativeVulkanCore.getInstance(null);
+        if(vulkanCoreObj != null)
+            Log.i("Vulkan", "Vulkan Instance On surface created at Vulkan Java Side");
+        else
+            Log.i("Vulkan", "Error :   On surface  No Instance created at Vulkan Java Side");
     }
 
     protected void onInitAppSettings(VrAppSettings appSettings) {
@@ -676,4 +683,9 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
         GVRConfigurationManager makeConfigurationManager(GVRActivity activity);
         void parseXmlSettings(AssetManager assetManager, String dataFilename);
     }
+}
+
+
+class NativeVulkanCore {
+    static native long getInstance(Surface surface);
 }
