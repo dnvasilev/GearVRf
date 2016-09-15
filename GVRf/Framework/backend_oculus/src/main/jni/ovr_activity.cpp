@@ -224,6 +224,12 @@ void GVRActivity::onDrawFrame() {
 
         // data is stored as R8B8G8A8 format, try to use this format for your vulkan
 
+/*    for (int i = 0; i < (1024*1024)-4; i++) {
+            LOGI("Vulkan OVR side %u, %u %u %u", oculusTexData[i], oculusTexData[i+1], oculusTexData[i+2], oculusTexData[i+3]);
+            i+=3;
+            //break;
+    }
+*/
     glTexSubImage2D(   GL_TEXTURE_2D,
                            0,
                            0,
@@ -232,7 +238,7 @@ void GVRActivity::onDrawFrame() {
                            mHeightConfiguration,
                                                GL_RGBA,
                            GL_UNSIGNED_BYTE,
-                           finaloutput);
+                           oculusTexData);
 
        // GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidthConfiguration, mHeightConfiguration, 0, GL_RGBA, GL_UNSIGNED_BYTE, texDataVulkan));
 

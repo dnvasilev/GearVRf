@@ -33,8 +33,11 @@ extern "C" {
 JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeVulkanCore_getInstance(JNIEnv * env, jobject obj, jobject surface){
     ANativeWindow * newNativeWindow = nullptr;//ANativeWindow_fromSurface(env, surface);
-    VulkanCore* vulkanCore = VulkanCore::getInstance(newNativeWindow);
-	return (reinterpret_cast<jlong>(vulkanCore));
+    VulkanCore * vulkanCore = VulkanCore::getInstance(newNativeWindow);
+    //if(vulkanCore == nullptr)
+    //    return (reinterpret_cast<jlong>(nullptr));
+    //else
+	    return (reinterpret_cast<jlong>(vulkanCore));
 }
 
 }

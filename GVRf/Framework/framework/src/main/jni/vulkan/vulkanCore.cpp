@@ -19,9 +19,17 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include <math.h>       /* sqrt */
+#include <shaderc/shaderc.hpp>
 #define UINT64_MAX 99999
+namespace gvr {
+
 VulkanCore* VulkanCore::theInstance = NULL;
-uint8_t *finaloutput;
+uint8_t *oculusTexData;
 #define QUEUE_INDEX_MAX 99999
 #define VERTEX_BUFFER_BIND_ID 0
 
@@ -425,6 +433,9 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_depthBuffers[i].view);
            GVR_VK_CHECK(!err);
        }
+
+       // Allocating memory for output image
+        oculusTexData = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
  }
 
 bool VulkanCore::GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
@@ -476,11 +487,11 @@ void VulkanCore::InitCommandbuffers(){
 
 void VulkanCore::InitVertexBuffers(){
     // Our vertex buffer data is a simple triangle, with associated vertex colors.
-    const float vb[3][7] = {
+    const float vb[4][7] = {
             //      position                   color
-            { -0.9f, -0.9f,  0.9f,     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.9f, -0.9f,  0.9f,     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.0f,  0.9f,  0.9f,     1.0f, 0.0f, 0.0f, 1.0f },
+            { -0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
+            {  0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
+            {  0.0f,  0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
     };
 
     VkResult   err;
@@ -541,7 +552,7 @@ void VulkanCore::InitVertexBuffers(){
     m_vertices.vi.pNext = nullptr;
     m_vertices.vi.vertexBindingDescriptionCount = 1;
     m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-    m_vertices.vi.vertexAttributeDescriptionCount = 2;
+    m_vertices.vi.vertexAttributeDescriptionCount = 1;
     m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
 
     // We bind the buffer as a whole, using the correct buffer ID.
@@ -555,38 +566,119 @@ void VulkanCore::InitVertexBuffers(){
     // first in the array structure.
     m_vertices.vi_attrs[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
     m_vertices.vi_attrs[0].location = 0;
-    m_vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32_SFLOAT; //float3
+    m_vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT; //float3
     m_vertices.vi_attrs[0].offset = 0;
 
-    // The second location is the vertex colors, in RGBA float4 format.
+    /*// The second location is the vertex colors, in RGBA float4 format.
     // These appear in each element in memory after the float3 vertex
     // positions, so the offset is set accordingly.
     m_vertices.vi_attrs[1].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
     m_vertices.vi_attrs[1].location = 1;
     m_vertices.vi_attrs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT; //float4
-    m_vertices.vi_attrs[1].offset = sizeof(float) * 3;
+    m_vertices.vi_attrs[1].offset = sizeof(float) * 3;*/
 }
 
 void VulkanCore::InitLayouts(){
     VkResult ret = VK_SUCCESS;
-    // This sample has no bindings, so the layout is empty.
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
-    descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.pNext = nullptr;
-    descriptorSetLayoutCreateInfo.bindingCount = 0;
-    descriptorSetLayoutCreateInfo.pBindings = nullptr;
+    // This sample has two  bindings, a sampler in the fragment shader and a uniform in the
+         // vertex shader for MVP matrix.
+         VkDescriptorSetLayoutBinding uniformAndSamplerBinding[2] = {};
+         // Our MVP matrix
+         uniformAndSamplerBinding[0].binding = 0;
+         uniformAndSamplerBinding[0].descriptorCount = 1;
+         uniformAndSamplerBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+         uniformAndSamplerBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+         uniformAndSamplerBinding[0].pImmutableSamplers = nullptr;
+         // Our texture sampler
+         /*uniformAndSamplerBinding[1].binding = 1;
+         uniformAndSamplerBinding[1].descriptorCount = 1;
+         uniformAndSamplerBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+         uniformAndSamplerBinding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+         uniformAndSamplerBinding[1].pImmutableSamplers = nullptr;*/
 
-    ret = vkCreateDescriptorSetLayout(m_device, &descriptorSetLayoutCreateInfo, nullptr, &m_descriptorLayout);
-    GVR_VK_CHECK(!ret);
+         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+         descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+         descriptorSetLayoutCreateInfo.pNext = nullptr;
+         descriptorSetLayoutCreateInfo.bindingCount = 1;//2;
+         descriptorSetLayoutCreateInfo.pBindings = &uniformAndSamplerBinding[0];
 
-    // Our pipeline layout simply points to the empty descriptor layout.
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-    pipelineLayoutCreateInfo.sType              = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCreateInfo.pNext              = nullptr;
-    pipelineLayoutCreateInfo.setLayoutCount     = 1;
-    pipelineLayoutCreateInfo.pSetLayouts        = &m_descriptorLayout;
-    ret = vkCreatePipelineLayout(m_device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
-    GVR_VK_CHECK(!ret);
+         ret = vkCreateDescriptorSetLayout(m_device, &descriptorSetLayoutCreateInfo, nullptr, &m_descriptorLayout);
+         GVR_VK_CHECK(!ret);
+
+         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+         pipelineLayoutCreateInfo.sType              = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+         pipelineLayoutCreateInfo.pNext              = nullptr;
+         pipelineLayoutCreateInfo.setLayoutCount     = 1;
+         pipelineLayoutCreateInfo.pSetLayouts        = &m_descriptorLayout;
+         ret = vkCreatePipelineLayout(m_device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
+         GVR_VK_CHECK(!ret);
+}
+
+void VulkanCore::InitUniformBuffers(){
+    // the uniform in this example is a matrix in the vertex stage
+    memset(&m_modelViewMatrixUniform, 0, sizeof(m_modelViewMatrixUniform));
+
+    VkResult err = VK_SUCCESS;
+
+    // Create our buffer object
+    VkBufferCreateInfo bufferCreateInfo;
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.pNext = NULL;
+    bufferCreateInfo.size = sizeof(glm::mat4);;//sizeof(float)*4;
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bufferCreateInfo.flags = 0;
+
+    err = vkCreateBuffer(m_device, &bufferCreateInfo, NULL, &m_modelViewMatrixUniform.buf);
+    assert(!err);
+
+    // Obtain the requirements on memory for this buffer
+    VkMemoryRequirements mem_reqs;
+    vkGetBufferMemoryRequirements(m_device, m_modelViewMatrixUniform.buf, &mem_reqs);
+    assert(!err);
+
+    // And allocate memory according to those requirements
+    VkMemoryAllocateInfo memoryAllocateInfo;
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.pNext = NULL;
+    memoryAllocateInfo.allocationSize = 0;
+    memoryAllocateInfo.memoryTypeIndex = 0;
+    memoryAllocateInfo.allocationSize  = mem_reqs.size;
+    bool pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+    assert(pass);
+
+    // We keep the size of the allocation for remapping it later when we update contents
+    m_modelViewMatrixUniform.allocSize = memoryAllocateInfo.allocationSize;
+
+    err = vkAllocateMemory(m_device, &memoryAllocateInfo, NULL, &m_modelViewMatrixUniform.mem);
+    assert(!err);
+
+    // Create our initial MVP matrix
+    float aaa[16] = {1,0,0,0,
+    0,1,0,0,
+    0,0,1,0,
+    0,0,0,1};
+    glm::mat4 mvp = glm::make_mat4(aaa);;
+
+    // Now we need to map the memory of this new allocation so the CPU can edit it.
+    void *data;
+    err = vkMapMemory(m_device, m_modelViewMatrixUniform.mem, 0, m_modelViewMatrixUniform.allocSize, 0, &data);
+    assert(!err);
+
+    float tempColor[4] = {0,1,0,1};
+    // Copy our triangle verticies and colors into the mapped memory area
+    //memcpy(data, tempColor, sizeof(float)*4);
+    memcpy(data, &mvp,sizeof(mvp));
+
+    // Unmap the memory back from the CPU
+    vkUnmapMemory(m_device, m_modelViewMatrixUniform.mem);
+
+    // Bind our buffer to the memory
+    err = vkBindBufferMemory(m_device, m_modelViewMatrixUniform.buf, m_modelViewMatrixUniform.mem, 0);
+    assert(!err);
+
+    m_modelViewMatrixUniform.bufferInfo.buffer = m_modelViewMatrixUniform.buf;
+    m_modelViewMatrixUniform.bufferInfo.offset = 0;
+    m_modelViewMatrixUniform.bufferInfo.range = sizeof(glm::mat4);
 }
 
 void VulkanCore::InitRenderPass(){
@@ -655,7 +747,8 @@ void VulkanCore::InitRenderPass(){
     ret = vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &m_renderPass);
     GVR_VK_CHECK(!ret);
 }
-VkShaderModule VulkanCore::CreateShaderModule(const uint32_t* code, uint32_t size)
+
+VkShaderModule VulkanCore::CreateShaderModule(std::vector<uint32_t> code, uint32_t size)
 {
     VkShaderModule module;
     VkResult  err;
@@ -664,8 +757,8 @@ VkShaderModule VulkanCore::CreateShaderModule(const uint32_t* code, uint32_t siz
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = nullptr;
-    moduleCreateInfo.codeSize = size;
-    moduleCreateInfo.pCode = code;
+    moduleCreateInfo.codeSize = size * sizeof(unsigned int);
+    moduleCreateInfo.pCode = code.data();
     moduleCreateInfo.flags = 0;
     err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &module);
     GVR_VK_CHECK(!err);
@@ -750,54 +843,110 @@ void VulkanCore::InitPipeline(){
     ms.pSampleMask = nullptr;
     ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+
+    options.AddMacroDefinition("MY_DEFINE", "1");
+          std::string data = std::string("") +
+         "#version 400 \n"+
+        "#extension GL_ARB_separate_shader_objects : enable \n"+
+        "#extension GL_ARB_shading_language_420pack : enable \n"+
+
+    //    "layout (set = 0, binding = 1) uniform sampler2D tex; \n"+
+        "layout (std140, set = 0, binding = 0) uniform matrix { mat4 mvp; } matrices;\n"+
+        "layout (location = 0) in vec4 pos; \n"+
+    //    "layout (location = 1) in vec4 vertColor; \n"+
+    //    "layout (location = 2) in vec2 vertUV; \n"+
+    //    "layout (location = 0) out vec4 color; \n"+
+    //    "layout (location = 1) out vec2 uv; \n"+
+        "void main() { \n"+
+    //      " color = vertColor; \n"+
+    //      "uv = vertUV;\n"+
+         "  gl_Position = matrices.mvp * vec4(pos.x, pos.y, pos.z,1.0); \n"+
+        "}";
+
+
+          shaderc_shader_kind kind = shaderc_glsl_default_vertex_shader;
+          shaderc::SpvCompilationResult module_vert = compiler.CompileGlslToSpv(
+                    data.c_str(), data.size(), kind, "VulkanShader", options);
+
+                if (module_vert.GetCompilationStatus() !=
+                    shaderc_compilation_status_success) {
+                  //std::cerr << module.GetErrorMessage();
+                  LOGI("Vulkan shader unable to compile shader %s", module_vert.GetErrorMessage().c_str());
+                }
+                else
+                  LOGE("Vulkan shader compiled shader");
+
+                std::vector<uint32_t> result_vert(module_vert.cbegin(), module_vert.cend());
+
+
+
+           std::string data_frag = std::string("") +
+                     "#version 400 \n"+
+                    "#extension GL_ARB_separate_shader_objects : enable \n"+
+                    "#extension GL_ARB_shading_language_420pack : enable \n"+
+
+            //        "layout (std140, set = 0, binding = 0) uniform matrix { vec4 mvp; } texcolor;\n"+
+           //         "layout (set = 0, binding = 1) uniform sampler2D tex; \n"+
+           //         "layout (location = 0) in vec4 color;  \n"+
+           //         "layout (location = 1) in vec2 uv; \n"+
+                    "layout (location = 0) out vec4 uFragColor;  \n"+
+                    "void main() {  \n"+
+                   " vec4 temp = vec4(1.0,0.0,1.0,1.0);\n"+
+           //         "  uFragColor = vec4(texcolor.mvp.x,texcolor.mvp.y,0.0,1.0);\n"+
+           //         "   uFragColor = texture(tex, uv)*temp;  \n"+
+                      "   uFragColor = temp;  \n"+
+                    "}";
+
+            shaderc_shader_kind  kind_frag = shaderc_glsl_default_fragment_shader;
+
+
+                      shaderc::SpvCompilationResult module_frag = compiler.CompileGlslToSpv(
+                          data_frag.c_str(), data_frag.size(), kind_frag, "VulkanShaderFrag", options);
+                      if (module_frag.GetCompilationStatus() !=
+                          shaderc_compilation_status_success) {
+                        //std::cerr << module.GetErrorMessage();
+                        LOGI("Vulkan shader unable graf to compile shader %s", module_frag.GetErrorMessage().c_str());
+                      }
+                      else
+                        LOGE("Vulkan shader fragcompiled shader");
+
+                      std::vector<uint32_t> result_frag(module_frag.cbegin(), module_frag.cend());
+
     // We define two shader stages: our vertex and fragment shader.
-    // they are embedded as SPIR-V into a header file for ease of deployment.
-    VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-    shaderStages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
-    shaderStages[0].module = CreateShaderModule( (const uint32_t*)&shader_tri_vert[0], shader_tri_vert_size);
-    shaderStages[0].pName  = "main";
-    shaderStages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-    shaderStages[1].module = CreateShaderModule( (const uint32_t*)&shader_tri_frag[0], shader_tri_frag_size);
-    shaderStages[1].pName  = "main";
-
-    // Pipelines are allocated from pipeline caches.
-    VkPipelineCacheCreateInfo pipelineCache = {};
-    pipelineCache.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pipelineCache.pNext = nullptr;
-    pipelineCache.flags = 0;
-
-    VkPipelineCache piplineCache;
-    err = vkCreatePipelineCache(m_device, &pipelineCache, nullptr, &piplineCache);
-    GVR_VK_CHECK(!err);
-
+        // they are embedded as SPIR-V into a header file for ease of deployment.
+        VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+        shaderStages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
+        shaderStages[0].module = CreateShaderModule( result_vert, result_vert.size());//CreateShaderModule( (const uint32_t*)&shader_tri_vert[0], shader_tri_vert_size);
+        shaderStages[0].pName  = "main";
+        shaderStages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+        shaderStages[1].module = CreateShaderModule( result_frag, result_frag.size());//CreateShaderModule( (const uint32_t*)&shader_tri_frag[0], shader_tri_frag_size);
+        shaderStages[1].pName  = "main";
     // Out graphics pipeline records all state information, including our renderpass
-    // and pipeline layout. We do not have any dynamic state in this example.
-    VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
-    pipelineCreateInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.layout              = m_pipelineLayout;
-    pipelineCreateInfo.pVertexInputState   = &vi;
-    pipelineCreateInfo.pInputAssemblyState = &ia;
-    pipelineCreateInfo.pRasterizationState = &rs;
-    pipelineCreateInfo.pColorBlendState    = &cb;
-    pipelineCreateInfo.pMultisampleState   = &ms;
-    pipelineCreateInfo.pViewportState      = &vp;
-    pipelineCreateInfo.pDepthStencilState  = nullptr;//&ds;
-    pipelineCreateInfo.pStages             = &shaderStages[0];
-    pipelineCreateInfo.renderPass          = m_renderPass;
-    pipelineCreateInfo.pDynamicState       = nullptr;
-    pipelineCreateInfo.stageCount          = 2; //vertex and fragment
+        // and pipeline layout. We do not have any dynamic state in this example.
+        VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
+        pipelineCreateInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineCreateInfo.layout              = m_pipelineLayout;
+        pipelineCreateInfo.pVertexInputState   = &vi;
+        pipelineCreateInfo.pInputAssemblyState = &ia;
+        pipelineCreateInfo.pRasterizationState = &rs;
+        pipelineCreateInfo.pColorBlendState    = &cb;
+        pipelineCreateInfo.pMultisampleState   = &ms;
+        pipelineCreateInfo.pViewportState      = &vp;
+        pipelineCreateInfo.pDepthStencilState  = &ds;
+        pipelineCreateInfo.pStages             = &shaderStages[0];
+        pipelineCreateInfo.renderPass          = m_renderPass;
+        pipelineCreateInfo.pDynamicState       = nullptr;
+        pipelineCreateInfo.stageCount          = 2; //vertex and fragment
 
-    err = vkCreateGraphicsPipelines(m_device, piplineCache, 1, &pipelineCreateInfo, nullptr, &m_pipeline);
-    GVR_VK_CHECK(!err);
-
-    // We can destroy the cache now as we do not need it. The shader modules also
-    // can be destroyed after the pipeline is created.
-    vkDestroyPipelineCache(m_device, piplineCache, nullptr);
-
-    vkDestroyShaderModule(m_device, shaderStages[0].module, nullptr);
-    vkDestroyShaderModule(m_device, shaderStages[1].module, nullptr);
+    VkPipelineCache pipelineCache = VK_NULL_HANDLE;
+        LOGI("Vulkan graphics call before");
+        err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_pipeline);
+        GVR_VK_CHECK(!err);
+        LOGI("Vulkan graphics call aftere");
 
 }
 
@@ -953,6 +1102,9 @@ void VulkanCore::BuildCmdBuffer()
         // the pipeline defines, for example, that the vertex buffer is a triangle list.
         vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
+        //bind out descriptor set, which handles our uniforms and samplers
+        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSet, 0, NULL);
+
         // Bind our vertex buffer, with a 0 offset.
         VkDeviceSize offsets[1] = {0};
         vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &m_vertices.buf, offsets);
@@ -1025,7 +1177,7 @@ void VulkanCore::DrawFrame(){
 
     static bool memoryAlloc = false;
     if(memoryAlloc == false){
-        finaloutput = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
+      //  oculusTexData = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
         memoryAlloc = true;
     }
 
@@ -1033,18 +1185,19 @@ void VulkanCore::DrawFrame(){
     err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
     GVR_VK_CHECK(!err);
 
-    LOGI("Vulkna size of %d", sizeof(finaloutput));
-    memcpy(finaloutput, data, (m_width*m_height*4* sizeof(uint8_t)));
+    LOGI("Vulkna size of %d", sizeof(oculusTexData));
+    memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
 
     LOGI("Vulkan memcpy map done");
 
-    for (int i = 0; i < (m_width*m_height)-4; i++) {
-        LOGI("Vulkan Data %u, %u %u %u", data[i], data[i+1], data[i+2], data[i+3]);
+    /*for (int i = 0; i < (m_width*m_height)-4; i++) {
+        LOGI("Vulkan Data %u, %u %u %u", finaloutput[i], finaloutput[i+1], finaloutput[i+2], finaloutput[i+3]);
         i+=3;
-        break;
-    }
+        //break;
+    }*/
 
-    texDataVulkan = data;//finaloutput;
+    oculusTexData = data;
+   // texDataVulkan = data;//finaloutput;
     LOGI("Vulkan data reading done");
     vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
 
@@ -1054,16 +1207,110 @@ void VulkanCore::DrawFrame(){
     LOGI("Vulkan after vkResetFences submit");
 }
 
+void VulkanCore::UpdateUniforms(Scene* scene, Camera* camera, RenderData* render_data)
+{
+    //static float spinAngle = 0.01f;
+
+    //glm::mat4 rotationx = glm::rotate(glm::mat4(), glm::radians(spinAngle*3), glm::vec3(1.0f, 0.0f, 0.0f));
+    //glm::mat4 rotationy = glm::rotate(glm::mat4(), glm::radians(spinAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+    //glm::mat4 rotation = rotationx * rotationy;
+    //glm::mat4 model = m_modelMatrix * rotation;
+    //glm::mat4 modelView = m_viewMatrix * model;
+   // glm::mat4 modelViewProjection;// =  rotation;//m_projectionMatrix * modelView;
+
+    VkResult ret = VK_SUCCESS;
+    uint8_t *pData;
+        Transform* const t = render_data->owner_object()->transform();
+
+        if (t == nullptr)
+            return;
+
+        glm::mat4 model = t->getModelMatrix();
+    glm::mat4 view = camera->getViewMatrix();
+    glm::mat4 proj = camera->getProjectionMatrix();
+    glm::mat4 modelViewProjection = proj * view * model;
+
+   // LOGI("Vulkan mvp %f %f %f %f", modelViewProjection[0][0],  modelViewProjection[0][1], modelViewProjection[0][2], modelViewProjection[0][3]);
+
+    ret = vkMapMemory(m_device, m_modelViewMatrixUniform.mem, 0, m_modelViewMatrixUniform.allocSize, 0, (void **) &pData);
+    assert(!ret);
+
+    memcpy(pData, (const void*) &modelViewProjection, sizeof(modelViewProjection));
+
+    vkUnmapMemory(m_device, m_modelViewMatrixUniform.mem);
+
+    //spinAngle += 0.8f;
+}
+
+
+void VulkanCore::InitDescriptorSet() {
+    //Create a pool with the amount of descriptors we require
+    VkDescriptorPoolSize poolSize[2] = {};
+    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize[0].descriptorCount = 1;
+
+    // poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    //  poolSize[1].descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.pNext = nullptr;
+    descriptorPoolCreateInfo.maxSets = 1;
+    descriptorPoolCreateInfo.poolSizeCount = 1;//2;
+    descriptorPoolCreateInfo.pPoolSizes = poolSize;
+
+    VkResult  err;
+    err = vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, NULL, &m_descriptorPool);
+    GVR_VK_CHECK(!err);
+
+    VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+    descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocateInfo.pNext = nullptr;
+    descriptorSetAllocateInfo.descriptorPool = m_descriptorPool;
+    descriptorSetAllocateInfo.descriptorSetCount = 1;
+    descriptorSetAllocateInfo.pSetLayouts = &m_descriptorLayout;
+
+    err = vkAllocateDescriptorSets(m_device, &descriptorSetAllocateInfo, &m_descriptorSet);
+    GVR_VK_CHECK(!err);
+
+    /*VkDescriptorImageInfo descriptorImageInfo = {};
+
+    if(m_texBricks->m_sampler == VK_NULL_HANDLE)
+    LOGI("Vulkan m sampler is null");
+    descriptorImageInfo.sampler = m_texBricks->m_sampler;
+    descriptorImageInfo.imageView = m_texBricks->view;
+    descriptorImageInfo.imageLayout = m_texBricks->m_imageLayout;*/
+
+    VkWriteDescriptorSet writes[2] = {};
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].dstBinding = 0;
+                         writes[0].dstSet = m_descriptorSet;
+                         writes[0].descriptorCount = 1;
+                         writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                         writes[0].pBufferInfo = &m_modelViewMatrixUniform.bufferInfo;
+
+                         /*writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                         writes[1].dstBinding = 1;
+                         writes[1].dstSet = m_descriptorSet;
+                         writes[1].descriptorCount = 1;
+                         writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                         writes[1].pImageInfo = &descriptorImageInfo;*/
+                         LOGI("Vulkan before update sdectiptor");
+                         vkUpdateDescriptorSets(m_device, 1, &writes[0], 0, nullptr);
+                         LOGI("Vulkan after update sdectiptor");
+}
+
 void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
     m_Vulkan_Initialised = true;
     m_androidWindow = newNativeWindow;
 
-    LOGE("Vulkan Before init methods");
-    if(InitVulkan() != 1){
+   // LOGE("Vulkan Before init methods");
+    if(InitVulkan() == 0){
+   //      LOGE("Vulkan Not found at native side");
         m_Vulkan_Initialised = false;
         return;
     }
-    LOGE("Vulkan after init methods");
+  //  LOGE("Vulkan after init methods");
 
     if(CreateInstance() == false){
         m_Vulkan_Initialised = false;
@@ -1083,13 +1330,21 @@ void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
     InitSwapchain(1024,1024);
     InitCommandbuffers();
     InitVertexBuffers();
+     LOGE("Vulkan after InitVertexBuffers methods");
+    InitUniformBuffers();
+     LOGE("Vulkan after InitUniformBuffers methods");
     InitLayouts();
+     LOGE("Vulkan after InitLayouts methods");
     InitRenderPass();
+     LOGE("Vulkan after InitRenderPass methods");
     InitPipeline();
+     LOGE("Vulkan after InitPipeline methods");
+    InitDescriptorSet();
     InitFrameBuffers();
     InitSync();
 
     // Initialize our command buffers
     BuildCmdBuffer();
     //DrawFrame();
+}
 }

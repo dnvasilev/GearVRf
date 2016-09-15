@@ -104,7 +104,7 @@ public:
      int incrementDrawCalls(){
         numberDrawCalls++;
      }
-     static Renderer* getInstance(const char* type = " ");
+     static Renderer* getInstance(std::string type =  " ");
      static void resetInstance(){
         delete instance;
      }

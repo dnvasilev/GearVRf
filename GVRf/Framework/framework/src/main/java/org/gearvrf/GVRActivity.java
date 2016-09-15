@@ -146,8 +146,9 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
 
         mActivityNative = mDelegate.getActivityNative();
 
-        Long vulkanCoreObj = NativeVulkanCore.getInstance(null);
-        if(vulkanCoreObj != null)
+        long vulkanCoreObj;
+        vulkanCoreObj = NativeVulkanCore.getInstance(null);
+        if(vulkanCoreObj != 0)
             Log.i("Vulkan", "Vulkan Instance On surface created at Vulkan Java Side");
         else
             Log.i("Vulkan", "Error :   On surface  No Instance created at Vulkan Java Side");

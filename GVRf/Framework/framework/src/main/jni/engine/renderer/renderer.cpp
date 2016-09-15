@@ -55,19 +55,26 @@ void Renderer::initializeStats() {
 /***
     Till we have Vulkan implementation, lets create GLRenderer by-default
 ***/
-Renderer* Renderer::getInstance(const char* type){
+Renderer* Renderer::getInstance(std::string type){
     if(nullptr == instance){
-        if(0 == std::strcmp(type,"Vulkan")) {
+
+   //     LOGE("string compare %d ",std::strcmp(type.c_str(),"Vulkan"));
+
+     //   if(!std::strcmp(type.c_str(),"Vulkan")) {
+     if(1){
+            LOGE("creating vulkan");
             instance = new VulkanRenderer();
             isVulkan_ = true;
         }
         else {
+         LOGE("creating GL");
             instance = new GLRenderer();
         }
         std::atexit(resetInstance);      // Destruction of instance registered at runtime exit
     }
     return instance;
 }
+
 Renderer::Renderer():numberDrawCalls(0), numberTriangles(0), batch_manager(nullptr) {
     if(do_batching) {
         batch_manager = new BatchManager(BATCH_SIZE, MAX_INDICES);
@@ -255,7 +262,7 @@ bool Renderer::occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scen
         scene->unlockColliders();
         return false;
     }
-
+    LOGE("in occlusion cull %d", render_data_vector.size());
     return true;
 }
 

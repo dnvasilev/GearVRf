@@ -17,7 +17,7 @@
 #include "ovr_view_manager.h"
 #include "../engine/renderer/renderer.h"
 #include "../objects/components/camera.h"
-
+#include "vulkan/vulkanCore.h"
 #include <jni.h>
 
 namespace gvr {
@@ -29,8 +29,18 @@ void Java_org_gearvrf_OvrViewManager_cull(JNIEnv * jni, jclass clazz,
     Scene* scene = reinterpret_cast<Scene*>(jscene);
     Camera* camera = reinterpret_cast<Camera*>(jcamera);
     ShaderManager* shader_manager = reinterpret_cast<ShaderManager*>(jshader_manager);
-    gRenderer = Renderer::getInstance();
+    VulkanCore* vulkanCore = VulkanCore::getInstance();
+    if(nullptr!= vulkanCore){
+        std::string type("vulkan");
+        gRenderer = Renderer::getInstance(type);
+    //  LOGE("vulkan core not null");
+    }
+    else {
+        gRenderer = Renderer::getInstance();
+    //   LOGE("vulkan core s null");
+    }
     gRenderer->cull(scene, camera, shader_manager);
+
 
 }
 
