@@ -29,6 +29,7 @@
 #include "objects/components/camera.h"
 #include "objects/components/render_data.h"
 #include "objects/textures/render_texture.h"
+#include "objects/mesh.h"
 #include "shaders/shader_manager.h"
 #include "shaders/post_effect_shader_manager.h"
 #include "util/gvr_gl.h"
@@ -40,5 +41,30 @@
 #include <unordered_set>
 
 namespace gvr {
+     void VulkanRenderer::renderCamera(Scene* scene, Camera* camera,
+             ShaderManager* shader_manager,
+             PostEffectShaderManager* post_effect_shader_manager,
+             RenderTexture* post_effect_render_texture_a,
+             RenderTexture* post_effect_render_texture_b) {
+
+        int swapChainIndex =  vulkanCore_->AcquireNextImage();
+         vulkanCore_->initPipelineMetaData(swapChainIndex);
+        vulkanCore_->bindCommandBuffer(swapChainIndex);
+      //  LOGI("VK calling draw %d", render_data_vector.size());
+        for(auto &render_data : render_data_vector) {
+            render_data->mesh()->generateVAO(vulkanCore_->getDevice(), vulkanCore_);
+            //GVR_VK_Vertices* vkVertices_ = render_data->mesh()->getVKVertices();
+            GVR_VK_Vertices& vkVertices_ = vulkanCore_->getVKVertices();
+            VkPipeline& m_pipeline = render_data->getVKPipeline();
+            VkGraphicsPipelineCreateInfo& m_pipelineCreateInfo_ = vulkanCore_->getPipelineCreateInfo();
+            vulkanCore_->updatePipelineInfo(m_pipelineCreateInfo_,vkVertices_.vi);
+            vulkanCore_->createGraphicsPipeline(m_pipeline, vulkanCore_->getPipelineCreateInfo());
+            vulkanCore_->UpdateUniforms(scene,camera, render_data);
+            vulkanCore_->bindRenderData(render_data, swapChainIndex);
+        }
+        vulkanCore_->unBindCommandBuffer(swapChainIndex);
+        vulkanCore_->DrawFrame(swapChainIndex);
+
+     }
 
 }

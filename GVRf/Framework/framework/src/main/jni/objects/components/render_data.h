@@ -30,6 +30,7 @@
 #include "objects/render_pass.h"
 #include "objects/material.h"
 #include<sstream>
+#include "vulkan/vulkanCore.h"
 typedef unsigned long Long;
 namespace gvr {
 class Mesh;
@@ -337,6 +338,9 @@ public:
         }
         return hash_code;
     }
+    VkPipeline& getVKPipeline(){
+        return m_pipeline;
+    }
 private:
     //  RenderData(const RenderData& render_data);
     RenderData(RenderData&& render_data);
@@ -344,6 +348,7 @@ private:
     RenderData& operator=(RenderData&& render_data);
 
 private:
+    VkPipeline m_pipeline;
     static const int DEFAULT_RENDER_MASK = Left | Right;
     static const int DEFAULT_RENDERING_ORDER = Geometry;
     Mesh* mesh_;

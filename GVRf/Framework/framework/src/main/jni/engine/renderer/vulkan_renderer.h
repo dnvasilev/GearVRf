@@ -68,15 +68,7 @@ public:
              ShaderManager* shader_manager,
              PostEffectShaderManager* post_effect_shader_manager,
              RenderTexture* post_effect_render_texture_a,
-             RenderTexture* post_effect_render_texture_b) {
-
-      //  LOGI("VK calling draw %d", render_data_vector.size());
-        for(auto &rdata : render_data_vector) {
-       //     LOGI("VK calling rdata");
-            vulkanCore_->UpdateUniforms(scene,camera, rdata);
-            vulkanCore_->DrawFrame();
-        }
-     }
+             RenderTexture* post_effect_render_texture_b);
 
    void renderCamera(Scene* scene, Camera* camera, int viewportX,
              int viewportY, int viewportWidth, int viewportHeight,

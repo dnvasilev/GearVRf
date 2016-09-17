@@ -37,7 +37,7 @@
 #include "objects/material.h"
 #include "objects/bounding_volume.h"
 #include "objects/vertex_bone_data.h"
-
+#include "vulkan/vulkanCore.h"
 #include "engine/memory/gl_delete.h"
 #include "objects/components/event_handler.h"
 namespace gvr {
@@ -45,7 +45,7 @@ class Mesh: public HybridObject {
 public:
     Mesh() :
             vertices_(), normals_(), tex_coords_(), indices_(), float_vectors_(), vec2_vectors_(), vec3_vectors_(), vec4_vectors_(),
-                    have_bounding_volume_(false), vao_dirty_(true), listener_(new Listener()),
+                    have_bounding_volume_(false), vao_dirty_(true), listener_(new Listener()),vkVertices_(new GVR_VK_Vertices()),
                     boneVboID_(GVR_INVALID), vertexBoneData_(this), bone_data_dirty_(true), regenerate_vao_(true)
     {
     }
@@ -63,7 +63,7 @@ public:
         tex_coords.swap(tex_coords_);
         std::vector<unsigned short> indices;
         indices.swap(indices_);
-
+        delete vkVertices_;
         deleteVaos();
     }
 
@@ -378,7 +378,7 @@ public:
 
      // generate VAO
      void generateVAO(int programId);
-
+    void generateVAO(VkDevice &m_device, VulkanCore*);
 
     void add_listener(RenderData* render_data){
         if(render_data)
@@ -390,7 +390,9 @@ public:
     void notify_listener(bool dirty){
         listener_->notify_listeners(dirty);
     }
-
+    GVR_VK_Vertices* getVKVertices(){
+        return vkVertices_;
+    }
 private:
     Mesh(const Mesh& mesh);
     Mesh(Mesh&& mesh);
@@ -398,6 +400,7 @@ private:
 
 
 private:
+    GVR_VK_Vertices* vkVertices_;
     Listener* listener_;
     std::vector<glm::vec3> vertices_;
     std::vector<glm::vec3> normals_;
