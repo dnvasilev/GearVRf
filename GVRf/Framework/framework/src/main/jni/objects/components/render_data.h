@@ -72,7 +72,7 @@ public:
                     false), offset_factor_(0.0f), offset_units_(0.0f), depth_test_(
                     true), alpha_blend_(true), alpha_to_coverage_(false), sample_coverage_(
                     1.0f), invert_coverage_mask_(GL_FALSE), draw_mode_(
-                    GL_TRIANGLES), texture_capturer(0),renderdata_dirty_(true) {
+                    GL_TRIANGLES), texture_capturer(0),uniform_dirty(true), renderdata_dirty_(true) {
     }
 
     void copy(const RenderData& rdata) {
@@ -341,6 +341,12 @@ public:
     VkPipeline& getVKPipeline(){
         return m_pipeline;
     }
+
+    // Vulkan
+        Uniform m_modelViewMatrixUniform;
+        VkPipeline m_pipeline;
+        VkDescriptorSet m_descriptorSet;
+        bool uniform_dirty;
 private:
     //  RenderData(const RenderData& render_data);
     RenderData(RenderData&& render_data);
@@ -348,7 +354,7 @@ private:
     RenderData& operator=(RenderData&& render_data);
 
 private:
-    VkPipeline m_pipeline;
+    //VkPipeline m_pipeline;
     static const int DEFAULT_RENDER_MASK = Left | Right;
     static const int DEFAULT_RENDERING_ORDER = Geometry;
     Mesh* mesh_;

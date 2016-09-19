@@ -51,14 +51,11 @@ struct GVR_VK_DepthBuffer {
 };
 
 struct GVR_VK_Vertices {
-    ~GVR_VK_Vertices(){
-        delete vi_attrs;
-    }
     VkBuffer buf;
     VkDeviceMemory mem;
     VkPipelineVertexInputStateCreateInfo vi;
     VkVertexInputBindingDescription      vi_bindings[1];
-    VkVertexInputAttributeDescription    *vi_attrs;
+    VkVertexInputAttributeDescription    vi_attrs[2];
 };
 
 struct Uniform {
@@ -90,53 +87,18 @@ public:
         return NULL;
     }
     void UpdateUniforms(Scene* scene, Camera* camera, RenderData* render_data);
-    void DrawFrame(int m_swapchainCurrentIdx);
-    void updatePipelineInfo(VkGraphicsPipelineCreateInfo& pipelineCreateInfo,VkPipelineVertexInputStateCreateInfo& vi);
-    void createGraphicsPipeline(VkPipeline& pipeline,VkGraphicsPipelineCreateInfo& pipelineCreateInfo );
-    void bindCommandBuffer(int swapChainIndex);
-     void unBindCommandBuffer(int swapChainIndex);
-    void bindRenderData(RenderData* render_data,int);
-    void initPipelineMetaData(int swapChainIndex);
-    VkDevice& getDevice(){
-        return m_device;
-    }
-    void bindPipeline(RenderData* render_data);
-    VkGraphicsPipelineCreateInfo& getPipelineCreateInfo(){
-        return m_pipelineCreateInfo_;
-    }
-    bool GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
-    int AcquireNextImage();
-    GVR_VK_Vertices& getVKVertices(){
-        return m_vertices;
-    }
+     void DrawFrame();
+     void InitUniformBuffersForRenderData(Uniform &m_modelViewMatrixUniform);
+     void InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUniform, VkDescriptorSet &m_descriptorSet);
+     void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors, int &swapChainIndex);
+     void DrawFrameForRenderData(int &swapChainIndex);
+      int AcquireNextImage();
 private:
-    VkGraphicsPipelineCreateInfo m_pipelineCreateInfo_;
     std::vector<VkFence> waitFences;
     static VulkanCore* theInstance;
     VulkanCore(ANativeWindow * newNativeWindow) : m_pPhysicalDevices(NULL){
         m_Vulkan_Initialised = false;
         initVulkanCore(newNativeWindow);
-        m_pipelineCreateInfo_ = {};
-        m_prePresentBarrier_ = {};
-        m_rp_begin_ = {};
-        m_preRenderBarrier_ = {};
-        cmd_buf_hinfo = {};
-        cmd_buf_info = {};
-        clear_values[0] = {};
-        clear_values[1] = {};
-       vi = {};
-	  ia = {};
-	   rs = {};
-	    att_state[1] = {};
-	      cb = {};
-	        vp = {};
-	   viewport = {};
-	    scissor = {};
-	      ds = {};
-	     ms = {};
-	      shaderStages[0] = {};
-   shaderStages[1] = {};
-
     }
     bool CreateInstance();
     VkShaderModule CreateShaderModule(std::vector<uint32_t> code, uint32_t size);
@@ -145,12 +107,12 @@ private:
     bool InitDevice();
     void InitSurface();
     void InitSwapchain(uint32_t width, uint32_t height);
-
+    bool GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
     void InitCommandbuffers();
     void InitVertexBuffers();
     void InitLayouts();
     void InitRenderPass();
-    void InitPipeline(VkGraphicsPipelineCreateInfo& pipelineCreateInfo);
+    void InitPipeline();
     void InitFrameBuffers();
     void InitSync();
     void BuildCmdBuffer();
@@ -188,9 +150,6 @@ private:
     VkCommandPool m_commandPool;
     GVR_VK_DepthBuffer* m_depthBuffers;
     GVR_VK_Vertices m_vertices;
-    VkImageMemoryBarrier m_prePresentBarrier_;
-    VkRenderPassBeginInfo m_rp_begin_;
-    VkImageMemoryBarrier m_preRenderBarrier_;
 
     VkDescriptorSetLayout m_descriptorLayout;
     VkPipelineLayout  m_pipelineLayout;
@@ -203,25 +162,6 @@ private:
     Uniform m_modelViewMatrixUniform;
     VkDescriptorPool m_descriptorPool;
     VkDescriptorSet m_descriptorSet;
-
-    VkCommandBufferInheritanceInfo cmd_buf_hinfo;
- VkCommandBufferBeginInfo cmd_buf_info;
-  VkClearValue clear_values[2] ;
-
-
-      VkPipelineVertexInputStateCreateInfo   vi;
-  	 VkPipelineInputAssemblyStateCreateInfo ia ;
-  	  VkPipelineRasterizationStateCreateInfo rs;
-  	   VkPipelineColorBlendAttachmentState att_state[1];
-  	  VkPipelineColorBlendStateCreateInfo    cb;
-  	  VkPipelineViewportStateCreateInfo      vp ;
-  	  VkViewport viewport ;
-  	   VkRect2D scissor ;
-  	    VkPipelineDepthStencilStateCreateInfo  ds;
-  	  VkPipelineMultisampleStateCreateInfo   ms ;
-  	     VkPipelineShaderStageCreateInfo shaderStages[2];
-
-
 };
 
 

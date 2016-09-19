@@ -349,7 +349,7 @@ const GLuint Mesh::getVAOId(int programId) {
     LOGI("!! %p Error in creating VAO  for Prog Id -- %d", this, programId);
     return 0;
 }
-void Mesh::generateVAO(VkDevice &m_device, VulkanCore* vulkanCore_){
+/*void Mesh::generateVAO(VkDevice &m_device, VulkanCore* vulkanCore_){
     if (!vao_dirty_) {
         return;
     }
@@ -429,6 +429,7 @@ void Mesh::generateVAO(VkDevice &m_device, VulkanCore* vulkanCore_){
 
 
 }
+*/
 // generate vertex array object
 void Mesh::generateVAO(int programId) {
     GLuint tmpID;

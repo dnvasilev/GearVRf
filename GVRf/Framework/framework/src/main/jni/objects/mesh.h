@@ -378,7 +378,7 @@ public:
 
      // generate VAO
      void generateVAO(int programId);
-    void generateVAO(VkDevice &m_device, VulkanCore*);
+ //   void generateVAO(VkDevice &m_device, VulkanCore*);
 
     void add_listener(RenderData* render_data){
         if(render_data)

@@ -47,6 +47,7 @@ namespace gvr {
              RenderTexture* post_effect_render_texture_a,
              RenderTexture* post_effect_render_texture_b) {
 
+/*
         int swapChainIndex =  vulkanCore_->AcquireNextImage();
          vulkanCore_->initPipelineMetaData(swapChainIndex);
         vulkanCore_->bindCommandBuffer(swapChainIndex);
@@ -64,7 +65,29 @@ namespace gvr {
             vulkanCore_->bindRenderData(render_data, swapChainIndex);
         }
         vulkanCore_->unBindCommandBuffer(swapChainIndex);
-        vulkanCore_->DrawFrame(swapChainIndex);
+        vulkanCore_->DrawFrame(swapChainIndex);*/
+
+            std::vector <VkDescriptorSet> allDescriptors;
+              //  LOGI("VK calling draw %d", render_data_vector.size());
+                for(auto &rdata : render_data_vector) {
+               //     LOGI("VK calling rdata");
+                // Creating and initializing Uniform Buffer for Each Render Data
+                if(rdata->uniform_dirty){
+                vulkanCore_->InitUniformBuffersForRenderData(rdata->m_modelViewMatrixUniform);
+                vulkanCore_->InitDescriptorSetForRenderData(rdata->m_modelViewMatrixUniform, rdata->m_descriptorSet);
+                rdata->uniform_dirty = false;
+                }
+
+                allDescriptors.push_back(rdata->m_descriptorSet);
+                    vulkanCore_->UpdateUniforms(scene,camera, rdata);
+
+
+                    //vulkanCore_->DrawFrame();
+                    //break;
+                }
+                int swapChainIndex = vulkanCore_->AcquireNextImage();
+                vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex);
+                vulkanCore_->DrawFrameForRenderData(swapChainIndex);
 
      }
 
