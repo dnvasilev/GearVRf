@@ -494,88 +494,87 @@ void VulkanCore::InitVertexBuffers(){
 
 void VulkanCore::InitVertexBuffers(){
     // Our vertex buffer data is a simple triangle, with associated vertex colors.
-    const float vb[4][7] = {
-            //      position                   color
-            { -0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.0f,  0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-    };
+       const float vb[3][3] = {
+               //      position                   color
+               { -0.9f, -0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
+               {  0.9f, -0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
+               {  0.0f,  0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
+       };
 
-    VkResult   err;
-    bool   pass;
+       VkResult   err;
+       bool   pass;
 
-    // Our m_vertices member contains the types required for storing
-    // and defining our vertex buffer within the graphics pipeline.
-    memset(&m_vertices, 0, sizeof(m_vertices));
+       // Our m_vertices member contains the types required for storing
+       // and defining our vertex buffer within the graphics pipeline.
+       memset(&m_vertices, 0, sizeof(m_vertices));
+        m_vertices.vi_attrs = new VkVertexInputAttributeDescription();
+       // Create our buffer object.
+       VkBufferCreateInfo bufferCreateInfo = {};
+       bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+       bufferCreateInfo.pNext = nullptr;
+       bufferCreateInfo.size = sizeof(vb);
+       bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+       bufferCreateInfo.flags = 0;
+       err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
+       GVR_VK_CHECK(!err);
 
-    // Create our buffer object.
-    VkBufferCreateInfo bufferCreateInfo = {};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.pNext = nullptr;
-    bufferCreateInfo.size = sizeof(vb);
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferCreateInfo.flags = 0;
-    err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
-    GVR_VK_CHECK(!err);
+       // Obtain the memory requirements for this buffer.
+       VkMemoryRequirements mem_reqs;
+       vkGetBufferMemoryRequirements(m_device, m_vertices.buf, &mem_reqs);
+       GVR_VK_CHECK(!err);
 
-    // Obtain the memory requirements for this buffer.
-    VkMemoryRequirements mem_reqs;
-    vkGetBufferMemoryRequirements(m_device, m_vertices.buf, &mem_reqs);
-    GVR_VK_CHECK(!err);
+       // And allocate memory according to those requirements.
+       VkMemoryAllocateInfo memoryAllocateInfo = {};
+       memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+       memoryAllocateInfo.pNext = nullptr;
+       memoryAllocateInfo.allocationSize = 0;
+       memoryAllocateInfo.memoryTypeIndex = 0;
+       memoryAllocateInfo.allocationSize  = mem_reqs.size;
+       pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+       GVR_VK_CHECK(pass);
 
-    // And allocate memory according to those requirements.
-    VkMemoryAllocateInfo memoryAllocateInfo = {};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.pNext = nullptr;
-    memoryAllocateInfo.allocationSize = 0;
-    memoryAllocateInfo.memoryTypeIndex = 0;
-    memoryAllocateInfo.allocationSize  = mem_reqs.size;
-    pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
-    GVR_VK_CHECK(pass);
+       err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
+       GVR_VK_CHECK(!err);
 
-    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
-    GVR_VK_CHECK(!err);
+       // Now we need to map the memory of this new allocation so the CPU can edit it.
+       void *data;
+       err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
+       GVR_VK_CHECK(!err);
 
-    // Now we need to map the memory of this new allocation so the CPU can edit it.
-    void *data;
-    err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
-    GVR_VK_CHECK(!err);
-
-    // Copy our triangle verticies and colors into the mapped memory area.
-    memcpy(data, vb, sizeof(vb));
+       // Copy our triangle verticies and colors into the mapped memory area.
+       memcpy(data, vb, sizeof(vb));
 
 
-    // Unmap the memory back from the CPU.
-    vkUnmapMemory(m_device, m_vertices.mem);
+       // Unmap the memory back from the CPU.
+       vkUnmapMemory(m_device, m_vertices.mem);
 
-    // Bind our buffer to the memory.
-    err = vkBindBufferMemory(m_device, m_vertices.buf, m_vertices.mem, 0);
-    GVR_VK_CHECK(!err);
+       // Bind our buffer to the memory.
+       err = vkBindBufferMemory(m_device, m_vertices.buf, m_vertices.mem, 0);
+       GVR_VK_CHECK(!err);
 
-    // The vertices need to be defined so that the pipeline understands how the
-    // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
-    // structure with the correct information.
-    m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    m_vertices.vi.pNext = nullptr;
-    m_vertices.vi.vertexBindingDescriptionCount = 1;
-    m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-    m_vertices.vi.vertexAttributeDescriptionCount = 1;
-    m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
+       // The vertices need to be defined so that the pipeline understands how the
+       // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
+       // structure with the correct information.
+       m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+       m_vertices.vi.pNext = nullptr;
+       m_vertices.vi.vertexBindingDescriptionCount = 1;
+       m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
+       m_vertices.vi.vertexAttributeDescriptionCount = 1;
+       m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
 
-    // We bind the buffer as a whole, using the correct buffer ID.
-    // This defines the stride for each element of the vertex array.
-    m_vertices.vi_bindings[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-    m_vertices.vi_bindings[0].stride = sizeof(vb[0]);
-    m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+       // We bind the buffer as a whole, using the correct buffer ID.
+       // This defines the stride for each element of the vertex array.
+       m_vertices.vi_bindings[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+       m_vertices.vi_bindings[0].stride = sizeof(vb[0]);
+       m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    // Within each element, we define the attributes. At location 0,
-    // the vertex positions, in float3 format, with offset 0 as they are
-    // first in the array structure.
-    m_vertices.vi_attrs[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-    m_vertices.vi_attrs[0].location = 0;
-    m_vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT; //float3
-    m_vertices.vi_attrs[0].offset = 0;
-
+       // Within each element, we define the attributes. At location 0,
+       // the vertex positions, in float3 format, with offset 0 as they are
+       // first in the array structure.
+       m_vertices.vi_attrs[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+       m_vertices.vi_attrs[0].location = 0;
+       m_vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32_SFLOAT; //float3
+       m_vertices.vi_attrs[0].offset = 0;
 
 }
 
@@ -780,16 +779,16 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
 
     // Our vertex input is a single vertex buffer, and its layout is defined
     // in our m_vertices object already. Use this when creating the pipeline.
-    VkPipelineVertexInputStateCreateInfo   vi = {};
+///    VkPipelineVertexInputStateCreateInfo   vi = {};
     vi = m_vertices.vi;
 
     // Our vertex buffer describes a triangle list.
-    VkPipelineInputAssemblyStateCreateInfo ia = {};
+ //   VkPipelineInputAssemblyStateCreateInfo ia = {};
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     // State for rasterization, such as polygon fill mode is defined.
-    VkPipelineRasterizationStateCreateInfo rs = {};
+   // VkPipelineRasterizationStateCreateInfo rs = {};
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rs.polygonMode = VK_POLYGON_MODE_FILL;
     rs.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -799,11 +798,11 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
     rs.depthBiasEnable = VK_FALSE;
 
     // For this example we do not do blending, so it is disabled.
-    VkPipelineColorBlendAttachmentState att_state[1] = {};
+  //  VkPipelineColorBlendAttachmentState att_state[1] = {};
     att_state[0].colorWriteMask = 0xf;
     att_state[0].blendEnable = VK_FALSE;
 
-    VkPipelineColorBlendStateCreateInfo    cb = {};
+ //   VkPipelineColorBlendStateCreateInfo    cb = {};
     cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     cb.attachmentCount = 1;
     cb.pAttachments = &att_state[0];
@@ -811,19 +810,19 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
 
     // We define a simple viewport and scissor. It does not change during rendering
     // in this sample.
-    VkPipelineViewportStateCreateInfo      vp = {};
+  //  VkPipelineViewportStateCreateInfo      vp = {};
     vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     vp.viewportCount = 1;
     vp.scissorCount = 1;
 
-    VkViewport viewport = {};
+//    VkViewport viewport = {};
     viewport.height = (float) m_height;
     viewport.width = (float) m_width;
     viewport.minDepth = (float) 0.0f;
     viewport.maxDepth = (float) 1.0f;
     vp.pViewports = &viewport;
 
-    VkRect2D scissor = {};
+ //   VkRect2D scissor = {};
     scissor.extent.width = m_width;
     scissor.extent.height = m_height;
     scissor.offset.x = 0;
@@ -831,7 +830,7 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
     vp.pScissors = &scissor;
 
     // Standard depth and stencil state is defined
-    VkPipelineDepthStencilStateCreateInfo  ds = {};
+  //  VkPipelineDepthStencilStateCreateInfo  ds = {};
     ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     ds.depthTestEnable = VK_TRUE;
     ds.depthWriteEnable = VK_TRUE;
@@ -844,7 +843,7 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
     ds.front = ds.back;
 
     // We do not use multisample
-    VkPipelineMultisampleStateCreateInfo   ms = {};
+  //  VkPipelineMultisampleStateCreateInfo   ms = {};
     ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     ms.pSampleMask = nullptr;
     ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -922,7 +921,7 @@ void VulkanCore::InitPipeline( VkGraphicsPipelineCreateInfo& pipelineCreateInfo)
 
     // We define two shader stages: our vertex and fragment shader.
         // they are embedded as SPIR-V into a header file for ease of deployment.
-        VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+     //   VkPipelineShaderStageCreateInfo shaderStages[2] = {};
         shaderStages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
         shaderStages[0].module = CreateShaderModule( result_vert, result_vert.size());//CreateShaderModule( (const uint32_t*)&shader_tri_vert[0], shader_tri_vert_size);
@@ -965,7 +964,7 @@ void VulkanCore::createGraphicsPipeline(VkPipeline& pipeline,VkGraphicsPipelineC
     VkResult err;
     VkPipelineCache pipelineCache = VK_NULL_HANDLE;
     LOGI("Vulkan graphics call before");
-    err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
+    err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &m_pipelineCreateInfo_, nullptr, &pipeline);
     GVR_VK_CHECK(!err);
     LOGI("Vulkan graphics call aftere");
 }
@@ -1086,7 +1085,8 @@ void VulkanCore::bindRenderData(RenderData* render_data,int swapChainIndex ){
 
     VkCommandBuffer &cmdBuffer = m_swapchainBuffers[swapChainIndex].cmdBuffer;
     GVR_VK_Vertices* vertices = render_data->mesh()->getVKVertices();
-    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+      VkPipeline& pipeline = render_data->getVKPipeline();
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     //bind out descriptor set, which handles our uniforms and samplers
     vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSet, 0, NULL);

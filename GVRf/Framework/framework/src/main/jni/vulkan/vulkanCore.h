@@ -124,6 +124,19 @@ private:
         cmd_buf_info = {};
         clear_values[0] = {};
         clear_values[1] = {};
+       vi = {};
+	  ia = {};
+	   rs = {};
+	    att_state[1] = {};
+	      cb = {};
+	        vp = {};
+	   viewport = {};
+	    scissor = {};
+	      ds = {};
+	     ms = {};
+	      shaderStages[0] = {};
+   shaderStages[1] = {};
+
     }
     bool CreateInstance();
     VkShaderModule CreateShaderModule(std::vector<uint32_t> code, uint32_t size);
@@ -194,6 +207,19 @@ private:
     VkCommandBufferInheritanceInfo cmd_buf_hinfo;
  VkCommandBufferBeginInfo cmd_buf_info;
   VkClearValue clear_values[2] ;
+
+
+      VkPipelineVertexInputStateCreateInfo   vi;
+  	 VkPipelineInputAssemblyStateCreateInfo ia ;
+  	  VkPipelineRasterizationStateCreateInfo rs;
+  	   VkPipelineColorBlendAttachmentState att_state[1];
+  	  VkPipelineColorBlendStateCreateInfo    cb;
+  	  VkPipelineViewportStateCreateInfo      vp ;
+  	  VkViewport viewport ;
+  	   VkRect2D scissor ;
+  	    VkPipelineDepthStencilStateCreateInfo  ds;
+  	  VkPipelineMultisampleStateCreateInfo   ms ;
+  	     VkPipelineShaderStageCreateInfo shaderStages[2];
 
 
 };

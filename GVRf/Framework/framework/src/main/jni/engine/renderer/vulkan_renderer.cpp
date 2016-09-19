@@ -52,13 +52,14 @@ namespace gvr {
         vulkanCore_->bindCommandBuffer(swapChainIndex);
       //  LOGI("VK calling draw %d", render_data_vector.size());
         for(auto &render_data : render_data_vector) {
-            render_data->mesh()->generateVAO(vulkanCore_->getDevice(), vulkanCore_);
+         //   render_data->mesh()->generateVAO(vulkanCore_->getDevice(), vulkanCore_);
             //GVR_VK_Vertices* vkVertices_ = render_data->mesh()->getVKVertices();
             GVR_VK_Vertices& vkVertices_ = vulkanCore_->getVKVertices();
             VkPipeline& m_pipeline = render_data->getVKPipeline();
+
             VkGraphicsPipelineCreateInfo& m_pipelineCreateInfo_ = vulkanCore_->getPipelineCreateInfo();
-            vulkanCore_->updatePipelineInfo(m_pipelineCreateInfo_,vkVertices_.vi);
-            vulkanCore_->createGraphicsPipeline(m_pipeline, vulkanCore_->getPipelineCreateInfo());
+        //    vulkanCore_->updatePipelineInfo(m_pipelineCreateInfo_,vkVertices_.vi);
+            vulkanCore_->createGraphicsPipeline(m_pipeline, m_pipelineCreateInfo_);
             vulkanCore_->UpdateUniforms(scene,camera, render_data);
             vulkanCore_->bindRenderData(render_data, swapChainIndex);
         }
