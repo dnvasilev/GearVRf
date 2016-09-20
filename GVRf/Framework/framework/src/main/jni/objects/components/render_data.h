@@ -347,6 +347,8 @@ public:
         VkPipeline m_pipeline;
         VkDescriptorSet m_descriptorSet;
         bool uniform_dirty;
+        GVR_VK_Indices m_indices;
+        GVR_VK_Vertices m_vertices;
 private:
     //  RenderData(const RenderData& render_data);
     RenderData(RenderData&& render_data);
@@ -354,7 +356,7 @@ private:
     RenderData& operator=(RenderData&& render_data);
 
 private:
-    //VkPipeline m_pipeline;
+
     static const int DEFAULT_RENDER_MASK = Left | Right;
     static const int DEFAULT_RENDERING_ORDER = Geometry;
     Mesh* mesh_;

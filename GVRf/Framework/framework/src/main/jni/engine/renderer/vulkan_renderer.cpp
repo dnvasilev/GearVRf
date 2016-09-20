@@ -69,24 +69,33 @@ namespace gvr {
 
             std::vector <VkDescriptorSet> allDescriptors;
               //  LOGI("VK calling draw %d", render_data_vector.size());
+              int swapChainIndex = vulkanCore_->AcquireNextImage();
+
                 for(auto &rdata : render_data_vector) {
                //     LOGI("VK calling rdata");
                 // Creating and initializing Uniform Buffer for Each Render Data
                 if(rdata->uniform_dirty){
+                const std::vector<glm::vec3>& vertices=  rdata->mesh()->vertices();
+                 const std::vector<unsigned short> & indices =  rdata->mesh()->triangles();
+                vulkanCore_->InitVertexBuffersFromRenderData(vertices, rdata->m_vertices, rdata->m_indices, indices);
+                //vulkanCore_->InitVertexBuffersFromRenderData(rdata->m_vertices, rdata->m_indices);
                 vulkanCore_->InitUniformBuffersForRenderData(rdata->m_modelViewMatrixUniform);
                 vulkanCore_->InitDescriptorSetForRenderData(rdata->m_modelViewMatrixUniform, rdata->m_descriptorSet);
+                vulkanCore_->InitPipelineForRenderData(rdata->m_vertices, rdata->m_pipeline);
+
                 rdata->uniform_dirty = false;
                 }
 
-                allDescriptors.push_back(rdata->m_descriptorSet);
+                    allDescriptors.push_back(rdata->m_descriptorSet);
                     vulkanCore_->UpdateUniforms(scene,camera, rdata);
 
 
                     //vulkanCore_->DrawFrame();
                     //break;
                 }
-                int swapChainIndex = vulkanCore_->AcquireNextImage();
-                vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex);
+                //int swapChainIndex = vulkanCore_->AcquireNextImage();
+                //vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, rdata->m_pipeline, rdata->m_vertices, rdata->m_indices);
+                vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, render_data_vector);//rdata->m_pipeline, rdata->m_vertices, rdata->m_indices);
                 vulkanCore_->DrawFrameForRenderData(swapChainIndex);
 
      }

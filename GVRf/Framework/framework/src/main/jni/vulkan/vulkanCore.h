@@ -22,6 +22,7 @@
 #include <android/native_window_jni.h>	// for native window JNI
 #include "vulkan/vulkan_wrapper.h"
 #include <vector>
+#include "glm/glm.hpp"
 
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
@@ -72,7 +73,12 @@ struct OutputBuffer
     VkDeviceSize size;
 };
 
-
+// Index buffer
+struct GVR_VK_Indices {
+    VkDeviceMemory memory;
+    VkBuffer buffer;
+    uint32_t count;
+};
 
 
 class VulkanCore {
@@ -90,9 +96,12 @@ public:
      void DrawFrame();
      void InitUniformBuffersForRenderData(Uniform &m_modelViewMatrixUniform);
      void InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUniform, VkDescriptorSet &m_descriptorSet);
-     void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors, int &swapChainIndex);
+     void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors, int &swapChainIndex, std::vector<RenderData*>& render_data_vector);
      void DrawFrameForRenderData(int &swapChainIndex);
       int AcquireNextImage();
+      void InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& vertices, GVR_VK_Vertices &m_vertices, GVR_VK_Indices &m_indices, const std::vector<unsigned short> & indices);
+     //void InitVertexBuffersFromRenderData(GVR_VK_Vertices &m_vertices, GVR_VK_Indices &m_indices);
+      void InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, VkPipeline &m_pipeline);
 private:
     std::vector<VkFence> waitFences;
     static VulkanCore* theInstance;
@@ -162,6 +171,7 @@ private:
     Uniform m_modelViewMatrixUniform;
     VkDescriptorPool m_descriptorPool;
     VkDescriptorSet m_descriptorSet;
+    GVR_VK_Indices m_indices;
 };
 
 
