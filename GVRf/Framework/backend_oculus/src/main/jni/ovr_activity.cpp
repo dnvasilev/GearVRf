@@ -220,6 +220,8 @@ void GVRActivity::onDrawFrame() {
     }
     headRotationProvider_.predict(*this, parms, (1 == eye ? 4.0f : 3.5f) / 60.0f);
     oculusJavaGlThread_.Env->CallVoidMethod(activityRenderingCallbacks_, onDrawEyeMethodId, eye);
+
+    if(0){
     glBindTexture(GL_TEXTURE_2D,colorTexture);
 
         // data is stored as R8B8G8A8 format, try to use this format for your vulkan
@@ -241,7 +243,7 @@ void GVRActivity::onDrawFrame() {
                            oculusTexData);
 
        // GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidthConfiguration, mHeightConfiguration, 0, GL_RGBA, GL_UNSIGNED_BYTE, texDataVulkan));
-
+    }
 
     endRenderingEye(eye);
 }
