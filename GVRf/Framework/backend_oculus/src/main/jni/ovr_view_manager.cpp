@@ -33,11 +33,9 @@ void Java_org_gearvrf_OvrViewManager_cull(JNIEnv * jni, jclass clazz,
     if(nullptr!= vulkanCore){
         std::string type("vulkan");
         gRenderer = Renderer::getInstance(type);
-    //  LOGE("vulkan core not null");
     }
     else {
         gRenderer = Renderer::getInstance();
-    //   LOGE("vulkan core s null");
     }
     gRenderer->cull(scene, camera, shader_manager);
 

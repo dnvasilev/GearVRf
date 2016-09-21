@@ -61,13 +61,11 @@ Renderer* Renderer::getInstance(std::string type){
    //     LOGE("string compare %d ",std::strcmp(type.c_str(),"Vulkan"));
 
      //   if(!std::strcmp(type.c_str(),"Vulkan")) {
-     if(1){
-            LOGE("creating vulkan");
+     if(0){
             instance = new VulkanRenderer();
             isVulkan_ = true;
         }
         else {
-         LOGE("creating GL");
             instance = new GLRenderer();
         }
         std::atexit(resetInstance);      // Destruction of instance registered at runtime exit
