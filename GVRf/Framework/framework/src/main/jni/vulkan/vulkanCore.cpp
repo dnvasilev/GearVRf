@@ -14,6 +14,7 @@
  */
 
 #include "vulkanCore.h"
+#include "vulkanInfoWrapper.h"
 #include "util/gvr_log.h"
 #include <assert.h>
 #include <cstring>
@@ -321,7 +322,13 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            VkResult  err;
            bool  pass;
 
-           ret = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_swapchainBuffers[i].image);
+           //ret = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_swapchainBuffers[i].image);
+           ret = vkCreateImage(
+                                m_device,
+                                gvr::ImageCreateInfo( VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, m_width, m_height, 1, 1, 1,
+                                                      VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT  | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED ),
+                                nullptr, &m_swapchainBuffers[i].image
+                               );
            GVR_VK_CHECK(!ret);
 
            // discover what memory requirements are for this image.
@@ -365,7 +372,13 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            imageViewCreateInfo.flags = 0;
            imageViewCreateInfo.image = m_swapchainBuffers[i].image;
 
-           err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_swapchainBuffers[i].view);
+           //err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_swapchainBuffers[i].view);
+           err = vkCreateImageView(
+                                    m_device,
+                                    gvr::ImageViewCreateInfo(m_swapchainBuffers[i].image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, 1, 1, VK_IMAGE_ASPECT_COLOR_BIT),
+                                    nullptr, &m_swapchainBuffers[i].view
+                                   );
+
            GVR_VK_CHECK(!err);
 
        }
@@ -407,7 +420,12 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            m_depthBuffers[i].format = depthFormat;
 
            // Create the image with details as imageCreateInfo
-           err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_depthBuffers[i].image);
+           //err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_depthBuffers[i].image);
+           err = vkCreateImage(
+                                m_device,
+                                gvr::ImageCreateInfo( VK_IMAGE_TYPE_2D, VK_FORMAT_D16_UNORM, m_width, m_height, 1, 1, 1, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED ),
+                                nullptr, &m_depthBuffers[i].image
+                              );
            GVR_VK_CHECK(!err);
 
            // discover what memory requirements are for this image.
@@ -432,7 +450,12 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
 
            // Create the view for this image
            imageViewCreateInfo.image = m_depthBuffers[i].image;
-           err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_depthBuffers[i].view);
+           //err = vkCreateImageView(m_device, &imageViewCreateInfo, nullptr, &m_depthBuffers[i].view);
+           err = vkCreateImageView(
+                                    m_device,
+                                    gvr::ImageViewCreateInfo(m_depthBuffers[i].image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_D16_UNORM, 1, 1, VK_IMAGE_ASPECT_COLOR_BIT),
+                                    nullptr, &m_depthBuffers[i].view
+                                  );
            GVR_VK_CHECK(!err);
        }
 
@@ -468,7 +491,13 @@ void VulkanCore::InitCommandbuffers(){
     commandPoolCreateInfo.queueFamilyIndex = m_queueFamilyIndex;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    ret = vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool);
+    //ret = vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool);
+    ret = vkCreateCommandPool(
+                                m_device,
+                                gvr::CmdPoolCreateInfo(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamilyIndex),
+                                nullptr, &m_commandPool
+                             );
+
     GVR_VK_CHECK(!ret);
 
 
@@ -482,7 +511,14 @@ void VulkanCore::InitCommandbuffers(){
     // Create render command buffers, one per swapchain image
     for (int i=0; i < m_swapchainImageCount; i++)
     {
-        ret = vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &m_swapchainBuffers[i].cmdBuffer);
+        //ret = vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &m_swapchainBuffers[i].cmdBuffer);
+        ret = vkAllocateCommandBuffers(
+                                        m_device,
+                                        gvr::CmdBufferCreateInfo(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool),
+                                        &m_swapchainBuffers[i].cmdBuffer
+                                      );
+
+
         GVR_VK_CHECK(!ret);
     }
 }
@@ -633,7 +669,8 @@ void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& v
     bufferCreateInfo.size = vertices.size()*sizeof(glm::vec3);//sizeof(vb);//
     bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferCreateInfo.flags = 0;
-    err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
+    //err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
+    err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(vertices.size()*sizeof(glm::vec3), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), nullptr, &m_vertices.buf);
     GVR_VK_CHECK(!err);
 
     // Obtain the memory requirements for this buffer.
@@ -715,7 +752,8 @@ void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& v
             indexbufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
             // Copy index data to a buffer visible to the host
-            err = vkCreateBuffer(m_device, &indexbufferInfo, nullptr, &m_indices.buffer);
+            //err = vkCreateBuffer(m_device, &indexbufferInfo, nullptr, &m_indices.buffer);
+            err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT), nullptr, &m_indices.buffer);
             GVR_VK_CHECK(!err);
             vkGetBufferMemoryRequirements(m_device, m_indices.buffer, &mem_reqs);
             memoryAllocateInfo.allocationSize = mem_reqs.size;
@@ -779,11 +817,12 @@ void VulkanCore::InitUniformBuffers(){
     VkBufferCreateInfo bufferCreateInfo;
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.pNext = NULL;
-    bufferCreateInfo.size = sizeof(glm::mat4);;//sizeof(float)*4;
+    bufferCreateInfo.size = sizeof(glm::mat4);//sizeof(float)*4;
     bufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bufferCreateInfo.flags = 0;
 
-    err = vkCreateBuffer(m_device, &bufferCreateInfo, NULL, &m_modelViewMatrixUniform.buf);
+    //err = vkCreateBuffer(m_device, &bufferCreateInfo, NULL, &m_modelViewMatrixUniform.buf);
+    err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT), NULL, &m_modelViewMatrixUniform.buf);
     assert(!err);
 
     // Obtain the requirements on memory for this buffer
@@ -851,7 +890,7 @@ void VulkanCore::InitUniformBuffersForRenderData(Uniform &m_modelViewMatrixUnifo
     bufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bufferCreateInfo.flags = 0;
 
-    err = vkCreateBuffer(m_device, &bufferCreateInfo, NULL, &m_modelViewMatrixUniform.buf);
+    err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT), NULL, &m_modelViewMatrixUniform.buf);
     assert(!err);
 
     // Obtain the requirements on memory for this buffer
@@ -983,7 +1022,7 @@ VkShaderModule VulkanCore::CreateShaderModule(std::vector<uint32_t> code, uint32
     moduleCreateInfo.codeSize = size * sizeof(unsigned int);
     moduleCreateInfo.pCode = code.data();
     moduleCreateInfo.flags = 0;
-    err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &module);
+    err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(code.data(), size * sizeof(unsigned int)), nullptr, &module);
     GVR_VK_CHECK(!err);
 
     return module;
@@ -1002,7 +1041,7 @@ VkShaderModule VulkanCore::CreateShaderModuleAscii(const uint32_t* code, uint32_
     moduleCreateInfo.codeSize = size;
     moduleCreateInfo.pCode = code;
     moduleCreateInfo.flags = 0;
-    err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &module);
+    err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(code, size), nullptr, &module);
     GVR_VK_CHECK(!err);
 
     return module;
@@ -1096,6 +1135,8 @@ void VulkanCore::InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, VkPipeli
         shaderStages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
         shaderStages[1].module = CreateShaderModuleAscii( (const uint32_t*)&shader_tri_frag[0], shader_tri_frag_size);//CreateShaderModule( result_frag, result_frag.size());//
         shaderStages[1].pName  = "main";
+
+
     // Out graphics pipeline records all state information, including our renderpass
         // and pipeline layout. We do not have any dynamic state in this example.
         VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
@@ -1165,10 +1206,10 @@ void VulkanCore::InitSync(){
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
-    ret = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_backBufferSemaphore);
+    ret = vkCreateSemaphore(m_device, gvr::SemaphoreCreateInfo(), nullptr, &m_backBufferSemaphore);
     GVR_VK_CHECK(!ret);
 
-    ret = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderCompleteSemaphore);
+    ret = vkCreateSemaphore(m_device, gvr::SemaphoreCreateInfo(), nullptr, &m_renderCompleteSemaphore);
     GVR_VK_CHECK(!ret);
 
     // Fences (Used to check draw command buffer completion)
@@ -1179,7 +1220,7 @@ void VulkanCore::InitSync(){
     waitFences.resize(m_swapchainImageCount);
     for (auto& fence : waitFences)
     {
-        ret = vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence);
+        ret = vkCreateFence(m_device, gvr::FenceCreateInfo(), nullptr, &fence);
         GVR_VK_CHECK(!ret);
     }
 
