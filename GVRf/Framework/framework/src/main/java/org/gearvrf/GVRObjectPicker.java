@@ -85,50 +85,26 @@ public class GVRObjectPicker extends GVRPicker
      * it to a scene object. In this case you must
      * manually set the pick ray and call doPick()
      * to generate the pick events.
+     *
      * @see IPickEvents
-     * @see GVRFrustumPicker.pickVisible
+     * @see GVRFrustumPicker#pickVisible
      */
-    public void doPick()
-    {
+    public void doPick() {
         GVRSceneObject owner = getOwnerObject();
         GVRPickedObject[] picked = GVRFrustumPicker.pickVisible(mScene);
 
-        if (owner != null)
-        {
-            GVRSceneObject.BoundingVolume bv1 = owner.getBoundingVolume();
-
-            for (int i = 0; i < picked.length; ++i)
-            {
+        if (owner != null) {
+            for (int i = 0; i < picked.length; ++i) {
                 GVRPickedObject hit = picked[i];
 
-                if (hit != null)
-                {
+                if (hit != null) {
                     GVRSceneObject sceneObj = hit.hitObject;
-                    GVRSceneObject.BoundingVolume bv2 = sceneObj.getBoundingVolume();
-                    if (!intersect(bv1, bv2))
-                    {
+                    if (!owner.intersectsBoundingVolume(sceneObj)) {
                         picked[i] = null;
                     }
                 }
             }
         }
         generatePickEvents(picked);
-    }
-
-    /**
-     * Determines whether or not two axially aligned bounding boxes in
-     * the same coordinate space intersect.
-     * @param bv1 first bounding volume to test.
-     * @param bv2 second bounding volume to test.
-     * @return true if the boxes intersect, false if not.
-     */
-    protected boolean intersect(GVRSceneObject.BoundingVolume bv1, GVRSceneObject.BoundingVolume bv2)
-    {
-        return  (bv1.maxCorner.x >= bv2.minCorner.x) &&
-                (bv1.maxCorner.y >= bv2.minCorner.y) &&
-                (bv1.maxCorner.z >= bv2.minCorner.z) &&
-                (bv1.minCorner.x <= bv2.maxCorner.x) &&
-                (bv1.minCorner.y <= bv2.maxCorner.y) &&
-                (bv1.minCorner.z <= bv2.maxCorner.z);
     }
 }
