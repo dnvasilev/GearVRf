@@ -26,6 +26,7 @@
 
 #include "glm/glm.hpp"
 
+#include "objects/shader_data.h"
 #include "objects/textures/texture.h"
 #include "objects/components/render_data.h"
 
@@ -34,7 +35,9 @@ namespace gvr {
 class RenderData;
 class Color;
 
+class Material: public ShaderData {
 public:
+    explicit Material() : ShaderData(), shader_feature_set_(0), listener_(new Listener()) {
     }
 
     ~Material() {
@@ -42,6 +45,7 @@ public:
 
 
     virtual void setTexture(const std::string& key, Texture* texture) {
+        ShaderData::setTexture(key, texture);
         if (key == "main_texture") {
             main_texture = texture;
         }
@@ -49,20 +53,24 @@ public:
     }
 
     virtual void setFloat(const std::string& key, float value) {
+        ShaderData::setFloat(key, value);
         listener_->notify_listeners(true);
     }
 
 
     virtual void setVec2(const std::string& key, glm::vec2 vector) {
+        ShaderData::setVec2(key, vector);
         listener_->notify_listeners(true);
     }
 
 
     virtual void setVec3(const std::string& key, glm::vec3 vector) {
+        ShaderData::setVec3(key, vector);
         listener_->notify_listeners(true);
     }
 
     virtual void setVec4(const std::string& key, glm::vec4 vector) {
+        ShaderData::setVec4(key, vector);
         listener_->notify_listeners(true);
     }
 
@@ -71,6 +79,7 @@ public:
     }
 
     virtual void setMat4(const std::string& key, glm::mat4 matrix) {
+        ShaderData::setMat4(key, matrix);
         listener_->notify_listeners(true);
     }
 
