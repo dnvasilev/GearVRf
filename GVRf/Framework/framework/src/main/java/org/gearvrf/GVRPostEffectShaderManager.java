@@ -24,41 +24,18 @@ import java.util.Map;
  * 
  * Get the singleton from {@link GVRContext#getPostEffectShaderManager()}
  */
-public class GVRPostEffectShaderManager extends
-        GVRBaseShaderManager<GVRPostEffectMap, GVRCustomPostEffectShaderId>
-        implements
-        GVRShaderManagers<GVRPostEffectMap, GVRCustomPostEffectShaderId> {
-
-    private final Map<GVRCustomPostEffectShaderId, GVRPostEffectMap> posteffects = new HashMap<GVRCustomPostEffectShaderId, GVRPostEffectMap>();
+public class GVRPostEffectShaderManager extends GVRShaderManager {
 
     GVRPostEffectShaderManager(GVRContext gvrContext) {
-        super(gvrContext, NativePostEffectShaderManager.ctor());
+        super(gvrContext);
     }
 
     @Override
-    public GVRCustomPostEffectShaderId addShader(String vertexShader,
-            String fragmentShader) {
-        final int shaderId = NativePostEffectShaderManager
-                .addCustomPostEffectShader(getNative(), vertexShader,
-                        fragmentShader);
-        GVRCustomPostEffectShaderId result = new GVRCustomPostEffectShaderId(
-                shaderId);
-        posteffects.put(result, retrieveShaderMap(result));
-        return result;
+    public long addShader(String signature, String vertexShader, String fragmentShader)
+    {
+        return NativePostEffectShaderManager.addCustomPostEffectShader(getNative(),
+                vertexShader, fragmentShader);
     }
-
-    @Override
-    public GVRPostEffectMap getShaderMap(GVRCustomPostEffectShaderId id) {
-        return posteffects.get(id);
-    }
-
-    @SuppressWarnings("resource")
-    private GVRPostEffectMap retrieveShaderMap(GVRCustomPostEffectShaderId id) {
-        long ptr = NativePostEffectShaderManager.getCustomPostEffectShader(
-                getNative(), id.ID);
-        return ptr == 0 ? null : new GVRPostEffectMap(getGVRContext(), ptr);
-    }
-
 }
 
 class NativePostEffectShaderManager {

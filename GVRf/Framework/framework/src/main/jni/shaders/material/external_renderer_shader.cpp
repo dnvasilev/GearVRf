@@ -23,7 +23,7 @@ void GVRF_installExternalRenderer(GVRF_ExternalRenderer fct) {
 
 namespace gvr {
 
-void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data, Material* mtl_unused) {
+void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data, ShaderData* mtl_unused) {
     if (externalRenderer == NULL) {
         LOGE("External renderer not installed");
         return;

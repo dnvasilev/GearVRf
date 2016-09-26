@@ -71,7 +71,7 @@ public:
                     false), offset_factor_(0.0f), offset_units_(0.0f), depth_test_(
                     true), alpha_blend_(true), alpha_to_coverage_(false), sample_coverage_(
                     1.0f), invert_coverage_mask_(GL_FALSE), draw_mode_(
-                    GL_TRIANGLES), texture_capturer(0),renderdata_dirty_(true) {
+                    GL_TRIANGLES), texture_capturer(0), shaderID_(0), renderdata_dirty_(true) {
     }
 
     void copy(const RenderData& rdata) {
@@ -98,6 +98,7 @@ public:
         invert_coverage_mask_ = rdata.invert_coverage_mask_;
         draw_mode_ = rdata.draw_mode_;
         texture_capturer = rdata.texture_capturer;
+        shaderID_ = rdata.shaderID_;
     }
 
     RenderData(const RenderData& rdata) {
@@ -117,6 +118,13 @@ public:
     }
 
     void set_mesh(Mesh* mesh);
+
+    void set_shader(int shaderid)
+    {
+        shaderID_ = shaderid;
+    }
+
+    int get_shader() const { return shaderID_; }
 
     void add_pass(RenderPass* render_pass);
     const RenderPass* pass(int pass) const;
@@ -368,6 +376,7 @@ private:
     GLboolean invert_coverage_mask_;
     GLenum draw_mode_;
     float camera_distance_;
+    int shaderID_;
     TextureCapturer *texture_capturer;
 };
 

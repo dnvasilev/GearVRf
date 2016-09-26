@@ -18,8 +18,8 @@
  * A shader which an user can add in run-time.
  ***************************************************************************/
 
-#ifndef CUSTOM_SHADER_H_
-#define CUSTOM_SHADER_H_
+#ifndef SHADER_H_
+#define SHADER_H_
 
 #include <map>
 #include <set>
@@ -41,13 +41,16 @@ namespace gvr {
 struct ShaderUniformsPerObject;
 
 typedef std::function<void(Mesh&, GLuint)> AttributeVariableBind;
-typedef std::function<void(Material&, GLuint)> UniformVariableBind;
+typedef std::function<void(ShaderData&, GLuint)> UniformVariableBind;
 
-class CustomShader: public ShaderBase {
+class Shader: public ShaderBase {
 public:
-    explicit CustomShader(const std::string& vertex_shader,
+    explicit Shader(const std::string& signature,
+            const std::string& vertex_shader,
             const std::string& fragment_shader);
-    virtual ~CustomShader();
+    virtual ~Shader();
+
+    const std::string& getSignature() { return signature_; }
 
     void addTextureKey(const std::string& variable_name, const std::string& key);
 
@@ -60,14 +63,17 @@ public:
     void addUniformVec3Key(const std::string& variable_name, const std::string& key);
     void addUniformVec4Key(const std::string& variable_name, const std::string& key);
     void addUniformMat4Key(const std::string& variable_name, const std::string& key);
-    virtual void render(RenderState* rstate, RenderData* render_data, Material* material);
+    virtual void render(RenderState* rstate, RenderData* render_data, ShaderData* material);
+    virtual void programInit(RenderState* rstate, RenderData* render_data, ShaderData* material,
+                        const std::vector<glm::mat4>& model_matrix, int drawcount, bool batching) { }
+
     static int getGLTexture(int n);
     GLuint getProgramId();
 private:
-    CustomShader(const CustomShader& custom_shader);
-    CustomShader(CustomShader&& custom_shader);
-    CustomShader& operator=(const CustomShader& custom_shader);
-    CustomShader& operator=(CustomShader&& custom_shader);
+    Shader(const Shader& shader);
+    Shader(Shader&& shader);
+    Shader& operator=(const Shader& shader);
+    Shader& operator=(Shader&& shader);
 
     void addAttributeKey(const std::string& variable_name, const std::string& key, AttributeVariableBind f);
     void addUniformKey(const std::string& variable_name, const std::string& key, UniformVariableBind f);
@@ -94,7 +100,7 @@ private:
 
     struct TextureVariable {
         std::function<int(GLuint)> f_getLocation;
-        std::function<void(int&, const Material&, GLuint)> f_bind;
+        std::function<void(int&, const ShaderData&, GLuint)> f_bind;
     };
 
     struct AttributeVariable {
@@ -126,9 +132,9 @@ private:
     std::mutex uniformVariablesLock_;
     std::set<Descriptor<UniformVariable>, DescriptorComparator<UniformVariable>> uniformVariables_;
 
+    std::string signature_;
     std::string vertexShader_;
     std::string fragmentShader_;
-
 };
 
 }

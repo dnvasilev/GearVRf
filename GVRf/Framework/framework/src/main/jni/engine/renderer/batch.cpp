@@ -103,10 +103,10 @@ bool Batch::add(RenderData *render_data) {
     for(int i=0; i<render_data->pass_count();i++)
     {
         Material* mat = render_data->pass(i)->material();
-        if (mat->shader_type() != Material::ShaderType::TEXTURE_SHADER ) {
+//        if (mat->shader_type() != Material::ShaderType::TEXTURE_SHADER ) {
             render_data_set_.insert(render_data);
             return true;
-        }
+//        }
     }
     // if mesh is large, render in normal way
     if (indices.size() == 0 || (indices.size() + index_count_ > indices_limit_)) {

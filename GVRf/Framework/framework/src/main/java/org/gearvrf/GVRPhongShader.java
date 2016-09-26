@@ -57,6 +57,8 @@ import org.gearvrf.R;
            setSegment("VertexShader", vtxShader);
            setSegment("VertexNormalShader", normalShader);
            setSegment("VertexSkinShader", skinShader);
+           mHasVariants = true;
+           mUsesLights = true;
        }
        
        public HashMap<String, Integer> getRenderDefines(GVRRenderData rdata, GVRLightBase[] lights) {

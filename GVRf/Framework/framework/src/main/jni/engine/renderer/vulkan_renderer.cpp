@@ -23,7 +23,7 @@
 
 #include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
 #include "objects/material.h"
-#include "objects/post_effect_data.h"
+#include "objects/shader_data.h"
 #include "objects/scene.h"
 #include "objects/scene_object.h"
 #include "objects/components/camera.h"

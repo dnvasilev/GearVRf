@@ -23,7 +23,7 @@
 
 #include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
 #include "objects/material.h"
-#include "objects/post_effect_data.h"
+#include "objects/shader_data.h"
 #include "objects/scene.h"
 #include "objects/scene_object.h"
 #include "objects/components/camera.h"
@@ -133,7 +133,7 @@ void Renderer::state_sort() {
                 LOGD(
                         "SORTING: pass_count = %d, rendering order = %d, shader_type = %d, camera_distance = %f\n",
                         renderData->pass_count(), renderData->rendering_order(),
-                        renderData->material(0)->shader_type(),
+                        renderData->get_shader(),
                         renderData->camera_distance());
             }
         }
@@ -152,7 +152,7 @@ bool isRenderPassEqual(RenderData* rdata1, RenderData* rdata2){
         return false;
 
     for(int i=0; i< pass_count1; i++){
-        if(!(rdata1->material(i) == rdata2->material(i) && rdata1->material(i)->shader_type() == rdata2->material(i)->shader_type() &&
+        if(!(rdata1->material(i) == rdata2->material(i) && rdata1->get_shader() == rdata2->get_shader() &&
                    rdata1->cull_face(i) == rdata2->cull_face(i)))
             return false;
     }
@@ -187,10 +187,18 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
         std::vector<SceneObject*>& scene_objects) {
     render_data_vector.clear();
     scene_objects.clear();
+    RenderState rstate;
 
-    glm::mat4 view_matrix = camera->getViewMatrix();
-    glm::mat4 projection_matrix = camera->getProjectionMatrix();
-    glm::mat4 vp_matrix = glm::mat4(projection_matrix * view_matrix);
+    rstate.material_override = NULL;
+    rstate.shader_manager = shader_manager;
+    rstate.uniforms.u_view = camera->getViewMatrix();
+    rstate.uniforms.u_proj = camera->getProjectionMatrix();
+    rstate.shader_manager = shader_manager;
+    rstate.scene = scene;
+    rstate.render_mask = camera->render_mask();
+    rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
+
+    glm::mat4 vp_matrix = glm::mat4(rstate.uniforms.u_proj * rstate.uniforms.u_view);
 
     // Travese all scene objects in the scene as a tree and do frustum culling at the same time if enabled
     // 1. Build the view frustum
@@ -207,7 +215,7 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
         LOGD("FRUSTUM: end frustum culling for root %s\n", object->name().c_str());
     }
     // 3. do occlusion culling, if enabled
-    occlusion_cull(scene, scene_objects, shader_manager, vp_matrix);
+    occlusion_cull(rstate, scene_objects);
 }
 
 
@@ -225,6 +233,10 @@ void Renderer::renderRenderDataVector(RenderState &rstate) {
 
 void Renderer::addRenderData(RenderData *render_data) {
     if (render_data == 0 || render_data->material(0) == 0 || !render_data->enabled()) {
+        return;
+    }
+
+    if (render_data->get_shader() == 0) {
         return;
     }
 
@@ -354,47 +366,6 @@ void Renderer::build_frustum(float frustum[6][4], const float *vp_matrix) {
     frustum[5][3] /= t;
 }
 
-
-bool Renderer::isShader3d(const Material* curr_material) {
-    bool shaders3d;
-
-    switch (curr_material->shader_type()) {
-    case Material::ShaderType::UNLIT_HORIZONTAL_STEREO_SHADER:
-    case Material::ShaderType::UNLIT_VERTICAL_STEREO_SHADER:
-    case Material::ShaderType::OES_SHADER:
-    case Material::ShaderType::OES_HORIZONTAL_STEREO_SHADER:
-    case Material::ShaderType::OES_VERTICAL_STEREO_SHADER:
-    case Material::ShaderType::CUBEMAP_SHADER:
-    case Material::ShaderType::CUBEMAP_REFLECTION_SHADER:
-        shaders3d = false;
-        break;
-    case Material::ShaderType::TEXTURE_SHADER:
-    case Material::ShaderType::EXTERNAL_RENDERER_SHADER:
-    case Material::ShaderType::ASSIMP_SHADER:
-    case Material::ShaderType::LIGHTMAP_SHADER:
-    default:
-        shaders3d = true;
-        break;
-    }
-
-    return shaders3d;
-}
-
-bool Renderer::isDefaultPosition3d(const Material* curr_material) {
-    bool defaultShadersForm = false;
-
-    switch (curr_material->shader_type()) {
-    case Material::ShaderType::TEXTURE_SHADER:
-        defaultShadersForm = true;
-        break;
-    default:
-        defaultShadersForm = false;
-        break;
-    }
-
-    return defaultShadersForm;
-}
-
 void Renderer::renderRenderData(RenderState& rstate, RenderData* render_data) {
     if (!(rstate.render_mask & render_data->render_mask()))
         return;
@@ -411,41 +382,19 @@ void Renderer::renderRenderData(RenderState& rstate, RenderData* render_data) {
 }
 
 
-
-
-void Renderer::renderPostEffectData(Camera* camera,
-        RenderTexture* render_texture, PostEffectData* post_effect_data,
-        PostEffectShaderManager* post_effect_shader_manager) {
+void Renderer::renderPostEffectData(RenderState& rstate,
+        RenderTexture* render_texture, ShaderData* post_effect_data) {
     try {
-        switch (post_effect_data->shader_type()) {
-        case PostEffectData::ShaderType::COLOR_BLEND_SHADER:
-            post_effect_shader_manager->getColorBlendPostEffectShader()->render(
-                    render_texture, post_effect_data,
-                    post_effect_shader_manager->quad_vertices(),
-                    post_effect_shader_manager->quad_uvs(),
-                    post_effect_shader_manager->quad_triangles());
-            break;
-        case PostEffectData::ShaderType::HORIZONTAL_FLIP_SHADER:
-            post_effect_shader_manager->getHorizontalFlipPostEffectShader()->render(
-                    render_texture, post_effect_data,
-                    post_effect_shader_manager->quad_vertices(),
-                    post_effect_shader_manager->quad_uvs(),
-                    post_effect_shader_manager->quad_triangles());
-            break;
-        default:
-            post_effect_shader_manager->getCustomPostEffectShader(
-                    post_effect_data->shader_type())->render(camera,
-                    render_texture, post_effect_data,
-                    post_effect_shader_manager->quad_vertices(),
-                    post_effect_shader_manager->quad_uvs(),
-                    post_effect_shader_manager->quad_triangles());
-            break;
-        }
+        PostEffectShaderManager* shader_manager = reinterpret_cast<PostEffectShaderManager*>(rstate.shader_manager);
+        Shader* shader = shader_manager->getShader(post_effect_data->get_shader());
+        post_effect_data->setTexture("u_texture", render_texture);
+        RenderData* rdata = shader_manager->get_render_data();
+        rdata->set_shader(post_effect_data->get_shader());
+        shader->render(&rstate, rdata, post_effect_data);
     } catch (const std::string& error) {
         LOGE(
                 "Error detected in Renderer::renderPostEffectData; error : %s", error.c_str());
     }
 }
-
 
 }

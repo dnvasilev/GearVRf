@@ -24,12 +24,7 @@
 namespace gvr {
 extern "C" {
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeMaterial_ctor(JNIEnv * env, jobject obj,
-            jint shader_type);
-
-    JNIEXPORT void JNICALL
-    Java_org_gearvrf_NativeMaterial_setShaderType(JNIEnv * env,
-            jobject obj, jlong jmaterial, jint shader_type);
+    Java_org_gearvrf_NativeMaterial_ctor(JNIEnv * env, jobject obj);
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeMaterial_setTexture(JNIEnv * env,
@@ -80,17 +75,8 @@ extern "C" {
 };
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeMaterial_ctor(JNIEnv * env, jobject obj,
-    jint shader_type) {
-return reinterpret_cast<jlong>(new Material(static_cast<Material::ShaderType>(shader_type)));
-}
-
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeMaterial_setShaderType(JNIEnv * env,
-    jobject obj, jlong jmaterial, jint shader_type) {
-Material* material = reinterpret_cast<Material*>(jmaterial);
-return material->set_shader_type(
-        static_cast<Material::ShaderType>(shader_type));
+Java_org_gearvrf_NativeMaterial_ctor(JNIEnv * env, jobject obj) {
+return reinterpret_cast<jlong>(new Material());
 }
 
 JNIEXPORT void JNICALL

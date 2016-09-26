@@ -40,7 +40,7 @@ extern bool use_multiview;
 class Camera;
 class Scene;
 class SceneObject;
-class PostEffectData;
+class ShaderData;
 class PostEffectShaderManager;
 class RenderData;
 class RenderTexture;
@@ -155,8 +155,6 @@ private:
             bool continue_cull, int planeMask);
 
     virtual void state_sort();
-    virtual bool isShader3d(const Material* curr_material);
-    virtual bool isDefaultPosition3d(const Material* curr_material);
 
     Renderer(const Renderer& render_engine);
     Renderer(Renderer&& render_engine);
@@ -172,18 +170,15 @@ protected:
     }
     virtual void renderMesh(RenderState& rstate, RenderData* render_data) = 0;
     virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *material) = 0;
-    virtual void occlusion_cull(Scene* scene,
-                std::vector<SceneObject*>& scene_objects,
-                ShaderManager *shader_manager, glm::mat4 vp_matrix) = 0;
+    virtual void occlusion_cull(RenderState& rstate, std::vector<SceneObject*>& scene_objects) = 0;
     void addRenderData(RenderData *render_data);
     virtual bool occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scene_objects);
     virtual void cullFromCamera(Scene *scene, Camera *camera,
             ShaderManager* shader_manager,
             std::vector<SceneObject*>& scene_objects);
 
-    virtual void renderPostEffectData(Camera* camera,
-            RenderTexture* render_texture, PostEffectData* post_effect_data,
-            PostEffectShaderManager* post_effect_shader_manager);
+    virtual void renderPostEffectData(RenderState& rstate,
+            RenderTexture* render_texture, ShaderData* post_effect_data);
 
     std::vector<RenderData*> render_data_vector;
     int numberDrawCalls;

@@ -22,7 +22,7 @@ package org.gearvrf;
  * A {@link GVRMesh} specifies a {@linkplain GVRSceneObject scene object's}
  * surface geometry; a {@link GVRMaterial} specifies a scene object's surface
  * appearance. A {@link GVRMaterial} specifies a shader by
- * {@link GVRMaterialShaderId id}, and contains named values. These names are
+ * {@link GVRShaderId id}, and contains named values. These names are
  * not necessarily the same as the names of the attributes and uniforms in the
  * shader program: the methods of this class let you map names from materials to
  * programs.

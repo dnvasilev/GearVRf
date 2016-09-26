@@ -28,12 +28,16 @@ JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativePostEffectShaderManager_ctor(
         JNIEnv * env, jobject obj);
 JNIEXPORT jint JNICALL
-Java_org_gearvrf_NativePostEffectShaderManager_addCustomPostEffectShader(
+Java_org_gearvrf_NativePostEffectShaderManager_addShader(
         JNIEnv * env, jobject obj, jlong jpost_effect_shader_manager,
-        jstring vertex_shader, jstring fragment_shader);
+        jstring signature, jstring vertex_shader, jstring fragment_shader);
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativePostEffectShaderManager_getCustomPostEffectShader(
+Java_org_gearvrf_NativePostEffectShaderManager_getShaderByID(
         JNIEnv * env, jobject obj, jlong jpost_effect_shader_manager, jint id);
+
+JNIEXPORT jlong JNICALL
+Java_org_gearvrf_NativePostEffectShaderManager_getShader(
+        JNIEnv * env, jobject obj, jlong jpost_effect_shader_manager, jstring signature);
 
 JNIEXPORT void JNICALL
 Java_org_gearvrf_NativePostEffectShaderManager_delete(
@@ -47,36 +51,52 @@ Java_org_gearvrf_NativePostEffectShaderManager_ctor(
 }
 
 JNIEXPORT jint JNICALL
-Java_org_gearvrf_NativePostEffectShaderManager_addCustomPostEffectShader(
+Java_org_gearvrf_NativePostEffectShaderManager_addShader(
         JNIEnv * env, jobject obj, jlong jpost_effect_shader_manager,
+        jstring signature,
         jstring vertex_shader, jstring fragment_shader) {
     PostEffectShaderManager* post_effect_shader_manager =
             reinterpret_cast<PostEffectShaderManager*>(jpost_effect_shader_manager);
 
+    const char *sig_str = env->GetStringUTFChars(signature, 0);
     const char *vertex_str = env->GetStringUTFChars(vertex_shader, 0);
     const char *fragment_str = env->GetStringUTFChars(fragment_shader, 0);
+    std::string native_sig = std::string(sig_str);
     std::string native_vertex_shader = std::string(vertex_str);
     std::string native_fragment_shader = std::string(fragment_str);
 
-    int id = post_effect_shader_manager->addCustomPostEffectShader(
+    int id = post_effect_shader_manager->addShader(native_sig,
             native_vertex_shader, native_fragment_shader);
 
     env->ReleaseStringUTFChars(vertex_shader, vertex_str);
     env->ReleaseStringUTFChars(fragment_shader, fragment_str);
-
+    env->ReleaseStringUTFChars(signature, sig_str);
     return id;
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativePostEffectShaderManager_getCustomPostEffectShader(
+Java_org_gearvrf_NativePostEffectShaderManager_getShaderByID(
         JNIEnv * env, jobject obj, jlong jpost_effect_shader_manager, jint id) {
     PostEffectShaderManager* post_effect_shader_manager =
             reinterpret_cast<PostEffectShaderManager*>(jpost_effect_shader_manager);
     try {
-        CustomPostEffectShader* custom_post_effect_shader =
-                post_effect_shader_manager->getCustomPostEffectShader(id);
+        Shader* custom_post_effect_shader =
+                post_effect_shader_manager->getShader(id);
         return reinterpret_cast<jlong>(custom_post_effect_shader);
     } catch (char const *c) {
+        return 0;
+    }
+}
+
+JNIEXPORT jlong JNICALL
+Java_org_gearvrf_NativePostEffectShaderManager_getShader(
+    JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature) {
+    PostEffectShaderManager* shader_manager = reinterpret_cast<PostEffectShaderManager*>(jshader_manager);
+    const char *sig_str = env->GetStringUTFChars(signature, 0);
+    std::string native_sig = std::string(sig_str);
+    try {
+        return reinterpret_cast<jlong>(shader_manager->getShader(native_sig));
+    } catch (char const *e) {
         return 0;
     }
 }

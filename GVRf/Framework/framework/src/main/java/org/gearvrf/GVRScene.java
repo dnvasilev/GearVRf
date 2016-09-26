@@ -572,7 +572,7 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
      * @param texture The texture atlas
      * @param shaderId The shader to render the texture atlas.
      */
-    public void applyTextureAtlas(String key, GVRTexture texture, GVRMaterialShaderId shaderId) {
+    public void applyTextureAtlas(String key, GVRTexture texture, GVRShaderId shaderId) {
         if (!texture.isAtlasedTexture()) {
             Log.w(TAG, "Invalid texture atlas to the scene!");
             return;
@@ -594,10 +594,10 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
                 // TODO: Add support to enable and disable light map at run time.
                 continue;
                     }
-
-            sceneObject.getRenderData().getMaterial().setShaderType(shaderId);
-            sceneObject.getRenderData().getMaterial().setTexture(key + "_texture", texture);
-            sceneObject.getRenderData().getMaterial().setTextureAtlasInfo(key, atlasInfo);
+            GVRMaterial material = new GVRMaterial(getGVRContext(), shaderId);
+            material.setTexture(key + "_texture", texture);
+            material.setTextureAtlasInfo(key, atlasInfo);
+            sceneObject.getRenderData().setMaterial(material);
         }
     }
 

@@ -25,7 +25,7 @@ class Distorter;
 class DistortionGrid;
 class Scene;
 class SceneObject;
-class PostEffectData;
+class ShaderData;
 class PostEffectShaderManager;
 class RenderData;
 class RenderTexture;

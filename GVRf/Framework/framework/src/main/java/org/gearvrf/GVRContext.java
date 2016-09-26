@@ -1970,8 +1970,8 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Simple, high-level method to load a texture asynchronously, for use with
-     * {@link GVRShaders#setMainTexture(Future)} and
-     * {@link GVRShaders#setTexture(String, Future)}.
+     * {@link GVRShaderData#setMainTexture(Future)} and
+     * {@link GVRShaderData#setTexture(String, Future)}.
      * 
      * This method uses a default priority and a default render quality: use
      * {@link #loadFutureTexture(GVRAndroidResource, int)} to specify a priority
@@ -2003,7 +2003,7 @@ public abstract class GVRContext implements IEventReceiver {
      *            handle a wide variety of Android resource types. Taking a
      *            {@code GVRAndroidResource} here eliminates six overloads.
      * @return A {@link Future} that you can pass to methods like
-     *         {@link GVRShaders#setMainTexture(Future)}
+     *         {@link GVRShaderData#setMainTexture(Future)}
      * 
      * @since 1.6.7
      * 
@@ -2031,8 +2031,8 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Simple, high-level method to load a texture asynchronously, for use with
-     * {@link GVRShaders#setMainTexture(Future)} and
-     * {@link GVRShaders#setTexture(String, Future)}.
+     * {@link GVRShaderData#setMainTexture(Future)} and
+     * {@link GVRShaderData#setTexture(String, Future)}.
      * 
      * This method uses a default render quality:
      * {@link #loadFutureTexture(GVRAndroidResource, int, int)} to specify
@@ -2071,7 +2071,7 @@ public abstract class GVRContext implements IEventReceiver {
      *            textures load so quickly that they are not run through the
      *            request scheduler.
      * @return A {@link Future} that you can pass to methods like
-     *         {@link GVRShaders#setMainTexture(Future)}
+     *         {@link GVRShaderData#setMainTexture(Future)}
      * 
      * @since 1.6.7
      * 
@@ -2101,8 +2101,8 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Simple, high-level method to load a texture asynchronously, for use with
-     * {@link GVRShaders#setMainTexture(Future)} and
-     * {@link GVRShaders#setTexture(String, Future)}.
+     * {@link GVRShaderData#setMainTexture(Future)} and
+     * {@link GVRShaderData#setTexture(String, Future)}.
      * 
      * 
      * <p>
@@ -2148,7 +2148,7 @@ public abstract class GVRContext implements IEventReceiver {
      *            {@linkplain GVRBitmapTexture bitmapped textures} don't take a
      *            quality parameter.
      * @return A {@link Future} that you can pass to methods like
-     *         {@link GVRShaders#setMainTexture(Future)}
+     *         {@link GVRShaderData#setMainTexture(Future)}
      * 
      * @since 1.6.7
      * 
@@ -2178,8 +2178,8 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Simple, high-level method to load a cube map texture asynchronously, for
-     * use with {@link GVRShaders#setMainTexture(Future)} and
-     * {@link GVRShaders#setTexture(String, Future)}.
+     * use with {@link GVRShaderData#setMainTexture(Future)} and
+     * {@link GVRShaderData#setTexture(String, Future)}.
      * 
      * @param resource
      *            A steam containing a zip file which contains six bitmaps. The
@@ -2189,7 +2189,7 @@ public abstract class GVRContext implements IEventReceiver {
      *            "posz.png", and "negz.png", which can be changed by calling
      *            {@link GVRCubemapTexture#setFaceNames(String[])}.
      * @return A {@link Future} that you can pass to methods like
-     *         {@link GVRShaders#setMainTexture(Future)}
+     *         {@link GVRShaderData#setMainTexture(Future)}
      * 
      * @since 1.6.9
      * 
@@ -2220,8 +2220,8 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Simple, high-level method to load a compressed cube map texture asynchronously,
-     * for use with {@link GVRShaders#setMainTexture(Future)} and
-     * {@link GVRShaders#setTexture(String, Future)}.
+     * for use with {@link GVRShaderData#setMainTexture(Future)} and
+     * {@link GVRShaderData#setTexture(String, Future)}.
      *
      * @param resource
      *            A steam containing a zip file which contains six compressed textures.
@@ -2231,7 +2231,7 @@ public abstract class GVRContext implements IEventReceiver {
      *            "posz.pkm", and "negz.pkm", which can be changed by calling
      *            {@link GVRCubemapTexture#setFaceNames(String[])}.
      * @return A {@link Future} that you can pass to methods like
-     *         {@link GVRShaders#setMainTexture(Future)}
+     *         {@link GVRShaderData#setMainTexture(Future)}
      *
      * @since 1.6.9
      *

@@ -65,17 +65,8 @@ import android.util.Log;
  * @see GVRPhongShader
  * @see GVRLightBase
  */
-public class GVRShaderTemplate
+public class GVRShaderTemplate extends GVRShader
 {
-    protected Integer mGLSLVersion = 100;
-
-    protected class ShaderVariant
-    {
-        String FragmentShaderSource;
-        String VertexShaderSource;
-        GVRCustomMaterialShaderId ShaderID;
-    };
-
     protected class LightClass
     {
         public LightClass()
@@ -104,8 +95,7 @@ public class GVRShaderTemplate
      */
     public GVRShaderTemplate(String descriptor)
     {
-        mUniformDescriptor = descriptor;
-        mShaderSegments = new HashMap<String, String>();
+        super(descriptor);
     }
 
     /**
@@ -118,22 +108,7 @@ public class GVRShaderTemplate
      */
     public GVRShaderTemplate(String descriptor, int glslVersion)
     {
-        mUniformDescriptor = descriptor;
-        mShaderSegments = new HashMap<String, String>();
-        mGLSLVersion = glslVersion;
-    }
-
-    /**
-     * Get the designated shader segment.
-     * 
-     * @param name
-     *            string name of shader segment
-     * @return source code for segment or null if none exists.
-     *         {@link setSegment}
-     */
-    public String getSegment(String name)
-    {
-        return mShaderSegments.get(name);
+       super(descriptor, glslVersion);
     }
 
     /**
@@ -149,11 +124,9 @@ public class GVRShaderTemplate
      * @param shaderSource
      *            String with shader source code
      */
-    public void setSegment(String segmentName, String shaderSource)
+    protected void setSegment(String segmentName, String shaderSource)
     {
-        mShaderSegments.put(segmentName, shaderSource);
-        if (shaderSource == null)
-            throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
+        super.setSegment(segmentName, shaderSource);
         Pattern pattern = Pattern.compile("HAS_([a-zA-Z0-9_]+)");
         Matcher matcher = pattern.matcher(shaderSource);
         if (mShaderDefines == null) mShaderDefines = new HashSet<String>();
@@ -164,23 +137,6 @@ public class GVRShaderTemplate
             mShaderDefines.add(match);
             index = matcher.end();
         }
-    }
-
-    /**
-     * Get the string describing the shader uniforms.
-     * 
-     * Each uniform is a fixed number of integer or float values. It is
-     * described with the type ("int" or "float") immediately followed by the
-     * size (a small integer) a space and then the name of uniform in the shader
-     * (e.g. "int enabled, float3 color") Spaces, commas, and other punctuation
-     * are ignored.
-     * 
-     * @return String with descriptor.
-     *         {@link GVRLightBase.getUniformDescriptor }
-     */
-    public String getUniformDescriptor()
-    {
-        return mUniformDescriptor;
     }
 
     /**
@@ -229,10 +185,10 @@ public class GVRShaderTemplate
      * @param mesh
      *            GVRMesh or null if vertex attributes should be ignored
      * @param material
-     *            GVRMaterial used with this shader (may not be null)
+     *            material used with this shader (may not be null)
      * @return shader variable names actually defined by the material and mesh
      */
-    private void generateVariantDefines(HashMap<String, Integer> definedNames, GVRMesh mesh, GVRMaterial material)
+    private void generateVariantDefines(HashMap<String, Integer> definedNames, GVRMesh mesh, GVRShaderData material)
     {
         Set<String> texNames = material.getTextureNames();
         Set<String> vertNames = null;
@@ -349,44 +305,26 @@ public class GVRShaderTemplate
     public void bindShader(GVRContext context, GVRRenderData rdata, GVRLightBase[] lightlist)
     {
         GVRMesh mesh = rdata.getMesh();
-        GVRMaterial material = rdata.getMaterial();
-
-        if (material == null)
-        {
-            return;
-        }
-        if (!rdata.isLightEnabled())
-        {
-            lightlist = null;
-        }
+        GVRShaderData material = rdata.getMaterial();
         HashMap<String, Integer> variantDefines = getRenderDefines(rdata, lightlist);
-        if (mShaderVariants == null)
-        {
-            mShaderVariants = new HashMap<String, ShaderVariant>();
-        }
         generateVariantDefines(variantDefines, mesh, material);
         String signature = generateSignature(variantDefines, lightlist);
-        ShaderVariant variant = mShaderVariants.get(signature);
-        if (variant != null)
-        {
-            if (variant.ShaderID != null)
-            {
-                Log.d("gvrf", "SHADER: Reuse shader #" + variant.ShaderID.ID + " " + signature);
-                material.setShaderType(variant.ShaderID);
-                return;
-            }
-        }
-        else
+        GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
+        long specificShader = shaderManager.getShader(signature);
+        if (specificShader == 0)
         {
             Map<String, LightClass> lightClasses = scanLights(lightlist);
-            variant = new ShaderVariant();
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
-            variant.VertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
-            variant.FragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
-            mShaderVariants.put(signature, variant);            
+            String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
+            String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
+            specificShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
         }
-      
-        generateGLShader(context, material, signature);
+        rdata.setShader(specificShader);
+    }
+
+    public void bindShader(GVRContext context, GVRRenderPass rpass, GVRMesh mesh)
+    {
+        rpass.setShader(bindShader(context, rpass.getMaterial()));
     }
 
     /**
@@ -402,69 +340,24 @@ public class GVRShaderTemplate
      *            material to use with the shader
      * @return ID of vertex/fragment shader set
      */
-    public void bindShader(GVRContext context, GVRMaterial material)
+    public long bindShader(GVRContext context, GVRShaderData material)
     {
-        if (material == null)
-        {
-            return;
-        }
         HashMap<String, Integer> variantDefines = new HashMap<String, Integer>();
-        if (mShaderVariants == null)
-        {
-            mShaderVariants = new HashMap<String, ShaderVariant>();
-        }
         generateVariantDefines(variantDefines, null, material);
         String signature = generateSignature(variantDefines, null);
-        ShaderVariant variant = mShaderVariants.get(signature);
-        if (variant != null)
+        GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
+        long specificShader = shaderManager.getShader(signature);
+
+        if (specificShader == 0)
         {
-            if (variant.ShaderID != null)
-            {
-                Log.d("gvrf", "SHADER: Reuse shader #" + variant.ShaderID.ID + " " + signature);
-                material.setShaderType(variant.ShaderID);
-                return;
-            }
-        }
-        else
-        {
-            variant = new ShaderVariant();
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
-            variant.VertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
-            variant.FragmentShaderSource = generateShaderVariant(isMultiviewSet, "Fragment", variantDefines, null, null);
-            mShaderVariants.put(signature, variant);            
+            String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
+            String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
+            specificShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
         }
-        generateGLShader(context, material, signature);
+        return specificShader;
     }
 
-    /**
-     * Generates a GL shader and adds it to the material.
-     * 
-     * The shader generation is actually performed by the GL thread.
-     * This function spawns a task to generate it.
-     * 
-     * @param context   GVRContext to use to generate shader
-     * @param variant   shader variant with sources
-     * @param material  material to use with shader
-     */
-    private void generateGLShader(final GVRContext context, final GVRMaterial material, final String signature) {
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                ShaderVariant variant = mShaderVariants.get(signature);
-                GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
-                if (variant.ShaderID == null)
-                {
-                    variant.ShaderID = shaderManager.addShader(variant.VertexShaderSource, variant.FragmentShaderSource);
-                    Log.d("gvrf", "SHADER: Generated shader #" + variant.ShaderID.ID + " " + signature);
-                }
-                GVRMaterialMap materialMap = shaderManager.getShaderMap(variant.ShaderID);
-                makeMaterialMap(material, materialMap);
-                material.setShaderType(variant.ShaderID);
-            }
-        };
-        context.runOnGlThread(task);
-    }
-    
     /**
      * Generate shader-specific defines from the rendering information.
      * You can override this function in your shader class to change which
@@ -497,58 +390,7 @@ public class GVRShaderTemplate
         return defines;
     }
     
-    /**
-     * Makes the material map for the shader.
-     * The material map does not change any names, just maps
-     * the keys in the material to themselves.
-     */
-    protected void makeMaterialMap(GVRMaterial material, GVRMaterialMap map)
-    {
-        Pattern uniformPattern = Pattern.compile("[ ]*([A-Za-z0-9_]+)[ ]+([A-Za-z0-9_]+)[,;:]*");
-        Pattern uniformTypePattern = Pattern.compile("([A-Za-z]+)([0-9_]+)");
-        Matcher matcher1 = uniformPattern.matcher(mUniformDescriptor);
-        Set<String> texNames = material.getTextureNames();
-
-        for (String s : texNames)
-        {
-            map.addTextureKey(s, s);
-        }
-        while (matcher1.find())
-        {
-            String type = matcher1.group(1);
-            String name = matcher1.group(2);
-            Matcher matcher2 = uniformTypePattern.matcher(type);
-            int nfloats = 1;
-            
-            if (matcher2.find())
-            {
-                String size = matcher2.group(2);
-                if (size.length() > 0)
-                {
-                    nfloats = Integer.parseInt(size);
-                }
-            }
-            switch (nfloats)
-            {
-            case 1:
-                map.addUniformFloatKey(name, name);
-                break;
-            case 2:
-                map.addUniformVec2Key(name, name);
-                break;
-            case 3:
-                map.addUniformVec3Key(name, name);
-                break;
-            case 4:
-                map.addUniformVec4Key(name, name);
-                break;
-            default:
-                throw new UnsupportedOperationException("Vertex attribute size " + nfloats + " unsupported");
-            }
-        }
-    }
-
-    /**
+     /**
      * Generates the shader code to compute fragment lighting for each light source.
      * The fragment shader defines a <LightPixel> function which computes the effect of all
      * light sources on the fragment color. This function calls the
@@ -738,9 +580,6 @@ public class GVRShaderTemplate
         }
         return desc;
     }
-    
-    protected Map<String, String> mShaderSegments;
-    protected Map<String, ShaderVariant> mShaderVariants;
+
     protected Set<String> mShaderDefines;
-    protected String mUniformDescriptor;
 }

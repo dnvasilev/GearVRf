@@ -454,7 +454,7 @@ public class GVRJassimpAdapter {
         FutureWrapper<GVRMesh> futureMesh = new FutureWrapper<GVRMesh>(
                 createMesh(parent.getGVRContext(), aiMesh));
         AiMaterial material = scene.getMaterials().get(aiMesh.getMaterialIndex());
-        final GVRMaterial meshMaterial = new GVRMaterial(context, GVRMaterial.GVRShaderType.BeingGenerated.ID);
+        final GVRMaterial meshMaterial = new GVRMaterial(context, GVRMaterial.GVRShaderType.Phong.ID);
 
         /* Diffuse color & Opacity */
         AiColor diffuseColor = material.getDiffuseColor(sWrapperProvider);        /* Opacity */

@@ -46,7 +46,7 @@ namespace gvr {
 class Camera;
 class Scene;
 class SceneObject;
-class PostEffectData;
+class ShaderData;
 class PostEffectShaderManager;
 class RenderData;
 class RenderTexture;
@@ -92,9 +92,8 @@ public:
 private:
     void renderMesh(RenderState& rstate, RenderData* render_data){}
     void renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *material){}
-    void occlusion_cull(Scene* scene,
-                std::vector<SceneObject*>& scene_objects,
-                ShaderManager *shader_manager, glm::mat4 vp_matrix){}
+    void occlusion_cull(RenderState& rstate,
+                std::vector<SceneObject*>& scene_objects){}
 
 
 };

@@ -31,14 +31,14 @@
 namespace gvr {
 struct RenderState;
 class RenderData;
-class Material;
+class ShaderData;
 class GLProgram;
 
 class ShaderBase: public HybridObject {
 public:
     ShaderBase() : program_(nullptr) {
     };
-    virtual void render(RenderState* rstate, RenderData* render_data, Material* material)=0;
+    virtual void render(RenderState* rstate, RenderData* render_data, ShaderData* material)=0;
     GLuint getProgramId()
     {
         if (program_)

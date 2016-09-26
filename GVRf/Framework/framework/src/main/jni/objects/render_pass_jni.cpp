@@ -26,29 +26,33 @@
 namespace gvr {
 
 extern "C" {
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeRenderPass_ctor(JNIEnv * env,
-        jobject obj);
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_NativeRenderPass_ctor(JNIEnv * env, jobject obj);
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeRenderPass_setMaterial(JNIEnv* env,
-        jobject obj, jlong jrender_pass, jlong jmaterial);
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeRenderPass_setMaterial(JNIEnv* env,
+            jobject obj, jlong jrender_pass, jlong jmaterial);
 
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeRenderPass_setCullFace(JNIEnv* env,
-        jobject obj, jlong jrender_pass, jint jcull_face);
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeRenderPass_setCullFace(JNIEnv* env,
+            jobject obj, jlong jrender_pass, jint jcull_face);
+
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeRenderPass_setShader(JNIEnv* env,
+            jobject obj, jlong jrender_pass, jint jshaderid);
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeRenderPass_ctor(JNIEnv * env,
-        jobject obj) {
+Java_org_gearvrf_NativeRenderPass_ctor(JNIEnv * env, jobject obj)
+{
     return reinterpret_cast<jlong>(new RenderPass());
 }
 
 JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeRenderPass_setMaterial(JNIEnv* env,
-        jobject obj, jlong jrender_pass, jlong jmaterial) {
+        jobject obj, jlong jrender_pass, jlong jmaterial)
+{
     RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
     Material* material = reinterpret_cast<Material*>(jmaterial);
     pass->set_material(material);
@@ -56,9 +60,20 @@ Java_org_gearvrf_NativeRenderPass_setMaterial(JNIEnv* env,
 
 JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeRenderPass_setCullFace(JNIEnv* env,
-        jobject obj, jlong jrender_pass, jint jcull_face) {
+        jobject obj, jlong jrender_pass, jint jcull_face)
+{
     RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
     pass->set_cull_face(static_cast<int>(jcull_face));
 }
 
+JNIEXPORT void JNICALL
+Java_org_gearvrf_NativeRenderPass_setShader(JNIEnv* env,
+        jobject obj, jlong jrender_pass, jint jshaderid)
+{
+    RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
+    pass->set_shader(static_cast<int>(jshaderid));
 }
+
+}
+
+

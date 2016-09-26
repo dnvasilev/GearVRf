@@ -31,6 +31,7 @@ public class GVRRenderPass extends GVRHybridObject {
     
     private GVRMaterial mMaterial;
     private GVRCullFaceEnum mCullFace;
+    private long    mShader;
     
     public enum GVRCullFaceEnum {
         /**
@@ -82,6 +83,7 @@ public class GVRRenderPass extends GVRHybridObject {
         super(gvrContext, NativeRenderPass.ctor());
         mMaterial = new GVRMaterial(gvrContext);
         mCullFace = GVRCullFaceEnum.Back;
+        mShader = 0;
     }
 
     /**
@@ -91,11 +93,27 @@ public class GVRRenderPass extends GVRHybridObject {
      *            The {@link GVRMaterial material} this {@link GVRRenderPass pass}
      *            will be rendered with.
      */
-    public void setMaterial(GVRMaterial material) {
+    public void setMaterial(GVRMaterial material)
+    {
         mMaterial = material;
         NativeRenderPass.setMaterial(getNative(), material.getNative());
+        bindShader();
     }
-    
+
+    /**
+     * Set the native shader for this pass.
+     * Native shaders are identified by unique integer IDs.
+     *
+     * @param shader
+     *            The native shader this {@link GVRRenderPass pass}
+     *            will be rendered with.
+     */
+    void setShader(long shader)
+    {
+        mShader = shader;
+        NativeRenderPass.setShader(getNative(), mShader);
+    }
+
     /**
      * @return The {@link GVRMaterial material} this {@link GVRRenderPass pass} will
      *         being rendered with.
@@ -103,7 +121,35 @@ public class GVRRenderPass extends GVRHybridObject {
     public GVRMaterial getMaterial() {
         return mMaterial;
     }
-    
+
+    /**
+     * Get the integer ID for the native shader used by this pass.
+     */
+    long getShader()
+    {
+        return mShader;
+    }
+
+    void bindShader()
+    {
+        GVRShaderId shader = mMaterial.getShaderType();
+        GVRShader template = shader.getTemplate(getGVRContext());
+        if ((template != null)&& !template.hasVariants())
+        {
+            setShader(template.bindShader(getGVRContext(), mMaterial));
+        }
+    }
+
+    void bindShader(GVRLightBase[] lightList)
+    {
+        GVRShaderId shader = mMaterial.getShaderType();
+        GVRShader template = shader.getTemplate(getGVRContext());
+        if ((template != null)&& !template.hasVariants())
+        {
+            setShader(template.bindShader(getGVRContext(), mMaterial));
+        }
+    }
+
     /**
      * Set the {@link GVRCullFaceEnum face} to be culled when rendering this {@link GVRRenderPass pass}
      * 
@@ -131,6 +177,8 @@ class NativeRenderPass {
     static native long ctor();
     
     static native void setMaterial(long renderPass, long material);
-    
+
+    static native void setShader(long renderPass, long shader);
+
     static native void setCullFace(long renderPass, int cullFace);
 }

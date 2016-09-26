@@ -20,7 +20,7 @@
 #include "custom_shader.h"
 #include "engine/renderer/renderer.h"
 #include "gl/gl_program.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "objects/scene.h"
 #include "objects/mesh.h"
 #include "objects/textures/texture.h"
@@ -30,10 +30,10 @@
 #include <sys/time.h>
 
 namespace gvr {
-CustomShader::CustomShader(const std::string& vertex_shader, const std::string& fragment_shader)
-    : vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
+Shader::Shader(const std::string& signature, const std::string& vertex_shader, const std::string& fragment_shader)
+    : signature_(signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
 }
-void CustomShader::initializeOnDemand(RenderState* rstate) {
+void Shader::initializeOnDemand(RenderState* rstate) {
     if (nullptr == program_)
     {
         program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
@@ -67,7 +67,7 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
         for (auto it = textureVariables_.begin(); it != textureVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("CustomShader::texture:location: variable: %s location: %d", it->variable.c_str(),
+                LOGV("Shader::texture:location: variable: %s location: %d", it->variable.c_str(),
                         it->location);
             }
         }
@@ -77,10 +77,10 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
     if (uniformVariablesDirty_) {
         std::lock_guard<std::mutex> lock(uniformVariablesLock_);
         for (auto it = uniformVariables_.begin(); it != uniformVariables_.end(); ++it) {
-            LOGV("CustomShader::uniform:location: variable: %s", it->variable.c_str());
+            LOGV("Shader::uniform:location: variable: %s", it->variable.c_str());
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("CustomShader::uniform:location: location: %d", it->location);
+                LOGV("Shader::uniform:location: location: %d", it->location);
             }
         }
         uniformVariablesDirty_ = false;
@@ -91,7 +91,7 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
         for (auto it = attributeVariables_.begin(); it != attributeVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("CustomShader::attribute:location: variable: %s location: %d", it->variable.c_str(),
+                LOGV("Shader::attribute:location: variable: %s location: %d", it->variable.c_str(),
                         it->location);
             }
         }
@@ -99,21 +99,21 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
     }
 }
 
-CustomShader::~CustomShader() {
+Shader::~Shader() {
     delete program_;
 }
-GLuint CustomShader::getProgramId(){
+GLuint Shader::getProgramId(){
 	return program_->id();
 }
-void CustomShader::addTextureKey(const std::string& variable_name, const std::string& key) {
-    LOGV("CustomShader::texture:add variable: %s key: %s", variable_name.c_str(), key.c_str());
+void Shader::addTextureKey(const std::string& variable_name, const std::string& key) {
+    LOGV("Shader::texture:add variable: %s key: %s", variable_name.c_str(), key.c_str());
     Descriptor<TextureVariable> d(variable_name, key);
 
     d.variableType.f_getLocation = [variable_name] (GLuint programId) {
         return glGetUniformLocation(programId, variable_name.c_str());
     };
 
-    d.variableType.f_bind = [key] (int& textureIndex, const Material& material, GLuint location) {
+    d.variableType.f_bind = [key] (int& textureIndex, const ShaderData& material, GLuint location) {
         glActiveTexture(GL_TEXTURE0 + textureIndex);
         Texture* texture = material.getTextureNoError(key);
         if (nullptr != texture) {
@@ -128,7 +128,7 @@ void CustomShader::addTextureKey(const std::string& variable_name, const std::st
 }
 
 
-void CustomShader::addAttributeFloatKey(const std::string& variable_name,
+void Shader::addAttributeFloatKey(const std::string& variable_name,
         const std::string& key) {
     AttributeVariableBind f =
             [key] (Mesh& mesh, GLuint location) {
@@ -138,7 +138,7 @@ void CustomShader::addAttributeFloatKey(const std::string& variable_name,
 }
 
 
-void CustomShader::addAttributeVec2Key(const std::string& variable_name,
+void Shader::addAttributeVec2Key(const std::string& variable_name,
         const std::string& key) {
     AttributeVariableBind f =
             [key] (Mesh& mesh, GLuint location) {
@@ -146,7 +146,7 @@ void CustomShader::addAttributeVec2Key(const std::string& variable_name,
             };
     addAttributeKey(variable_name, key, f);
 }
-void CustomShader::addAttributeKey(const std::string& variable_name,
+void Shader::addAttributeKey(const std::string& variable_name,
         const std::string& key, AttributeVariableBind f) {
     Descriptor<AttributeVariable> d(variable_name, key);
 
@@ -161,7 +161,7 @@ void CustomShader::addAttributeKey(const std::string& variable_name,
 }
 
 
-void CustomShader::addAttributeVec3Key(const std::string& variable_name,
+void Shader::addAttributeVec3Key(const std::string& variable_name,
         const std::string& key) {
     AttributeVariableBind f =
             [key] (Mesh& mesh, GLuint location) {
@@ -171,7 +171,7 @@ void CustomShader::addAttributeVec3Key(const std::string& variable_name,
 }
 
 
-void CustomShader::addAttributeVec4Key(const std::string& variable_name,
+void Shader::addAttributeVec4Key(const std::string& variable_name,
         const std::string& key) {
     AttributeVariableBind f =
             [key] (Mesh& mesh, GLuint location) {
@@ -179,9 +179,9 @@ void CustomShader::addAttributeVec4Key(const std::string& variable_name,
             };
     addAttributeKey(variable_name, key, f);
 }
-void CustomShader::addUniformKey(const std::string& variable_name,
+void Shader::addUniformKey(const std::string& variable_name,
         const std::string& key, UniformVariableBind f) {
-    LOGV("CustomShader::uniform:add variable: %s key: %s", variable_name.c_str(), key.c_str());
+    LOGV("Shader::uniform:add variable: %s key: %s", variable_name.c_str(), key.c_str());
     Descriptor<UniformVariable> d(variable_name, key);
 
     d.variableType.f_getLocation = [variable_name] (GLuint programId) {
@@ -195,20 +195,20 @@ void CustomShader::addUniformKey(const std::string& variable_name,
 }
 
 
-void CustomShader::addUniformFloatKey(const std::string& variable_name,
+void Shader::addUniformFloatKey(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
-            [key] (Material& material, GLuint location) {
+            [key] (ShaderData& material, GLuint location) {
                 glUniform1f(location, material.getFloat(key));
             };
     addUniformKey(variable_name, key, f);
 }
 
 
-void CustomShader::addUniformVec2Key(const std::string& variable_name,
+void Shader::addUniformVec2Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
-            [key] (Material& material, GLuint location) {
+            [key] (ShaderData& material, GLuint location) {
                 glm::vec2 v = material.getVec2(key);
                 glUniform2f(location, v.x, v.y);
             };
@@ -216,10 +216,10 @@ void CustomShader::addUniformVec2Key(const std::string& variable_name,
 }
 
 
-void CustomShader::addUniformVec3Key(const std::string& variable_name,
+void Shader::addUniformVec3Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
-            [key] (Material& material, GLuint location) {
+            [key] (ShaderData& material, GLuint location) {
                 glm::vec3 v = material.getVec3(key);
                 glUniform3f(location, v.x, v.y, v.z);
             };
@@ -227,20 +227,20 @@ void CustomShader::addUniformVec3Key(const std::string& variable_name,
 }
 
 
-void CustomShader::addUniformVec4Key(const std::string& variable_name,
+void Shader::addUniformVec4Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
-            [key] (Material& material, GLuint location) {
+            [key] (ShaderData& material, GLuint location) {
                 glm::vec4 v = material.getVec4(key);
                 glUniform4f(location, v.x, v.y, v.z, v.w);
             };
     addUniformKey(variable_name, key, f);
 }
 
-void CustomShader::addUniformMat4Key(const std::string& variable_name,
+void Shader::addUniformMat4Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
-            [key] (Material& material, GLuint location) {
+            [key] (ShaderData& material, GLuint location) {
                 glm::mat4 m = material.getMat4(key);
                 glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m));
             };
@@ -248,7 +248,7 @@ void CustomShader::addUniformMat4Key(const std::string& variable_name,
 }
 
 
-void CustomShader::render(RenderState* rstate, RenderData* render_data, Material* material) {
+void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
 	//LOGE(" start of render %s", render_data->owner_object()->name().c_str());
 	initializeOnDemand(rstate);
     {
@@ -289,7 +289,7 @@ void CustomShader::render(RenderState* rstate, RenderData* render_data, Material
             finalTransform = mesh->getVertexBoneData().getFinalBoneTransform(i);
             glUniformMatrix4fv(u_bone_matrices + i, 1, GL_FALSE, glm::value_ptr(finalTransform));
         }
-        checkGlError("CustomShader after bones");
+        checkGlError("Shader after bones");
     }
     /*
      * Update values of uniform variables
@@ -366,6 +366,6 @@ void CustomShader::render(RenderState* rstate, RenderData* render_data, Material
     if (castShadow){
     	Light::bindShadowMap(program_->id(), texture_index);
     }
-    checkGlError("CustomShader::render");
+    checkGlError("Shader::render");
 }
 } /* namespace gvr */

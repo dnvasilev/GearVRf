@@ -23,7 +23,7 @@
 
 #include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
 #include "objects/material.h"
-#include "objects/post_effect_data.h"
+#include "objects/shader_data.h"
 #include "objects/scene.h"
 #include "objects/scene_object.h"
 #include "objects/components/camera.h"
@@ -60,7 +60,7 @@ void GLRenderer::renderCamera(Scene* scene, Camera* camera, int framebufferId,
     rstate.render_mask = camera->render_mask();
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
 
-    std::vector<PostEffectData*> post_effects = camera->post_effect_data();
+    std::vector<ShaderData*> post_effects = camera->post_effect_data();
 
     GL(glEnable (GL_DEPTH_TEST));
     GL(glDepthFunc (GL_LEQUAL));
@@ -102,7 +102,7 @@ void GLRenderer::renderCamera(Scene* scene, Camera* camera, int framebufferId,
 
         GL(glDisable(GL_DEPTH_TEST));
         GL(glDisable(GL_CULL_FACE));
-
+        rstate.shader_manager = post_effect_shader_manager;
         for (int i = 0; i < post_effects.size() - 1; ++i) {
             if (i % 2 == 0) {
                 texture_render_texture = post_effect_render_texture_a;
@@ -115,14 +115,13 @@ void GLRenderer::renderCamera(Scene* scene, Camera* camera, int framebufferId,
             GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
 
             GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-            GL(renderPostEffectData(camera, texture_render_texture,
-                    post_effects[i], post_effect_shader_manager));
+            GL(renderPostEffectData(rstate, texture_render_texture, post_effects[i]));
         }
 
         GL(glBindFramebuffer(GL_FRAMEBUFFER, framebufferId));
         GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
         GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-        renderPostEffectData(camera, texture_render_texture, post_effects.back(), post_effect_shader_manager);
+        renderPostEffectData(rstate, texture_render_texture, post_effects.back());
     }
 
     GL(glDisable(GL_DEPTH_TEST));
@@ -288,33 +287,13 @@ void GLRenderer::set_face_culling(int cull_face) {
     }
 }
 bool GLRenderer::checkTextureReady(Material* material) {
-    int shaderType = material->shader_type();
-
-    //Skip custom shader here since they are rendering multiple textures
-    //Check the textures later inside the rendering pass inside the custom shader
-    if (shaderType < 0
-            || shaderType >= Material::ShaderType::BUILTIN_SHADER_SIZE) {
-        return true;
-    }
-    //For regular shaders, check its main texture
-    else if (shaderType != Material::ShaderType::ASSIMP_SHADER) {
-        return material->isMainTextureReady();
-    }
-    //For ASSIMP_SHADER as diffused texture, check its main texture
-    //For non diffused texture, the rendering doesn't take any textures and needs to be skipped
-    else if (ISSET(material->get_shader_feature_set(), AS_DIFFUSE_TEXTURE)) {
-        return material->isMainTextureReady();
-    }
-    else {
-        return true;
-    }
+    return material->areTexturesReady();
 }
 
-void GLRenderer::occlusion_cull(Scene* scene,
-        std::vector<SceneObject*>& scene_objects, ShaderManager *shader_manager,
-        glm::mat4 vp_matrix) {
+void GLRenderer::occlusion_cull(RenderState& rstate,
+        std::vector<SceneObject*>& scene_objects) {
 
-    if(!occlusion_cull_init(scene, scene_objects))
+    if(!occlusion_cull_init(rstate.scene, scene_objects))
         return;
 
     for (auto it = scene_objects.begin(); it != scene_objects.end(); ++it) {
@@ -339,9 +318,10 @@ void GLRenderer::occlusion_cull(Scene* scene,
             //Setup basic bounding box and material
             RenderData* bounding_box_render_data(new RenderData());
             Mesh* bounding_box_mesh = render_data->mesh()->createBoundingBox();
-            Material *bbox_material = new Material(
-                    Material::BOUNDING_BOX_SHADER);
+            Material *bbox_material = new Material();
             RenderPass *pass = new RenderPass();
+            Shader* bboxShader = rstate.shader_manager->getShader(std::string("GVRBoundingBoxShader"));
+            pass->set_shader(bboxShader->getProgramId());
             pass->set_material(bbox_material);
             bounding_box_render_data->set_mesh(bounding_box_mesh);
             bounding_box_render_data->add_pass(pass);
@@ -352,13 +332,14 @@ void GLRenderer::occlusion_cull(Scene* scene,
             glEnable (GL_DEPTH_TEST);
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-            glm::mat4 model_matrix_tmp(
-                    scene_object->transform()->getModelMatrix());
-            glm::mat4 mvp_matrix_tmp(vp_matrix * model_matrix_tmp);
+            rstate.uniforms.u_model = scene_object->transform()->getModelMatrix();
+            rstate.uniforms.u_mv = rstate.uniforms.u_view * rstate.uniforms.u_model;
+            rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
+            rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
 
             //Issue the query only with a bounding box
             glBeginQuery(GL_ANY_SAMPLES_PASSED, query[0]);
-            shader_manager->getBoundingBoxShader()->render(mvp_matrix_tmp,
+            bboxShader->render(&rstate,
                     bounding_box_render_data,
                     bounding_box_render_data->material(0));
             glEndQuery (GL_ANY_SAMPLES_PASSED);
@@ -385,10 +366,10 @@ void GLRenderer::occlusion_cull(Scene* scene,
             (*it)->set_visible(visibility);
             (*it)->set_query_issued(false);
             addRenderData((*it)->render_data());
-            scene->pick(scene_object);
+            rstate.scene->pick(scene_object);
         }
     }
-    scene->unlockColliders();
+    rstate.scene->unlockColliders();
 }
 
 void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
@@ -411,12 +392,8 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
 
 void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material) {
 
-    if (Material::ShaderType::BEING_GENERATED == curr_material->shader_type()) {
-        return;
-    }
-
     //Skip the material whose texture is not ready with some exceptions
-    if (!checkTextureReady(curr_material))
+    if (!curr_material->areTexturesReady())
         return;
     ShaderManager* shader_manager = rstate.shader_manager;
     Transform* const t = render_data->owner_object()->transform();
@@ -449,60 +426,18 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
     try {
          //TODO: Improve this logic to avoid a big "switch case"
         if (rstate.material_override != nullptr)
+        {
             curr_material = rstate.material_override;
-         switch (curr_material->shader_type()) {
-            case Material::ShaderType::UNLIT_HORIZONTAL_STEREO_SHADER:
-            	shader = shader_manager->getUnlitHorizontalStereoShader();
-                break;
-            case Material::ShaderType::UNLIT_VERTICAL_STEREO_SHADER:
-                shader = shader_manager->getUnlitVerticalStereoShader();
-                break;
-            case Material::ShaderType::OES_SHADER:
-                shader = shader_manager->getOESShader();
-                break;
-            case Material::ShaderType::OES_HORIZONTAL_STEREO_SHADER:
-                shader = shader_manager->getOESHorizontalStereoShader();
-                break;
-            case Material::ShaderType::OES_VERTICAL_STEREO_SHADER:
-                shader = shader_manager->getOESVerticalStereoShader();
-                break;
-            case Material::ShaderType::CUBEMAP_SHADER:
-                shader = shader_manager->getCubemapShader();
-                break;
-            case Material::ShaderType::CUBEMAP_REFLECTION_SHADER:
-                if(use_multiview){
-                    rstate.uniforms.u_view_inv_[0] = glm::inverse(rstate.uniforms.u_view_[0]);
-                    rstate.uniforms.u_view_inv_[1] = glm::inverse(rstate.uniforms.u_view_[1]);
-                }
-                else
-                    rstate.uniforms.u_view_inv = glm::inverse(rstate.uniforms.u_view);
-                shader = shader_manager->getCubemapReflectionShader();
-                break;
-            case Material::ShaderType::TEXTURE_SHADER:
-                shader = shader_manager->getTextureShader();
-                break;
-            case Material::ShaderType::EXTERNAL_RENDERER_SHADER:
-                shader = shader_manager->getExternalRendererShader();
-                break;
-            case Material::ShaderType::ASSIMP_SHADER:
-                shader = shader_manager->getAssimpShader();
-                break;
-            case Material::ShaderType::LIGHTMAP_SHADER:
-                shader = shader_manager->getLightMapShader();
-                break;
-			case Material::ShaderType::UNLIT_FBO_SHADER:
-				shader = shader_manager->getUnlitFboShader();
-                break;
-            default:
-                shader = shader_manager->getCustomShader(curr_material->shader_type());
-                break;
         }
-         if (shader == NULL) {
-             LOGE("Rendering error: GVRRenderData shader cannot be determined\n");
-             shader_manager->getErrorShader()->render(&rstate, render_data, curr_material);
-             return;
-         }
-         if ((render_data->draw_mode() == GL_LINE_STRIP) ||
+        Shader* shader = shader_manager->getShader(render_data->get_shader());
+        if (shader == NULL)
+        {
+            shader = shader_manager->getShader(std::string("GVRColorShader"));
+            LOGE("Rendering error: GVRRenderData shader cannot be determined\n");
+            shader->render(&rstate, render_data, curr_material);
+            return;
+        }
+        if ((render_data->draw_mode() == GL_LINE_STRIP) ||
              (render_data->draw_mode() == GL_LINES) ||
              (render_data->draw_mode() == GL_LINE_LOOP)) {
              if (curr_material->hasUniform("line_width")) {
@@ -512,14 +447,15 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
              else {
                  glLineWidth(1.0f);
              }
-         }
-         shader->render(&rstate, render_data, curr_material);
+        }
+        shader->render(&rstate, render_data, curr_material);
     } catch (const std::string &error) {
         LOGE(
                 "Error detected in Renderer::renderRenderData; name : %s, error : %s",
                 render_data->owner_object()->name().c_str(),
                 error.c_str());
-        shader_manager->getErrorShader()->render(&rstate, render_data, curr_material);
+        shader = shader_manager->getShader(std::string("GVRColorShader"));
+        shader->render(&rstate, render_data, curr_material);
     }
 
     programId = shader->getProgramId();

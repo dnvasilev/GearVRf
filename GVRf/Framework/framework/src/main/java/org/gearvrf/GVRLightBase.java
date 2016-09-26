@@ -91,7 +91,6 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
         setVec3("world_direction", 0.0f, 0.0f, 1.0f);
     }
 
-
     static public long getComponentType() {
         return NativeLight.getComponentType();
     }
@@ -123,9 +122,13 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
         {
             if (mShadowMaterial == null)
             {
-                mShadowMaterial = new GVRMaterial(context);
-                GVRShaderTemplate depthShader = context.getMaterialShaderManager().retrieveShaderTemplate(GVRDepthShader.class);
-                depthShader.bindShader(context, mShadowMaterial);
+                GVRShaderId id = context.getMaterialShaderManager().getShaderType(GVRDepthShader.class);
+                mShadowMaterial = new GVRMaterial(context, id);
+                GVRShader shader = id.getTemplate(context);
+                if (shader != null)
+                {
+                    shader.bindShader(context, mShadowMaterial);
+                }
             }
             NativeLight.setCastShadow(getNative(), mShadowMaterial.getNative());
         }

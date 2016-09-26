@@ -15,6 +15,7 @@
 
 package org.gearvrf;
 
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -26,69 +27,28 @@ import java.util.concurrent.Future;
  * <td>{@link GVRMaterialShaderManager} {@code implements}
  * {@link GVRShaderManagers}</td>
  * <td>{@link GVRMaterialMap} {@code implements} {@link GVRShaderMaps}</td>
- * <td>{@link GVRMaterial} {@code implements} {@link GVRShaders}</td>
+ * <td>{@link GVRMaterial} {@code implements} {@link GVRShaderData}</td>
  * </tr>
  * <tr>
  * <td>{@link GVRPostEffectShaderManager} {@code implements}
  * {@link GVRShaderManagers}</td>
  * <td>{@link GVRPostEffectMap} {@code implements} {@link GVRShaderMaps}</td>
- * <td>{@link GVRPostEffect} {@code implements} {@link GVRShaders}</td>
+ * <td>{@link GVRPostEffect} {@code implements} {@link GVRShaderData}</td>
  * </tr>
  * </table>
  * </p>
  */
-public interface GVRShaders<ID> {
+public interface GVRShaderData {
 
     static final String MAIN_TEXTURE = "main_texture";
 
-    /** @return The current shader id. */
-    public ID getShaderType();
+    public GVRShaderId getShaderType();
 
     /**
-     * Set shader id
-     *
-     * @param shaderId
-     *            The new shader id. This is an opaque type, used to keep object
-     *            and scene shader ids in distinct namespaces.
+     * Return the names of all the textures used by this post effect.
+     * @return list of texture names
      */
-    public void setShaderType(ID shaderId);
-
-    /**
-     * The {@link GVRTexture texture} currently bound to the
-     * {@code main_texture} shader uniform.
-     * 
-     * With most shaders, this is the texture that is actually displayed.
-     * 
-     * @return The {@linkplain GVRTexture main texture}
-     */
-    public GVRTexture getMainTexture();
-
-    /**
-     * Bind a different {@link GVRTexture texture} to the {@code main_texture}
-     * shader uniform.
-     * 
-     * @param texture
-     *            The {@link GVRTexture} to bind.
-     */
-    public void setMainTexture(GVRTexture texture);
-
-    /**
-     * Asynchronously bind a different {@link GVRTexture texture} to the
-     * {@code main_texture} shader uniform.
-     * 
-     * Uses a background thread from the thread pool to wait for the
-     * {@code Future.get()} method; unless you are loading dozens of textures
-     * asynchronously, the extra overhead should be modest compared to the cost
-     * of loading a texture.
-     * 
-     * @param texture
-     *            A future texture, from one of the the
-     *            {@link GVRContext#loadFutureTexture(GVRAndroidResource)}
-     *            methods
-     * 
-     * @since 1.6.7
-     */
-    public void setMainTexture(Future<GVRTexture> texture);
+    public Set<String> getTextureNames();
 
     /**
      * Get the {@link GVRTexture texture} currently bound to the shader uniform
@@ -127,6 +87,13 @@ public interface GVRShaders<ID> {
      * @since 1.6.7
      */
     public void setTexture(String key, Future<GVRTexture> texture);
+
+    /**
+     * Determine whether a named uniform has been set.
+     * @param name of uniform in shader and material
+     * @return true if uniform has been set, else false
+     */
+    public boolean hasUniform(String name);
 
     /**
      * Get the {@code float} bound to the shader uniform {@code key}.

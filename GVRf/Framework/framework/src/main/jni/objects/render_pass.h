@@ -34,7 +34,7 @@ public:
     };
 
     RenderPass() :
-            material_(0), cull_face_(DEFAULT_CULL_FACE), listener_(new Listener) {
+            material_(0), shaderID_(0), cull_face_(DEFAULT_CULL_FACE), listener_(new Listener) {
     }
 
     Material* material() const {
@@ -52,12 +52,20 @@ public:
         listener_->notify_listeners(true);
     }
 
+    void set_shader(int shaderid)
+    {
+        shaderID_ = shaderid;
+    }
+
+    int get_shader() const { return shaderID_; }
+
     void add_listener(RenderData* render_data);
 
 private:
     Listener* listener_;
     static const int DEFAULT_CULL_FACE = CullBack;
     Material* material_;
+    int shaderID_;
     int cull_face_;
 };
 

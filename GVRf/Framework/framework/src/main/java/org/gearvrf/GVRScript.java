@@ -283,7 +283,7 @@ public abstract class GVRScript implements IScriptEvents, IScriptable, IEventRec
      * 
      * @since 1.6.4
      */
-    public GVRMaterialShaderId getSplashShader(GVRContext gvrContext) {
+    public GVRShaderId getSplashShader(GVRContext gvrContext) {
         return GVRMaterial.GVRShaderType.Texture.ID;
     }
 
