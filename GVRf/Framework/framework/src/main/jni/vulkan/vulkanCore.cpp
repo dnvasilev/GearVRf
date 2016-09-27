@@ -85,8 +85,8 @@ bool VulkanCore::CreateInstance(){
     applicationInfo.pNext = nullptr;
     applicationInfo.pApplicationName = GVR_VK_SAMPLE_NAME;
     applicationInfo.applicationVersion = 0;
-    applicationInfo.pEngineName = "VkSample";
-    applicationInfo.engineVersion = 1;
+    applicationInfo.pEngineName = "GearVRf";
+    applicationInfo.engineVersion = 302; // TODO: GVRF version as a macro
     applicationInfo.apiVersion = VK_API_VERSION_1_0;
 
     // Creation information for the instance points to details about
