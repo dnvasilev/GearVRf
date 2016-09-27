@@ -32,32 +32,43 @@ public:
             latest_shader_id_(INITIAL_SHADER_INDEX)  {
     }
 
-    int addShader(std::string signature,
-            std::string vertex_shader,
-            std::string fragment_shader) {
-        int id = latest_shader_id_++;
+    long addShader(const std::string& signature,
+            const std::string& vertex_shader,
+            const std::string& fragment_shader) {
+        long id = latest_shader_id_++;
         Shader* shader = new Shader(signature, vertex_shader, fragment_shader);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
+        LOGE("SHADER: end added custom shader %ld %s", id, signature.c_str());
         return id;
     }
 
-    Shader* getShader(const std::string& signature) {
+    Shader* findShader(const std::string& signature)
+    {
         auto it = shadersBySignature.find(signature);
-        if (it != shadersBySignature.end()) {
-            return it->second;
-        } else {
-            LOGE("ShaderManager::getShader() %s not found", signature.c_str());
+        if (it != shadersBySignature.end())
+        {
+            Shader* shader = it->second;
+            LOGE("SHADER: findShader %s -> %d", signature.c_str(), shader->getShaderID());
+            return shader;
+        }
+        else
+        {
             return NULL;
         }
     }
 
-    Shader* getShader(int id) {
+    Shader* getShader(long id)
+    {
         auto it = shadersByID.find(id);
-        if (it != shadersByID.end()) {
-            return it->second;
-        } else {
-            LOGE("ShaderManager::getShader() %d not found", id);
+        if (it != shadersByID.end())
+        {
+            Shader* shader = it->second;
+            LOGE("SHADER: getShader %ld -> %s", id, shader->signature().c_str());
+            return shader;
+        }
+        else
+        {
             return NULL;
         }
     }
@@ -70,7 +81,7 @@ private:
 
 private:
     static const int INITIAL_SHADER_INDEX = 1;
-    int latest_shader_id_;
+    int latest_shader_id_ = 0;
     std::map<std::string, Shader*> shadersBySignature;
     std::map<int, Shader*> shadersByID;
 };

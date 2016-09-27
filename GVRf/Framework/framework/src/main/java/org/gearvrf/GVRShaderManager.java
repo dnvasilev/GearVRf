@@ -35,13 +35,13 @@ public class GVRShaderManager extends GVRHybridObject
         super(gvrContext, NativeShaderManager.ctor());
     }
 
-    public long addShader(String signature, String vertexShader, String fragmentShader)
+    public int addShader(String signature, String vertexShader, String fragmentShader)
     {
         return NativeShaderManager.addShader(getNative(), signature,
                 vertexShader, fragmentShader);
     }
 
-    public long getShader(String signature)
+    public int getShader(String signature)
     {
         return NativeShaderManager.getShader(getNative(), signature);
     }
@@ -75,6 +75,19 @@ public class GVRShaderManager extends GVRHybridObject
     }
 
     /**
+     * Get a name mapping object for the custom shader program.
+     *
+     * @param nativeShader
+     *            Opaque type from {@link #addShader(String, String, String)}
+     * @return A name mapping object
+     */
+    public GVRMaterialMap getShaderMap(int nativeShader)
+    {
+        long nativeMap = NativeShaderManager.getShaderMap(getNative(), nativeShader);
+        return new GVRMaterialMap(getGVRContext(), nativeMap);
+    }
+
+    /**
      * Maps the shader template class to the instance of the template.
      * Only one shader template of each class is necessary since
      * shaders are global.
@@ -85,8 +98,10 @@ public class GVRShaderManager extends GVRHybridObject
 class NativeShaderManager {
     static native long ctor();
 
-    static native long addShader(long shaderManager, String signature, String vertexShader,
+    static native int addShader(long shaderManager, String signature, String vertexShader,
                                  String fragmentShader);
 
-    static native long getShader(long shaderManager, String signature);
+    static native int getShader(long shaderManager, String signature);
+
+    static native long getShaderMap(long shaderManager, int nativeShader);
 }

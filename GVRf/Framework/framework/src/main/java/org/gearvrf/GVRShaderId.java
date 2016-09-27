@@ -60,7 +60,7 @@ public class GVRShaderId {
             GVRShader shader = getTemplate(ctx);
             if ((shader != null) && !shader.hasVariants())
             {
-                mNativeShader = shader.bindShader(ctx, null);
+                mNativeShader = shader.bindShader(ctx, (GVRShaderData) null);
             }
         }
         return mNativeShader;

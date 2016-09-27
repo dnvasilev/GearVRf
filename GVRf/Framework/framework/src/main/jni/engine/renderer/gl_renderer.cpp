@@ -320,7 +320,7 @@ void GLRenderer::occlusion_cull(RenderState& rstate,
             Mesh* bounding_box_mesh = render_data->mesh()->createBoundingBox();
             Material *bbox_material = new Material();
             RenderPass *pass = new RenderPass();
-            Shader* bboxShader = rstate.shader_manager->getShader(std::string("GVRBoundingBoxShader"));
+            Shader* bboxShader = rstate.shader_manager->findShader(std::string("GVRBoundingBoxShader"));
             pass->set_shader(bboxShader->getProgramId());
             pass->set_material(bbox_material);
             bounding_box_render_data->set_mesh(bounding_box_mesh);
@@ -384,7 +384,9 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
 
         if (curr_material == nullptr)
             curr_material = render_data->pass(curr_pass)->material();
-        if (curr_material != nullptr) {
+        if (curr_material != nullptr)
+        {
+            LOGE("SHADER: renderMesh %s", render_data->owner_object()->name().c_str());
             GL(renderMaterialShader(rstate, render_data, curr_material));
         }
     }
@@ -393,10 +395,19 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
 void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material) {
 
     //Skip the material whose texture is not ready with some exceptions
+    SceneObject* owner = render_data->owner_object();
+
+    if (rstate.material_override != nullptr)
+    {
+        curr_material = rstate.material_override;
+    }
     if (!curr_material->areTexturesReady())
+    {
+        LOGE("SHADER: textures not ready %s", owner->name().c_str());
         return;
+    }
     ShaderManager* shader_manager = rstate.shader_manager;
-    Transform* const t = render_data->owner_object()->transform();
+    Transform* const t = owner->transform();
 
     if (t == nullptr)
         return;
@@ -406,7 +417,6 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
 	rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
 	rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
-
 
     if(use_multiview){
         rstate.uniforms.u_view_[0] = rstate.scene->main_camera_rig()->left_camera()->getViewMatrix();
@@ -424,16 +434,11 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
     ShaderBase* shader = NULL;
 
     try {
-         //TODO: Improve this logic to avoid a big "switch case"
-        if (rstate.material_override != nullptr)
-        {
-            curr_material = rstate.material_override;
-        }
         Shader* shader = shader_manager->getShader(render_data->get_shader());
         if (shader == NULL)
         {
-            shader = shader_manager->getShader(std::string("GVRColorShader"));
-            LOGE("Rendering error: GVRRenderData shader cannot be determined\n");
+            shader = shader_manager->findShader(std::string("GVRColorShader"));
+            LOGE("Rendering error: GVRRenderData shader cannot be determined, using GVRColorShader\n");
             shader->render(&rstate, render_data, curr_material);
             return;
         }
@@ -448,13 +453,14 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
                  glLineWidth(1.0f);
              }
         }
+        LOGE("SHADER: selecting shader %s", shader->signature().c_str());
         shader->render(&rstate, render_data, curr_material);
     } catch (const std::string &error) {
         LOGE(
                 "Error detected in Renderer::renderRenderData; name : %s, error : %s",
                 render_data->owner_object()->name().c_str(),
                 error.c_str());
-        shader = shader_manager->getShader(std::string("GVRColorShader"));
+        shader = shader_manager->findShader(std::string("GVRColorShader"));
         shader->render(&rstate, render_data, curr_material);
     }
 

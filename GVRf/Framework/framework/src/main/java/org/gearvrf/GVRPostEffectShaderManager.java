@@ -31,7 +31,7 @@ public class GVRPostEffectShaderManager extends GVRShaderManager {
     }
 
     @Override
-    public long addShader(String signature, String vertexShader, String fragmentShader)
+    public int addShader(String signature, String vertexShader, String fragmentShader)
     {
         return NativePostEffectShaderManager.addCustomPostEffectShader(getNative(),
                 vertexShader, fragmentShader);

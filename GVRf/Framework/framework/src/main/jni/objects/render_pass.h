@@ -21,7 +21,6 @@
 #define RENDER_PASS_H_
 
 #include "objects/hybrid_object.h"
-#include "objects/components/render_data.h"
 #include "objects/components/event_handler.h"
 namespace gvr {
 class Material;
@@ -54,6 +53,7 @@ public:
 
     void set_shader(int shaderid)
     {
+        LOGE("SHADER: RenderPass:set_shader %d", shaderid);
         shaderID_ = shaderid;
     }
 

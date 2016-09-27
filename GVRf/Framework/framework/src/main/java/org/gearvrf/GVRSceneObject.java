@@ -128,19 +128,21 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
     public GVRSceneObject(GVRContext gvrContext, GVRMesh mesh,
             GVRTexture texture, GVRShaderId shaderId) {
         super(gvrContext, NativeSceneObject.ctor());
-
         attachComponent(new GVRTransform(getGVRContext()));
 
+        if ((mesh == null) && (texture == null)) {
+            return;
+        }
+        GVRRenderData renderData = new GVRRenderData(gvrContext);
+        attachComponent(renderData);
         if (mesh != null) {
-            GVRRenderData renderData = new GVRRenderData(gvrContext);
-            attachComponent(renderData);
             renderData.setMesh(mesh);
         }
+        GVRMaterial material = new GVRMaterial(gvrContext, shaderId);
+        renderData.setMaterial(material);
 
         if (texture != null) {
-            GVRMaterial material = new GVRMaterial(gvrContext, shaderId);
             material.setMainTexture(texture);
-            getRenderData().setMaterial(material);
         }
     }
 

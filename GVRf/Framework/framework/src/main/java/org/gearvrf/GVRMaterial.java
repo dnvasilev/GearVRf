@@ -73,6 +73,8 @@ public class GVRMaterial extends GVRPostEffect
     private static final String TAG = Log.tag(GVRHybridObject.class);
     private String mUniformDescriptor = null;
     private int mShaderFeatureSet;
+    static final String MAIN_TEXTURE = "u_texture";
+
 
     /** Pre-built shader ids. */
     public abstract static class GVRShaderType {
@@ -123,6 +125,11 @@ public class GVRMaterial extends GVRPostEffect
         public abstract static class LightMap {
             public static final GVRShaderId ID = new GVRShaderId(GVRLightmapShader.class);
         }
+
+        public abstract static class BeingGenerated {
+            public static final GVRShaderId ID = GVRShaderType.Phong.ID;
+        }
+
     };
 
     /**

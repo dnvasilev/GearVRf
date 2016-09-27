@@ -40,8 +40,6 @@ import java.util.concurrent.Future;
  */
 public interface GVRShaderData {
 
-    static final String MAIN_TEXTURE = "main_texture";
-
     public GVRShaderId getShaderType();
 
     /**

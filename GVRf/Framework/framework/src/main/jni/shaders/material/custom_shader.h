@@ -50,8 +50,6 @@ public:
             const std::string& fragment_shader);
     virtual ~Shader();
 
-    const std::string& getSignature() { return signature_; }
-
     void addTextureKey(const std::string& variable_name, const std::string& key);
 
     void addAttributeFloatKey(const std::string& variable_name, const std::string& key);
@@ -132,7 +130,6 @@ private:
     std::mutex uniformVariablesLock_;
     std::set<Descriptor<UniformVariable>, DescriptorComparator<UniformVariable>> uniformVariables_;
 
-    std::string signature_;
     std::string vertexShader_;
     std::string fragmentShader_;
 };

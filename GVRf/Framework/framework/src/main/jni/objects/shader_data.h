@@ -57,6 +57,7 @@ public:
         } else {
             std::string error = "Material::getTexture() : " + key
                     + " not found";
+            LOGE("%s", error.c_str());
             throw error;
         }
     }
@@ -84,8 +85,8 @@ public:
         if (it != floats_.end()) {
             return it->second;
         } else {
-            std::string error = "Material::getFloat() : " + key + " not found";
-            throw error;
+            LOGE("Material::getFloat() : %s not found", key.c_str());
+            return 0.0f;
         }
     }
 
@@ -98,8 +99,8 @@ public:
         if (it != vec2s_.end()) {
             return it->second;
         } else {
-            std::string error = "Material::getVec2() : " + key + " not found";
-            throw error;
+            LOGE("Material::getVec2() : %s not found", key.c_str());
+            return glm::vec2(0, 0);
         }
     }
 
@@ -112,8 +113,8 @@ public:
         if (it != vec3s_.end()) {
             return it->second;
         } else {
-            std::string error = "Material::getVec3() : " + key + " not found";
-            throw error;
+            LOGE("Material::getVec3() : %s not found", key.c_str());
+            return glm::vec3(0, 0, 0);
         }
     }
 
@@ -126,8 +127,8 @@ public:
         if (it != vec4s_.end()) {
             return it->second;
         } else {
-            std::string error = "Material::getVec4() : " + key + " not found";
-            throw error;
+            LOGE("Material::getVec4() : %s not found", key.c_str());
+            return glm::vec4(0, 0, 0, 1);
         }
     }
 
@@ -135,13 +136,14 @@ public:
         vec4s_[key] = vector;
     }
 
-    glm::mat4 getMat4(const std::string& key) {
+    bool getMat4(const std::string& key, glm::mat4 mtx) {
         auto it = mat4s_.find(key);
         if (it != mat4s_.end()) {
-            return it->second;
+            mtx = it->second;
+            return true;
         } else {
-            std::string error = "Material::getMat4() : " + key + " not found";
-            throw error;
+            LOGE( "Material::getMat4() : %s not found", key.c_str());
+            return false;
         }
     }
 

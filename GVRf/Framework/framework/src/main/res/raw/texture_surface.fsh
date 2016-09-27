@@ -23,7 +23,7 @@ struct Surface
 
 Surface @ShaderName()
 {
-	vec4 diffuse = u_color;
+	vec4 diffuse = vec4(u_color, u_opacity);
 #ifdef HAS_LIGHTSOURCES
     diffuse *= diffuse_color;
 #endif
@@ -32,6 +32,7 @@ Surface @ShaderName()
 #else
     diffuse *= texture(u_texture, diffuse_coord.xy);
 #endif
-    diffuse = vec4(diffuse.r * u_opacity, diffuse.g * u_opacity, diffuse.b * u_opacity, diffuse.a * u_opacity);
+    float opacity = diffuse.w;
+    diffuse = vec4(diffuse.r * opacity, diffuse.g * opacity, diffuse.b * opacity, opacity);
 	return Surface(viewspace_normal, ambient_color, diffuse, specular_color, emissive_color);
 }

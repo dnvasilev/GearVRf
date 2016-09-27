@@ -31,8 +31,9 @@
 
 namespace gvr {
 Shader::Shader(const std::string& signature, const std::string& vertex_shader, const std::string& fragment_shader)
-    : signature_(signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
+    : ShaderBase(signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
 }
+
 void Shader::initializeOnDemand(RenderState* rstate) {
     if (nullptr == program_)
     {
@@ -102,9 +103,11 @@ void Shader::initializeOnDemand(RenderState* rstate) {
 Shader::~Shader() {
     delete program_;
 }
+
 GLuint Shader::getProgramId(){
 	return program_->id();
 }
+
 void Shader::addTextureKey(const std::string& variable_name, const std::string& key) {
     LOGV("Shader::texture:add variable: %s key: %s", variable_name.c_str(), key.c_str());
     Descriptor<TextureVariable> d(variable_name, key);
@@ -241,8 +244,10 @@ void Shader::addUniformMat4Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
             [key] (ShaderData& material, GLuint location) {
-                glm::mat4 m = material.getMat4(key);
-                glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m));
+                glm::mat4 m;
+                if (material.getMat4(key, m)) {
+                    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m));
+                }
             };
     addUniformKey(variable_name, key, f);
 }

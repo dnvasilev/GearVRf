@@ -17,10 +17,9 @@
  * JNI
  ***************************************************************************/
 
-#include "render_pass.h"
-
 #include "util/gvr_jni.h"
-
+#include "util/gvr_log.h"
+#include "render_pass.h"
 #include "objects/material.h"
 
 namespace gvr {
@@ -71,7 +70,8 @@ Java_org_gearvrf_NativeRenderPass_setShader(JNIEnv* env,
         jobject obj, jlong jrender_pass, jint jshaderid)
 {
     RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
-    pass->set_shader(static_cast<int>(jshaderid));
+    int shaderid = jshaderid;
+    pass->set_shader(shaderid);
 }
 
 }

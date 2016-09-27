@@ -416,7 +416,7 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
         }
     }
 
-    void setShader(long shader)
+    void setShader(int shader)
     {
         GVRRenderPass pass = mRenderPassList.get(0);
         pass.setShader(shader);
@@ -460,7 +460,11 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
         {
             lightList = scene.getLightList();
         }
-        pass.bindShader(lightList);
+        GVRShader shader = getMaterial().getShaderType().getTemplate(getGVRContext());
+        if (shader != null)
+        {
+            shader.bindShader(getGVRContext(), this, lightList);
+        }
         for (int i = 1; i < mRenderPassList.size(); ++i)
         {
             mRenderPassList.get(i).bindShader(null);

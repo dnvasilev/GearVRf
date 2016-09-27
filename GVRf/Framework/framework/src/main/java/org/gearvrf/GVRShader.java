@@ -189,15 +189,18 @@ public class GVRShader
      *            list of lights illuminating the mesh
      * @return ID of vertex/fragment shader set
      */
-    public void bindShader(GVRContext context, GVRRenderData rdata, GVRLightBase[] lightlist)
+    public void bindShader(GVRContext context, GVRRenderData rdata)
     {
+        bindShader(context, rdata, null);
+    }
+
+    public void bindShader(GVRContext context, GVRRenderData rdata, GVRLightBase[] lightlist) {
         GVRMesh mesh = rdata.getMesh();
         GVRShaderData material = rdata.getMaterial();
         String signature = getClass().getSimpleName();
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
-        long nativeShader = shaderManager.getShader(signature);
-        if (nativeShader == 0)
-        {
+        int nativeShader = shaderManager.getShader(signature);
+        if (nativeShader == 0) {
             String vertexShaderSource = getSegment("VertexTemplate");
             String fragmentShaderSource = getSegment("FragmentTemplate");
             nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
@@ -223,11 +226,11 @@ public class GVRShader
      *            material to use with the shader
      * @return ID of vertex/fragment shader set
      */
-    public long bindShader(GVRContext context, GVRShaderData material)
+    public int bindShader(GVRContext context, GVRShaderData material)
     {
         String signature = getClass().getSimpleName();
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
-        long nativeShader = shaderManager.getShader(signature);
+        int nativeShader = shaderManager.getShader(signature);
 
         if (nativeShader == 0)
         {

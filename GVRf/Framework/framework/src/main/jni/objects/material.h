@@ -29,8 +29,8 @@
 #include "objects/shader_data.h"
 #include "objects/textures/texture.h"
 #include "objects/components/render_data.h"
-
 #include "objects/components/event_handler.h"
+
 namespace gvr {
 class RenderData;
 class Color;

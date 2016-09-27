@@ -18,11 +18,11 @@
 #define FRAMEWORK_EVENTHANDLER_H
 
 #include "objects/hybrid_object.h"
-#include "objects/components/render_data.h"
 #include <unordered_set>
 namespace gvr {
 class RenderData;
-class Listener{
+
+class Listener {
 
 public:
     void add_listener(RenderData* render_data){

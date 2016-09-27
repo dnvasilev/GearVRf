@@ -321,6 +321,7 @@ public abstract class GVRScript implements IScriptEvents, IScriptable, IEventRec
                 this);
         splashScreen.getRenderData().setRenderingOrder(
                 GVRRenderData.GVRRenderingOrder.OVERLAY);
+        splashScreen.getRenderData().bindShader(getGVRContext().getMainScene());
         onSplashScreenCreated(splashScreen);
         return splashScreen;
     }

@@ -42,7 +42,7 @@
 #include "vulkan_renderer.h"
 #define MAX_INDICES 500
 #define BATCH_SIZE 60
-bool do_batching = true;
+bool do_batching = false;
 
 namespace gvr {
 Renderer* gRenderer = nullptr;
@@ -236,9 +236,9 @@ void Renderer::addRenderData(RenderData *render_data) {
         return;
     }
 
-    if (render_data->get_shader() == 0) {
-        return;
-    }
+//    if (render_data->get_shader() == 0) {
+//        return;
+//    }
 
     if (render_data->mesh() == NULL) {
         return;
@@ -367,6 +367,8 @@ void Renderer::build_frustum(float frustum[6][4], const float *vp_matrix) {
 }
 
 void Renderer::renderRenderData(RenderState& rstate, RenderData* render_data) {
+    LOGE("SHADER: renderRenderData %s", render_data->owner_object()->name().c_str());
+
     if (!(rstate.render_mask & render_data->render_mask()))
         return;
 
@@ -387,13 +389,18 @@ void Renderer::renderPostEffectData(RenderState& rstate,
     try {
         PostEffectShaderManager* shader_manager = reinterpret_cast<PostEffectShaderManager*>(rstate.shader_manager);
         Shader* shader = shader_manager->getShader(post_effect_data->get_shader());
-        post_effect_data->setTexture("u_texture", render_texture);
-        RenderData* rdata = shader_manager->get_render_data();
-        rdata->set_shader(post_effect_data->get_shader());
-        shader->render(&rstate, rdata, post_effect_data);
+        if (shader != NULL)
+        {
+            post_effect_data->setTexture("u_texture", render_texture);
+            RenderData* rdata = shader_manager->get_render_data();
+            rdata->set_shader(post_effect_data->get_shader());
+            shader->render(&rstate, rdata, post_effect_data);
+        }
+        else {
+            LOGE("Render: post effect shader %d not found", post_effect_data->get_shader());
+        }
     } catch (const std::string& error) {
-        LOGE(
-                "Error detected in Renderer::renderPostEffectData; error : %s", error.c_str());
+        LOGE("Error detected in Renderer::renderPostEffectData; error : %s", error.c_str());
     }
 }
 

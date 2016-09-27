@@ -23,20 +23,22 @@
 
 namespace gvr {
 extern "C" {
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeShaderManager_ctor(JNIEnv * env,
-        jobject obj);
-JNIEXPORT jint JNICALL
-Java_org_gearvrf_NativeShaderManager_addShader(
-        JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature,
-        jstring vertex_shader,
-        jstring fragment_shader);
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeShaderManager_getShaderByID(
-        JNIEnv * env, jobject obj, jlong jshader_manager, jint id);
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeShaderManager_getShader(
-        JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature);
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_NativeShaderManager_ctor(JNIEnv * env, jobject obj);
+
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_NativeShaderManager_addShader(
+            JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature,
+            jstring vertex_shader,
+            jstring fragment_shader);
+
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_NativeShaderManager_getShaderMap(
+            JNIEnv * env, jobject obj, jlong jshader_manager, jint id);
+
+    JNIEXPORT jint JNICALL
+    Java_org_gearvrf_NativeShaderManager_getShader(
+            JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature);
 }
 
 JNIEXPORT jlong JNICALL
@@ -45,7 +47,7 @@ Java_org_gearvrf_NativeShaderManager_ctor(JNIEnv * env,
     return reinterpret_cast<jlong>(new ShaderManager());
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeShaderManager_addShader(
     JNIEnv * env, jobject obj, jlong jshader_manager,
     jstring signature,
@@ -54,14 +56,12 @@ Java_org_gearvrf_NativeShaderManager_addShader(
     ShaderManager* shader_manager =
     reinterpret_cast<ShaderManager*>(jshader_manager);
     const char *sig_str = env->GetStringUTFChars(signature, 0);
-    std::string native_sig = std::string(sig_str);
     const char *vertex_str = env->GetStringUTFChars(vertex_shader, 0);
-    std::string native_vertex_shader = std::string(vertex_str);
     const char *fragment_str = env->GetStringUTFChars(fragment_shader, 0);
-    std::string native_fragment_shader = std::string(fragment_str);
-    int id = shader_manager->addShader(native_sig, native_vertex_shader,
-            native_fragment_shader);
-LOGE("SHADER: end added custom shader %d\n", id);
+    std::string native_sig(sig_str);
+    std::string native_vertex_shader(vertex_str);
+    std::string native_fragment_shader(fragment_str);
+    long id = shader_manager->addShader(native_sig, native_vertex_shader, native_fragment_shader);
     env->ReleaseStringUTFChars(vertex_shader, vertex_str);
     env->ReleaseStringUTFChars(fragment_shader, fragment_str);
     env->ReleaseStringUTFChars(signature, sig_str);
@@ -69,30 +69,24 @@ LOGE("SHADER: end added custom shader %d\n", id);
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeShaderManager_getShaderByID(
+Java_org_gearvrf_NativeShaderManager_getShaderMap(
     JNIEnv * env, jobject obj, jlong jshader_manager, jint id) {
-    ShaderManager* shader_manager =
-    reinterpret_cast<ShaderManager*>(jshader_manager);
-    try {
-        return reinterpret_cast<jlong>(shader_manager->getShader(id));
-    } catch (char const *e) {
-        return 0;
-    }
+    ShaderManager* shader_manager = reinterpret_cast<ShaderManager*>(jshader_manager);
+    Shader* shader = shader_manager->getShader(id);
+    return reinterpret_cast<jlong>(shader);
 }
 
-
-JNIEXPORT jlong JNICALL
+JNIEXPORT jint JNICALL
 Java_org_gearvrf_NativeShaderManager_getShader(
     JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature) {
-    ShaderManager* shader_manager =
-    reinterpret_cast<ShaderManager*>(jshader_manager);
+    ShaderManager* shader_manager = reinterpret_cast<ShaderManager*>(jshader_manager);
     const char *sig_str = env->GetStringUTFChars(signature, 0);
-    std::string native_sig = std::string(sig_str);
-    try {
-        return reinterpret_cast<jlong>(shader_manager->getShader(native_sig));
-    } catch (char const *e) {
-        return 0;
-    }
+    std::string native_sig(sig_str);
+    Shader* shader = shader_manager->findShader((const std::string&) native_sig);
+    env->ReleaseStringUTFChars(signature, sig_str);
+    if (shader != NULL)
+        return shader->getShaderID();
+    return 0;
 }
 
 }

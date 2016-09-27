@@ -30,6 +30,7 @@
 #include "objects/render_pass.h"
 #include "objects/material.h"
 #include<sstream>
+
 typedef unsigned long Long;
 namespace gvr {
 class Mesh;
@@ -37,7 +38,7 @@ class Material;
 class Light;
 class Batch;
 class TextureCapturer;
-class RenderPass;
+
 template<typename T>
 std::string to_string(T value) {
     //create an output string stream
@@ -118,13 +119,6 @@ public:
     }
 
     void set_mesh(Mesh* mesh);
-
-    void set_shader(int shaderid)
-    {
-        shaderID_ = shaderid;
-    }
-
-    int get_shader() const { return shaderID_; }
 
     void add_pass(RenderPass* render_pass);
     const RenderPass* pass(int pass) const;
@@ -320,6 +314,12 @@ public:
     TextureCapturer *get_texture_capturer() {
         return texture_capturer;
     }
+
+    void set_shader(int shaderid) {
+        render_pass_list_[0]->set_shader(shaderid);
+    }
+
+    int get_shader() const { return render_pass_list_[0]->get_shader(); }
 
     std::string getHashCode() {
         if (hash_code_dirty_) {

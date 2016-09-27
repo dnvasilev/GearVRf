@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import org.gearvrf.GVRLightBase;
 import org.mozilla.javascript.NativeGenerator.GeneratorClosedException;
 
-import android.util.Log;
+import org.gearvrf.utility.Log;
 
 /**
  * Generates a set of vertex and fragment shaders from the same source template.
@@ -67,6 +67,8 @@ import android.util.Log;
  */
 public class GVRShaderTemplate extends GVRShader
 {
+    private final static String TAG = "GVRShaderTemplate";
+
     protected class LightClass
     {
         public LightClass()
@@ -188,7 +190,7 @@ public class GVRShaderTemplate extends GVRShader
      *            material used with this shader (may not be null)
      * @return shader variable names actually defined by the material and mesh
      */
-    private void generateVariantDefines(HashMap<String, Integer> definedNames, GVRMesh mesh, GVRShaderData material)
+    protected void generateVariantDefines(HashMap<String, Integer> definedNames, GVRMesh mesh, GVRShaderData material)
     {
         Set<String> texNames = material.getTextureNames();
         Set<String> vertNames = null;
@@ -205,6 +207,7 @@ public class GVRShaderTemplate extends GVRShader
                 definedNames.put(name, 1);
         }
     }
+
     /**
      * Checks  whether device supports OGL_MULTIVIEW extension
      * 
@@ -310,16 +313,19 @@ public class GVRShaderTemplate extends GVRShader
         generateVariantDefines(variantDefines, mesh, material);
         String signature = generateSignature(variantDefines, lightlist);
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
-        long specificShader = shaderManager.getShader(signature);
-        if (specificShader == 0)
+        int nativeShader = shaderManager.getShader(signature);
+        if (nativeShader == 0)
         {
             Map<String, LightClass> lightClasses = scanLights(lightlist);
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
-            specificShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
+            makeMaterialMap(material, materialMap);
+            Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
-        rdata.setShader(specificShader);
+        rdata.setShader(nativeShader);
     }
 
     public void bindShader(GVRContext context, GVRRenderPass rpass, GVRMesh mesh)
@@ -340,23 +346,27 @@ public class GVRShaderTemplate extends GVRShader
      *            material to use with the shader
      * @return ID of vertex/fragment shader set
      */
-    public long bindShader(GVRContext context, GVRShaderData material)
+    public int bindShader(GVRContext context, GVRShaderData material)
     {
         HashMap<String, Integer> variantDefines = new HashMap<String, Integer>();
         generateVariantDefines(variantDefines, null, material);
         String signature = generateSignature(variantDefines, null);
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
-        long specificShader = shaderManager.getShader(signature);
+        int nativeShader = shaderManager.getShader(signature);
 
-        if (specificShader == 0)
+        if (nativeShader == 0)
         {
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
-            specificShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
+            makeMaterialMap(material, materialMap);
+            Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
-        return specificShader;
+        return nativeShader;
     }
+
 
     /**
      * Generate shader-specific defines from the rendering information.
@@ -579,6 +589,57 @@ public class GVRShaderTemplate extends GVRShader
             desc += "   " + outBase + "." + name + " = " +  inBase + "_" + name + ";\n";
         }
         return desc;
+    }
+
+    /**
+     * Makes the material map for the shader.
+     * The material map does not change any names, just maps
+     * the keys in the material to themselves.
+     */
+    private void makeMaterialMap(GVRShaderData material, GVRMaterialMap map)
+    {
+        Pattern uniformPattern = Pattern.compile("[ ]*([A-Za-z0-9_]+)[ ]+([A-Za-z0-9_]+)[,;:]*");
+        Pattern uniformTypePattern = Pattern.compile("([A-Za-z]+)([0-9_]+)");
+        Matcher matcher1 = uniformPattern.matcher(mUniformDescriptor);
+        Set<String> texNames = material.getTextureNames();
+
+        for (String s : texNames)
+        {
+            map.addTextureKey(s, s);
+        }
+        while (matcher1.find())
+        {
+            String type = matcher1.group(1);
+            String name = matcher1.group(2);
+            Matcher matcher2 = uniformTypePattern.matcher(type);
+            int nfloats = 1;
+
+            if (matcher2.find())
+            {
+                String size = matcher2.group(2);
+                if (size.length() > 0)
+                {
+                    nfloats = Integer.parseInt(size);
+                }
+            }
+            switch (nfloats)
+            {
+                case 1:
+                    map.addUniformFloatKey(name, name);
+                    break;
+                case 2:
+                    map.addUniformVec2Key(name, name);
+                    break;
+                case 3:
+                    map.addUniformVec3Key(name, name);
+                    break;
+                case 4:
+                    map.addUniformVec4Key(name, name);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Vertex attribute size " + nfloats + " unsupported");
+            }
+        }
     }
 
     protected Set<String> mShaderDefines;
