@@ -61,7 +61,7 @@ Renderer* Renderer::getInstance(std::string type){
    //     LOGE("string compare %d ",std::strcmp(type.c_str(),"Vulkan"));
 
      //   if(!std::strcmp(type.c_str(),"Vulkan")) {
-     if(0){
+     if(1){
             instance = new VulkanRenderer();
             isVulkan_ = true;
         }
