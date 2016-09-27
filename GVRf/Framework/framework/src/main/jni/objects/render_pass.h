@@ -51,9 +51,9 @@ public:
         listener_->notify_listeners(true);
     }
 
-    void set_shader(int shaderid)
+    void set_shader(long shaderid)
     {
-        LOGE("SHADER: RenderPass:set_shader %d", shaderid);
+        LOGE("SHADER: RenderPass:set_shader %ld", shaderid);
         shaderID_ = shaderid;
     }
 
@@ -65,7 +65,7 @@ private:
     Listener* listener_;
     static const int DEFAULT_CULL_FACE = CullBack;
     Material* material_;
-    int shaderID_;
+    long shaderID_;
     int cull_face_;
 };
 

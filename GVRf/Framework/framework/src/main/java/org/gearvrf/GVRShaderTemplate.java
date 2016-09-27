@@ -320,7 +320,7 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
-            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = shaderManager.addShader(signature, vertexShaderSource, fragmentShaderSource);
             GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
             makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
@@ -359,7 +359,7 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
-            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = shaderManager.addShader(signature, vertexShaderSource, fragmentShaderSource);
             GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
             makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);

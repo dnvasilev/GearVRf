@@ -29,7 +29,7 @@ namespace gvr {
 class PostEffectShaderManager: public ShaderManager {
 public:
     PostEffectShaderManager() :
-            ShaderManager(), mesh(NULL), render_data(NULL) {
+            ShaderManager(), render_data(NULL) {
         std::vector<glm::vec3> quad_vertices;
         std::vector<glm::vec2> quad_uvs;
         std::vector<unsigned short> quad_triangles;
@@ -51,7 +51,7 @@ public:
         quad_triangles.push_back(1);
         quad_triangles.push_back(3);
         quad_triangles.push_back(2);
-        mesh = new Mesh();
+        Mesh* mesh = new Mesh();
         mesh->set_vertices(quad_vertices);
         mesh->set_tex_coords(quad_uvs);
         mesh->set_triangles(quad_triangles);
@@ -75,7 +75,6 @@ private:
             PostEffectShaderManager&& post_effect_shader_manager);
 
 private:
-    Mesh*       mesh;
     RenderData* render_data;
     std::vector<glm::vec3> quad_vertices_;
     std::vector<glm::vec2> quad_uvs_;

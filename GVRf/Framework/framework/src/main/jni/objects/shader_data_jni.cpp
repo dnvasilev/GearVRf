@@ -33,7 +33,7 @@ extern "C" {
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeShaderData_setNativeShader(
-            JNIEnv * env, jobject obj, jlong jpost_effect_data, jlong shader);
+            JNIEnv * env, jobject obj, jlong jpost_effect_data, jint shader);
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeShaderData_setTexture(JNIEnv * env,
@@ -96,7 +96,7 @@ Java_org_gearvrf_NativeShaderData_getNativeShader(
 
 JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeShaderData_setNativeShader(
-        JNIEnv * env, jobject obj, jlong jpost_effect_data, jlong shader) {
+        JNIEnv * env, jobject obj, jlong jpost_effect_data, jint shader) {
     ShaderData* post_effect_data =
             reinterpret_cast<ShaderData*>(jpost_effect_data);
     post_effect_data->set_shader(shader);

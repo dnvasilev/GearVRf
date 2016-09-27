@@ -83,9 +83,12 @@ Java_org_gearvrf_NativeShaderManager_getShader(
     const char *sig_str = env->GetStringUTFChars(signature, 0);
     std::string native_sig(sig_str);
     Shader* shader = shader_manager->findShader((const std::string&) native_sig);
+
     env->ReleaseStringUTFChars(signature, sig_str);
     if (shader != NULL)
+    {
         return shader->getShaderID();
+    }
     return 0;
 }
 

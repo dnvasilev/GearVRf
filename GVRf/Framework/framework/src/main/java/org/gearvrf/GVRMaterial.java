@@ -70,8 +70,7 @@ import android.graphics.Color;
  */
 public class GVRMaterial extends GVRPostEffect
 {
-    private static final String TAG = Log.tag(GVRHybridObject.class);
-    private String mUniformDescriptor = null;
+    private static final String TAG = Log.tag(GVRMaterial.class);
     private int mShaderFeatureSet;
     static final String MAIN_TEXTURE = "u_texture";
 
@@ -143,8 +142,8 @@ public class GVRMaterial extends GVRPostEffect
      */
     public GVRMaterial(GVRContext gvrContext, GVRShaderId shaderId) {
         super(gvrContext, shaderId, NativeMaterial.ctor());
-        mUniformDescriptor = shaderId.getTemplate(gvrContext).getUniformDescriptor();
         mShaderId = getGVRContext().getMaterialShaderManager().getShaderType(shaderId.ID);
+        mUniformDescriptor = mShaderId.getTemplate(gvrContext).getUniformDescriptor();
         // set lighting coefficients to OpenGL default values
         // TODO: Get rid of this - it does not belong here!
         setAmbientColor(0.2f, 0.2f, 0.2f, 1.0f);

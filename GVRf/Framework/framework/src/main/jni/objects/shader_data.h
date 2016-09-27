@@ -147,6 +147,11 @@ public:
         }
     }
 
+    const std::map<std::string, Texture*>& getAllTextures()
+    {
+        return textures_;
+    }
+
     virtual bool hasTexture() const {
         return (textures_.size() > 0);
     }

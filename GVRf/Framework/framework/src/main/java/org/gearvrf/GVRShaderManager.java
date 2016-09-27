@@ -32,7 +32,12 @@ public class GVRShaderManager extends GVRHybridObject
 {
     GVRShaderManager(GVRContext gvrContext)
     {
-        super(gvrContext, NativeShaderManager.ctor());
+        this(gvrContext, NativeShaderManager.ctor());
+    }
+
+    protected GVRShaderManager(GVRContext gvrContext, long ctor)
+    {
+        super(gvrContext, ctor);
     }
 
     public int addShader(String signature, String vertexShader, String fragmentShader)

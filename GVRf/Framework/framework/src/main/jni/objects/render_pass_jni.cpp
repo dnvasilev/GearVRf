@@ -70,7 +70,7 @@ Java_org_gearvrf_NativeRenderPass_setShader(JNIEnv* env,
         jobject obj, jlong jrender_pass, jint jshaderid)
 {
     RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
-    int shaderid = jshaderid;
+    long shaderid = jshaderid;
     pass->set_shader(shaderid);
 }
 

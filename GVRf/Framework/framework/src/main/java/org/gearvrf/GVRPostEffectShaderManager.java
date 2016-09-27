@@ -27,14 +27,7 @@ import java.util.Map;
 public class GVRPostEffectShaderManager extends GVRShaderManager {
 
     GVRPostEffectShaderManager(GVRContext gvrContext) {
-        super(gvrContext);
-    }
-
-    @Override
-    public int addShader(String signature, String vertexShader, String fragmentShader)
-    {
-        return NativePostEffectShaderManager.addCustomPostEffectShader(getNative(),
-                vertexShader, fragmentShader);
+        super(gvrContext, NativePostEffectShaderManager.ctor());
     }
 }
 
@@ -42,10 +35,4 @@ class NativePostEffectShaderManager {
     static native long ctor();
 
     static native long delete(long postEffectShaderManager);
-
-    static native int addCustomPostEffectShader(long postEffectShaderManager,
-            String vertexShader, String fragmentShader);
-
-    static native long getCustomPostEffectShader(long postEffectShaderManager,
-            int id);
 }

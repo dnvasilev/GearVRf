@@ -39,6 +39,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
 
     protected final Map<String, GVRTexture> textures = new HashMap<String, GVRTexture>();
     protected GVRShaderId mShaderId;
+    protected String mUniformDescriptor = null;
 
     /** Selectors for pre-built post effect shaders. */
     public abstract static class GVRPostEffectShaderType {
@@ -72,6 +73,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     public GVRPostEffect(GVRContext gvrContext, GVRShaderId shaderId) {
         super(gvrContext, NativeShaderData.ctor());
         mShaderId = getGVRContext().getPostEffectShaderManager().getShaderType(shaderId.ID);
+        mUniformDescriptor = mShaderId.getTemplate(gvrContext).getUniformDescriptor();
         NativeShaderData.setNativeShader(getNative(), mShaderId.getNativeShader(gvrContext));
     }
 

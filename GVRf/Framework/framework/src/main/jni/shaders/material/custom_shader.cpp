@@ -38,6 +38,7 @@ void Shader::initializeOnDemand(RenderState* rstate) {
     if (nullptr == program_)
     {
         program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
+        LOGE("SHADER: creating GLProgram %d", program_->id());
         if(use_multiview && !(strstr(vertexShader_.c_str(),"gl_ViewID_OVR")
                 && strstr(vertexShader_.c_str(),"GL_OVR_multiview2")
                 && strstr(vertexShader_.c_str(),"GL_OVR_multiview2"))){
@@ -61,14 +62,14 @@ void Shader::initializeOnDemand(RenderState* rstate) {
         u_model_ = glGetUniformLocation(program_->id(), "u_model");
         vertexShader_.clear();
         fragmentShader_.clear();
-        LOGE("Custom shader added program %d", program_->id());
-    }
+        LOGE("SHADER: Custom shader added program %d", program_->id());
+   }
    if (textureVariablesDirty_) {
         std::lock_guard<std::mutex> lock(textureVariablesLock_);
         for (auto it = textureVariables_.begin(); it != textureVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("Shader::texture:location: variable: %s location: %d", it->variable.c_str(),
+                LOGE("SHADER::texture:location: variable: %s location: %d", it->variable.c_str(),
                         it->location);
             }
         }
@@ -78,10 +79,10 @@ void Shader::initializeOnDemand(RenderState* rstate) {
     if (uniformVariablesDirty_) {
         std::lock_guard<std::mutex> lock(uniformVariablesLock_);
         for (auto it = uniformVariables_.begin(); it != uniformVariables_.end(); ++it) {
-            LOGV("Shader::uniform:location: variable: %s", it->variable.c_str());
+            LOGE("SHADER::uniform:location: variable: %s", it->variable.c_str());
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("Shader::uniform:location: location: %d", it->location);
+                LOGE("SHADER::uniform:location: location: %d", it->location);
             }
         }
         uniformVariablesDirty_ = false;
@@ -92,7 +93,7 @@ void Shader::initializeOnDemand(RenderState* rstate) {
         for (auto it = attributeVariables_.begin(); it != attributeVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGV("Shader::attribute:location: variable: %s location: %d", it->variable.c_str(),
+                LOGE("SHADER::attribute:location: variable: %s location: %d", it->variable.c_str(),
                         it->location);
             }
         }
@@ -109,11 +110,12 @@ GLuint Shader::getProgramId(){
 }
 
 void Shader::addTextureKey(const std::string& variable_name, const std::string& key) {
-    LOGV("Shader::texture:add variable: %s key: %s", variable_name.c_str(), key.c_str());
     Descriptor<TextureVariable> d(variable_name, key);
 
-    d.variableType.f_getLocation = [variable_name] (GLuint programId) {
-        return glGetUniformLocation(programId, variable_name.c_str());
+    d.variableType.f_getLocation = [variable_name, key] (GLuint programId) {
+        GLint loc = glGetUniformLocation(programId, variable_name.c_str());
+        LOGE("SHADER::texture:add variable: %s key: %s loc: %d", variable_name.c_str(), key.c_str(), loc);
+        return loc;
     };
 
     d.variableType.f_bind = [key] (int& textureIndex, const ShaderData& material, GLuint location) {
@@ -122,6 +124,7 @@ void Shader::addTextureKey(const std::string& variable_name, const std::string& 
         if (nullptr != texture) {
             glBindTexture(texture->getTarget(), texture->getId());
             glUniform1i(location, textureIndex++);
+            LOGE("SHADER: bind texture:%s loc: %d index: %d", key.c_str(), location, textureIndex);
         }
     };
 
@@ -153,8 +156,10 @@ void Shader::addAttributeKey(const std::string& variable_name,
         const std::string& key, AttributeVariableBind f) {
     Descriptor<AttributeVariable> d(variable_name, key);
 
-    d.variableType.f_getLocation = [variable_name] (GLuint programId) {
-        return glGetAttribLocation(programId, variable_name.c_str());
+    d.variableType.f_getLocation = [variable_name, key] (GLuint programId) {
+        GLint loc = glGetAttribLocation(programId, variable_name.c_str());
+        LOGE("SHADER::attribute:add variable: %s key: %s loc: %d", variable_name.c_str(), key.c_str(), loc);
+        return loc;
     };
     d.variableType.f_bind = f;
 
@@ -184,11 +189,12 @@ void Shader::addAttributeVec4Key(const std::string& variable_name,
 }
 void Shader::addUniformKey(const std::string& variable_name,
         const std::string& key, UniformVariableBind f) {
-    LOGV("Shader::uniform:add variable: %s key: %s", variable_name.c_str(), key.c_str());
     Descriptor<UniformVariable> d(variable_name, key);
 
-    d.variableType.f_getLocation = [variable_name] (GLuint programId) {
-        return glGetUniformLocation(programId, variable_name.c_str());
+    d.variableType.f_getLocation = [variable_name, key] (GLuint programId) {
+        GLint loc = glGetUniformLocation(programId, variable_name.c_str());
+        LOGE("SHADER::uniform:add variable: %s key: %s loc: %d", variable_name.c_str(), key.c_str(), loc);
+        return loc;
     };
     d.variableType.f_bind = f;
 
@@ -254,7 +260,7 @@ void Shader::addUniformMat4Key(const std::string& variable_name,
 
 
 void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
-	//LOGE(" start of render %s", render_data->owner_object()->name().c_str());
+	LOGE("SHADER: render %s", signature().c_str());
 	initializeOnDemand(rstate);
     {
         std::lock_guard<std::mutex> lock(textureVariablesLock_);
