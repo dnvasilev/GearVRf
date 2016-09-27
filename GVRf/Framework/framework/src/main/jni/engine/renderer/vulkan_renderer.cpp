@@ -80,7 +80,9 @@ namespace gvr {
                 vulkanCore_->InitVertexBuffersFromRenderData(vertices, rdata->m_vertices, rdata->m_indices, indices);
                 //vulkanCore_->InitVertexBuffersFromRenderData(rdata->m_vertices, rdata->m_indices);
                 vulkanCore_->InitUniformBuffersForRenderData(rdata->m_modelViewMatrixUniform);
-                vulkanCore_->InitDescriptorSetForRenderData(rdata->m_modelViewMatrixUniform, rdata->m_descriptorSet);
+                vulkanCore_->InitUniformBuffersForRenderDataLights(rdata->m_lightUniform);
+
+                vulkanCore_->InitDescriptorSetForRenderData(rdata->m_modelViewMatrixUniform, rdata->m_lightUniform, rdata->m_descriptorSet);
                 vulkanCore_->InitPipelineForRenderData(rdata->m_vertices, rdata->m_pipeline);
 
                 rdata->uniform_dirty = false;
@@ -88,7 +90,6 @@ namespace gvr {
 
                     allDescriptors.push_back(rdata->m_descriptorSet);
                     vulkanCore_->UpdateUniforms(scene,camera, rdata);
-
 
                     //vulkanCore_->DrawFrame();
                     //break;

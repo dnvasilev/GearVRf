@@ -26,8 +26,10 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include <math.h>       /* sqrt */
-//#include <shaderc/shaderc.hpp>
+#include <math.h>
+#include <thread>
+
+#include <shaderc/shaderc.hpp>
 #define UINT64_MAX 99999
 namespace gvr {
 
@@ -124,6 +126,13 @@ bool VulkanCore::CreateInstance(){
     } else {
         GVR_VK_CHECK(!ret);
     }
+
+    // Getting CPU Thread Count
+    /*
+    m_threadCount = 0;
+    m_threadCount = std::thread::hardware_concurrency();
+    LOGE("Vulkan got threads from OS %d", m_threadCount);
+    m_threadPool.setWorkerThreadCount(m_threadCount);*/
 
     return true;
 }
@@ -782,17 +791,17 @@ void VulkanCore::InitLayouts(){
          uniformAndSamplerBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
          uniformAndSamplerBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
          uniformAndSamplerBinding[0].pImmutableSamplers = nullptr;
-         // Our texture sampler
-         /*uniformAndSamplerBinding[1].binding = 1;
+         // Our Lights
+         uniformAndSamplerBinding[1].binding = 1;
          uniformAndSamplerBinding[1].descriptorCount = 1;
-         uniformAndSamplerBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+         uniformAndSamplerBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
          uniformAndSamplerBinding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-         uniformAndSamplerBinding[1].pImmutableSamplers = nullptr;*/
+         uniformAndSamplerBinding[1].pImmutableSamplers = nullptr;
 
          VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
          descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
          descriptorSetLayoutCreateInfo.pNext = nullptr;
-         descriptorSetLayoutCreateInfo.bindingCount = 1;//2;
+         descriptorSetLayoutCreateInfo.bindingCount = 2;
          descriptorSetLayoutCreateInfo.pBindings = &uniformAndSamplerBinding[0];
 
          ret = vkCreateDescriptorSetLayout(m_device, &descriptorSetLayoutCreateInfo, nullptr, &m_descriptorLayout);
@@ -941,6 +950,62 @@ void VulkanCore::InitUniformBuffersForRenderData(Uniform &m_modelViewMatrixUnifo
     m_modelViewMatrixUniform.bufferInfo.buffer = m_modelViewMatrixUniform.buf;
     m_modelViewMatrixUniform.bufferInfo.offset = 0;
     m_modelViewMatrixUniform.bufferInfo.range = sizeof(glm::mat4);
+}
+
+
+void VulkanCore::InitUniformBuffersForRenderDataLights(Uniform &m_modelViewMatrixUniform){
+    // the uniform in this example is a matrix in the vertex stage
+    memset(&m_modelViewMatrixUniform, 0, sizeof(m_modelViewMatrixUniform));
+
+    VkResult err = VK_SUCCESS;
+
+    err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(sizeof(float)*17, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT), NULL, &m_modelViewMatrixUniform.buf);
+    assert(!err);
+
+    // Obtain the requirements on memory for this buffer
+    VkMemoryRequirements mem_reqs;
+    vkGetBufferMemoryRequirements(m_device, m_modelViewMatrixUniform.buf, &mem_reqs);
+    assert(!err);
+
+    // And allocate memory according to those requirements
+    VkMemoryAllocateInfo memoryAllocateInfo;
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.pNext = NULL;
+    memoryAllocateInfo.allocationSize = 0;
+    memoryAllocateInfo.memoryTypeIndex = 0;
+    memoryAllocateInfo.allocationSize  = mem_reqs.size;
+    bool pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+    assert(pass);
+
+    // We keep the size of the allocation for remapping it later when we update contents
+    m_modelViewMatrixUniform.allocSize = memoryAllocateInfo.allocationSize;
+
+    err = vkAllocateMemory(m_device, &memoryAllocateInfo, NULL, &m_modelViewMatrixUniform.mem);
+    assert(!err);
+
+    // Create our initial MVP matrix
+    float aaa[17] = {1,1,0,0,
+    0,1,0,0,
+    0,0,1,0,
+    0,0,0,1,1};
+
+    // Now we need to map the memory of this new allocation so the CPU can edit it.
+    void *data;
+    err = vkMapMemory(m_device, m_modelViewMatrixUniform.mem, 0, m_modelViewMatrixUniform.allocSize, 0, &data);
+    assert(!err);
+
+    memcpy(data, aaa, sizeof(float)*17);
+
+    // Unmap the memory back from the CPU
+    vkUnmapMemory(m_device, m_modelViewMatrixUniform.mem);
+
+    // Bind our buffer to the memory
+    err = vkBindBufferMemory(m_device, m_modelViewMatrixUniform.buf, m_modelViewMatrixUniform.mem, 0);
+    assert(!err);
+
+    m_modelViewMatrixUniform.bufferInfo.buffer = m_modelViewMatrixUniform.buf;
+    m_modelViewMatrixUniform.bufferInfo.offset = 0;
+    m_modelViewMatrixUniform.bufferInfo.range = sizeof(float)*17;
 }
 
 void VulkanCore::InitRenderPass(){
@@ -1124,16 +1189,71 @@ void VulkanCore::InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, VkPipeli
     ms.pSampleMask = nullptr;
     ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+
+    options.AddMacroDefinition("MY_DEFINE", "1");
+
+    std::string vertexShaderData = std::string("") +
+    "#version 400 \n"+
+    "#extension GL_ARB_separate_shader_objects : enable \n"+
+    "#extension GL_ARB_shading_language_420pack : enable \n"+
+    "layout (std140, set = 0, binding = 0) uniform matrix { mat4 mvp; } matrices;\n"+
+    "layout (location = 0) in vec3 pos; \n"+
+    "void main() { \n"+
+    "  gl_Position = matrices.mvp * vec4(pos.x, pos.y, pos.z,1.0); \n"+
+    "}";
+
+    shaderc_shader_kind kind = shaderc_glsl_default_vertex_shader;
+    shaderc::SpvCompilationResult module_vert = compiler.CompileGlslToSpv(vertexShaderData.c_str(), vertexShaderData.size(), kind, "VulkanShader", options);
+    if (module_vert.GetCompilationStatus() != shaderc_compilation_status_success) {
+    //std::cerr << module.GetErrorMessage();
+    LOGI("Vulkan shader unable to compile shader %s", module_vert.GetErrorMessage().c_str());
+    }
+    else
+    LOGE("Vulkan shader compiled shader");
+
+    std::vector<uint32_t> result_vert(module_vert.cbegin(), module_vert.cend());
+
+
+    std::string data_frag = std::string("") +
+    "#version 400 \n"+
+    "#extension GL_ARB_separate_shader_objects : enable \n"+
+    "#extension GL_ARB_shading_language_420pack : enable \n"+
+    "layout (std140, set = 0, binding = 1) uniform lightEffects {\n"+
+    "vec4 ambient_color;\n"+
+    "vec4 diffuse_color;\n"+
+    "vec4 specular_color;\n"+
+    "vec4 emissive_color;\n"+
+    "float specular_exponent;\n"+
+    "} lightEffectsObj;"+
+    "layout (location = 0) out vec4 uFragColor;  \n"+
+    "void main() {  \n"+
+    " vec4 temp = vec4(1.0,0.0,1.0,1.0);\n"+
+    "   uFragColor = lightEffectsObj.ambient_color;  \n"+
+    "}";
+
+    shaderc_shader_kind  kind_frag = shaderc_glsl_default_fragment_shader;
+    shaderc::SpvCompilationResult module_frag = compiler.CompileGlslToSpv(data_frag.c_str(), data_frag.size(), kind_frag, "VulkanShaderFrag", options);
+    if (module_frag.GetCompilationStatus() != shaderc_compilation_status_success) {
+    //std::cerr << module.GetErrorMessage();
+    LOGI("Vulkan shader unable to compile shader %s", module_frag.GetErrorMessage().c_str());
+    }
+    else
+        LOGE("Vulkan shader fragcompiled shader");
+
+    std::vector<uint32_t> result_frag(module_frag.cbegin(), module_frag.cend());
+
     // We define two shader stages: our vertex and fragment shader.
         // they are embedded as SPIR-V into a header file for ease of deployment.
         VkPipelineShaderStageCreateInfo shaderStages[2] = {};
         shaderStages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        shaderStages[0].module = CreateShaderModuleAscii( (const uint32_t*)&shader_tri_vert[0], shader_tri_vert_size);//CreateShaderModule( result_vert, result_vert.size());//
+        shaderStages[0].module = CreateShaderModule( result_vert, result_vert.size());//CreateShaderModuleAscii( (const uint32_t*)&shader_tri_vert[0], shader_tri_vert_size);//
         shaderStages[0].pName  = "main";
         shaderStages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-        shaderStages[1].module = CreateShaderModuleAscii( (const uint32_t*)&shader_tri_frag[0], shader_tri_frag_size);//CreateShaderModule( result_frag, result_frag.size());//
+        shaderStages[1].module = CreateShaderModule( result_frag, result_frag.size());//CreateShaderModuleAscii( (const uint32_t*)&shader_tri_frag[0], shader_tri_frag_size);//
         shaderStages[1].pName  = "main";
 
 
@@ -1227,6 +1347,32 @@ void VulkanCore::InitSync(){
     LOGI("Vulkan initsync end");
 }
 
+void VulkanCore::BuildSecondaryCmdBuffer(VkCommandBuffer secondaryCmdBuff, VkCommandBufferBeginInfo secondaryBeginInfo, RenderData* render_data_vector, VkDescriptorSet allDescriptors){
+
+        vkBeginCommandBuffer(secondaryCmdBuff, &secondaryBeginInfo);
+      vkCmdBindPipeline(secondaryCmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render_data_vector->m_pipeline);
+
+        //bind out descriptor set, which handles our uniforms and samplers
+        vkCmdBindDescriptorSets(secondaryCmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &allDescriptors, 0, NULL);
+
+        // Bind our vertex buffer, with a 0 offset.
+        VkDeviceSize offsets[1] = {0};
+        GVR_VK_Vertices vert = render_data_vector->m_vertices;
+   //     if(&(vert.buf) != NULL)
+   //         LOGE("buf is not nuull");
+        vkCmdBindVertexBuffers(secondaryCmdBuff, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
+
+        // Bind triangle index buffer
+                vkCmdBindIndexBuffer(secondaryCmdBuff, (render_data_vector->m_indices).buffer, 0, VK_INDEX_TYPE_UINT16);
+                // Issue a draw command, with our 3 vertices.
+                //vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+                //vkCmdDrawIndexed(cmdBuffer, (render_data_vector[j]->m_indices).count, 1, 0, 0, 1);
+       //         LOGI("Vulkan number of indeices %d", (render_data_vector->m_indices).count);
+                vkCmdDrawIndexed(secondaryCmdBuff, (render_data_vector->m_indices).count, 1, 0, 0, 1);
+
+                vkEndCommandBuffer(secondaryCmdBuff);
+}
+
 void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors, int &swapChainIndex, std::vector<RenderData*>& render_data_vector)
 {
  //VkPipeline &m_pipeline, GVR_VK_Vertices &m_vertices, GVR_VK_Indices &m_indices)
@@ -1314,7 +1460,53 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
         vkCmdBeginRenderPass(cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
 
+ /*       VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+            commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            commandBufferAllocateInfo.pNext = nullptr;
+            commandBufferAllocateInfo.commandPool = m_commandPool;
+            commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+            commandBufferAllocateInfo.commandBufferCount = 1;
 
+            // Create render command buffers, one per swapchain image
+            std::vector<VkCommandBuffer> secondaryCmdBuff(allDescriptors.size());
+
+            for (int k = 0; k < secondaryCmdBuff.size(); k++){
+                //ret = vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &m_swapchainBuffers[i].cmdBuffer);
+                err = vkAllocateCommandBuffers(
+                                                m_device,
+                                                gvr::CmdBufferCreateInfo(VK_COMMAND_BUFFER_LEVEL_SECONDARY, m_commandPool),
+                                                &secondaryCmdBuff[k]
+                                              );
+                GVR_VK_CHECK(!err);
+            }
+
+        VkCommandBufferBeginInfo secondaryBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+        		VkCommandBufferInheritanceInfo inheritance = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
+        		secondaryBeginInfo.flags =
+        		    VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        		secondaryBeginInfo.pInheritanceInfo = &inheritance;
+
+        		// The secondary buffer doesn't really know about the primary command buffer yet, so give it some essential knowledge.
+        		inheritance.renderPass = m_renderPass;
+        		inheritance.framebuffer = m_frameBuffers[i];
+        		inheritance.subpass = 0;
+*/
+
+        //if(m_threadCount){
+        if(0){
+             //LOGI("Vulkan THreading start second cmd buff");
+            /*int roundRobin = 0;
+            for(int j = 0; j < allDescriptors.size(); j++){
+                            m_threadPool.pushWorkToThread(roundRobin, [=]
+                            {BuildSecondaryCmdBuffer(secondaryCmdBuff[j], secondaryBeginInfo, render_data_vector[j], allDescriptors[j]);});
+                            roundRobin = (roundRobin + 1) % m_threadCount;
+            }
+
+            m_threadPool.waitIdle();
+            vkCmdExecuteCommands(cmdBuffer, secondaryCmdBuff.size(), secondaryCmdBuff.data());
+            vkFreeCommandBuffers(m_device, m_commandPool, secondaryCmdBuff.size(), secondaryCmdBuff.data());*/
+        }
+        else{
         for(int j = 0; j < allDescriptors.size(); j++){
 
         // Set our pipeline. This holds all major state
@@ -1327,8 +1519,8 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
         // Bind our vertex buffer, with a 0 offset.
         VkDeviceSize offsets[1] = {0};
         GVR_VK_Vertices vert = render_data_vector[j]->m_vertices;
-        if(&(vert.buf) != NULL)
-            LOGE("buf is not nuull");
+   //     if(&(vert.buf) != NULL)
+   //         LOGE("buf is not nuull");
         vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
 
         // Bind triangle index buffer
@@ -1336,10 +1528,12 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
                 // Issue a draw command, with our 3 vertices.
                 //vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
                 //vkCmdDrawIndexed(cmdBuffer, (render_data_vector[j]->m_indices).count, 1, 0, 0, 1);
-                LOGI("Vulkan number of indeices %d", (render_data_vector[j]->m_indices).count);
+       //         LOGI("Vulkan number of indeices %d", (render_data_vector[j]->m_indices).count);
                 vkCmdDrawIndexed(cmdBuffer, (render_data_vector[j]->m_indices).count, 1, 0, 0, 1);
          }
+         }
         // Now our render pass has ended.
+
         vkCmdEndRenderPass(cmdBuffer);
 
             // As stated earlier, now transition the swapchain image to the PRESENT mode.
@@ -1381,7 +1575,7 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
     VkResult err;
     // Get the next image to render to, then queue a wait until the image is ready
     int m_swapchainCurrentIdx = swapChainIndex;
-    LOGI("Vulkna Swapchain Image number of %d", m_swapchainCurrentIdx);
+  //  LOGI("Vulkna Swapchain Image number of %d", m_swapchainCurrentIdx);
     VkFence nullFence = waitFences[m_swapchainCurrentIdx];
 
     VkSubmitInfo submitInfo = {};
@@ -1395,13 +1589,13 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
         submitInfo.signalSemaphoreCount = 0;
         submitInfo.pSignalSemaphores = nullptr;//&m_renderCompleteSemaphore;
 
-    LOGI("Vulkan after vkqueue before submit");
+  //  LOGI("Vulkan after vkqueue before submit");
     err = vkQueueSubmit(m_queue, 1, &submitInfo,  waitFences[m_swapchainCurrentIdx]);
     GVR_VK_CHECK(!err);
-    LOGI("Vulkan after vkqueue submit %d", err);
+ //   LOGI("Vulkan after vkqueue submit %d", err);
     err = vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, 4294967295U);
     GVR_VK_CHECK(!err);
-    LOGI("Vulkan after vkWaitForFences submit %d", err);
+  //  LOGI("Vulkan after vkWaitForFences submit %d", err);
 
     static bool memoryAlloc = false;
     if(memoryAlloc == false){
@@ -1413,10 +1607,10 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
     err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
     GVR_VK_CHECK(!err);
 
-    LOGI("Vulkna size of %d", sizeof(oculusTexData));
+ //   LOGI("Vulkna size of %d", sizeof(oculusTexData));
     memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
 
-    LOGI("Vulkan memcpy map done");
+ //   LOGI("Vulkan memcpy map done");
 
     /*for (int i = 0; i < (m_width*m_height)-4; i++) {
         LOGI("Vulkan Data %u, %u %u %u", finaloutput[i], finaloutput[i+1], finaloutput[i+2], finaloutput[i+3]);
@@ -1426,13 +1620,13 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
 
     //oculusTexData = data;
    // texDataVulkan = data;//finaloutput;
-    LOGI("Vulkan data reading done");
+ //   LOGI("Vulkan data reading done");
     vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
 
     // Makes Fence Un-signalled
     err = vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]);
     GVR_VK_CHECK(!err);
-    LOGI("Vulkan after vkResetFences submit");
+ //   LOGI("Vulkan after vkResetFences submit");
 }
 
 
@@ -1473,20 +1667,20 @@ void VulkanCore::UpdateUniforms(Scene* scene, Camera* camera, RenderData* render
 }
 
 
-void VulkanCore::InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUniform, VkDescriptorSet &m_descriptorSet) {
+void VulkanCore::InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUniform, Uniform &m_lightsUniform, VkDescriptorSet &m_descriptorSet) {
     //Create a pool with the amount of descriptors we require
     VkDescriptorPoolSize poolSize[2] = {};
     poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[0].descriptorCount = 1;
 
-    // poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    //  poolSize[1].descriptorCount = 1;
+     poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      poolSize[1].descriptorCount = 1;
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCreateInfo.pNext = nullptr;
     descriptorPoolCreateInfo.maxSets = 1;
-    descriptorPoolCreateInfo.poolSizeCount = 1;//2;
+    descriptorPoolCreateInfo.poolSizeCount = 2;
     descriptorPoolCreateInfo.pPoolSizes = poolSize;
 
     VkResult  err;
@@ -1519,6 +1713,13 @@ void VulkanCore::InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUnifor
                          writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
                          writes[0].pBufferInfo = &m_modelViewMatrixUniform.bufferInfo;
 
+    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[1].dstBinding = 1;
+                             writes[1].dstSet = m_descriptorSet;
+                             writes[1].descriptorCount = 1;
+                             writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                             writes[1].pBufferInfo = &m_lightsUniform.bufferInfo;
+
                          /*writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                          writes[1].dstBinding = 1;
                          writes[1].dstSet = m_descriptorSet;
@@ -1526,7 +1727,7 @@ void VulkanCore::InitDescriptorSetForRenderData(Uniform &m_modelViewMatrixUnifor
                          writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                          writes[1].pImageInfo = &descriptorImageInfo;*/
                          LOGI("Vulkan before update sdectiptor");
-                         vkUpdateDescriptorSets(m_device, 1, &writes[0], 0, nullptr);
+                         vkUpdateDescriptorSets(m_device, 2, &writes[0], 0, nullptr);
                          LOGI("Vulkan after update sdectiptor");
 }
 

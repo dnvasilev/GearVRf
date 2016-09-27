@@ -344,6 +344,7 @@ public:
 
     // Vulkan
         Uniform m_modelViewMatrixUniform;
+        Uniform m_lightUniform;
         VkPipeline m_pipeline;
         VkDescriptorSet m_descriptorSet;
         bool uniform_dirty;
