@@ -36,14 +36,12 @@ class GLProgram;
 
 class ShaderBase: public HybridObject {
 public:
-    ShaderBase(const std::string& signature) : program_(nullptr), signature_(signature), id_(0) {  };
+    ShaderBase(long id, const std::string& signature) : program_(nullptr), signature_(signature), id_(id) {  };
 
     const std::string& signature() const { return signature_; }
     virtual void render(RenderState* rstate, RenderData* render_data, ShaderData* material)=0;
 
     long getShaderID() const { return id_; }
-
-    void setShaderID(long id) { id_ = id; }
 
     GLuint getProgramId()
     {

@@ -57,6 +57,7 @@ public:
         mesh->set_triangles(quad_triangles);
         render_data = new RenderData();
         render_data->set_mesh(mesh);
+        name_ = "PostEffectShaderManager";
     }
 
     RenderData* get_render_data()

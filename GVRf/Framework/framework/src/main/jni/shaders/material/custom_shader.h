@@ -45,7 +45,7 @@ typedef std::function<void(ShaderData&, GLuint)> UniformVariableBind;
 
 class Shader: public ShaderBase {
 public:
-    explicit Shader(const std::string& signature,
+    explicit Shader(long id, const std::string& signature,
             const std::string& vertex_shader,
             const std::string& fragment_shader);
     virtual ~Shader();
@@ -72,6 +72,7 @@ private:
     Shader(Shader&& shader);
     Shader& operator=(const Shader& shader);
     Shader& operator=(Shader&& shader);
+
 
     void addAttributeKey(const std::string& variable_name, const std::string& key, AttributeVariableBind f);
     void addUniformKey(const std::string& variable_name, const std::string& key, UniformVariableBind f);

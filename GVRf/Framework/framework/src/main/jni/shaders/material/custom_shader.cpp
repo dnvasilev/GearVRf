@@ -30,8 +30,9 @@
 #include <sys/time.h>
 
 namespace gvr {
-Shader::Shader(const std::string& signature, const std::string& vertex_shader, const std::string& fragment_shader)
-    : ShaderBase(signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
+Shader::Shader(long id, const std::string& signature, const std::string& vertex_shader, const std::string& fragment_shader)
+    : ShaderBase(id, signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
+    LOGE("SHADER: constructing shader %s %ld %p", signature.c_str(), id, this);
 }
 
 void Shader::initializeOnDemand(RenderState* rstate) {
@@ -102,6 +103,7 @@ void Shader::initializeOnDemand(RenderState* rstate) {
 }
 
 Shader::~Shader() {
+    LOGE("SHADER: deleting shader %s %ld %p", signature_.c_str(), id_, this);
     delete program_;
 }
 
@@ -260,7 +262,7 @@ void Shader::addUniformMat4Key(const std::string& variable_name,
 
 
 void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
-	LOGE("SHADER: render %s", signature().c_str());
+	LOGE("SHADER: render %s", signature_.c_str());
 	initializeOnDemand(rstate);
     {
         std::lock_guard<std::mutex> lock(textureVariablesLock_);
@@ -277,7 +279,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
             }
         }
     }
-   // LOGE("rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
+   LOGE("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
 
     Mesh* mesh = render_data->mesh();
     glUseProgram(program_->id());

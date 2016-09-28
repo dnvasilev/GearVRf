@@ -367,8 +367,6 @@ void Renderer::build_frustum(float frustum[6][4], const float *vp_matrix) {
 }
 
 void Renderer::renderRenderData(RenderState& rstate, RenderData* render_data) {
-    LOGE("SHADER: renderRenderData %s", render_data->owner_object()->name().c_str());
-
     if (!(rstate.render_mask & render_data->render_mask()))
         return;
 

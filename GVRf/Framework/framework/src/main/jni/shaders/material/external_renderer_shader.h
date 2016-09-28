@@ -18,7 +18,7 @@ namespace gvr {
 
 class ExternalRendererShader : public ShaderBase {
 public:
-    ExternalRendererShader() : ShaderBase("GVRExternalRendererShader") {}
+    ExternalRendererShader(long id) : ShaderBase(id, "GVRExternalRendererShader") {}
     virtual void render(RenderState* rstate, RenderData* render_data, ShaderData* material);
 
 private:

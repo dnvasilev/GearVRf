@@ -396,7 +396,9 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
 
     //Skip the material whose texture is not ready with some exceptions
     SceneObject* owner = render_data->owner_object();
+    ShaderManager* shader_manager = rstate.shader_manager;
 
+    shader_manager->dump();
     if (rstate.material_override != nullptr)
     {
         curr_material = rstate.material_override;
@@ -406,7 +408,6 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         LOGE("SHADER: textures not ready %s", owner->name().c_str());
         return;
     }
-    ShaderManager* shader_manager = rstate.shader_manager;
     Transform* const t = owner->transform();
 
     if (t == nullptr)
@@ -453,7 +454,8 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
                  glLineWidth(1.0f);
              }
         }
-        LOGE("SHADER: selecting shader %s", shader->signature().c_str());
+        LOGE("SHADER: selecting shader %s %ld", shader->signature().c_str(), shader->getShaderID());
+        return;
         shader->render(&rstate, render_data, curr_material);
     } catch (const std::string &error) {
         LOGE(

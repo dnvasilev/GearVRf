@@ -31,20 +31,28 @@ class ShaderManager: public HybridObject {
 public:
     ShaderManager() :
             HybridObject(),
-            latest_shader_id_(0)
+            latest_shader_id_(0),
+            name_("MaterialShaderManager")
     { }
+
+    ~ShaderManager();
 
     long addShader(const std::string& signature,
             const std::string& vertex_shader,
             const std::string& fragment_shader);
     Shader* findShader(const std::string& signature);
     Shader* getShader(long id);
+    const std::string& name() { return name_; }
+    void    dump();
 
 private:
     ShaderManager(const ShaderManager& shader_manager);
     ShaderManager(ShaderManager&& shader_manager);
     ShaderManager& operator=(const ShaderManager& shader_manager);
     ShaderManager& operator=(ShaderManager&& shader_manager);
+
+protected:
+    std::string name_;
 
 private:
     long latest_shader_id_ = 0;
