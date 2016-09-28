@@ -75,11 +75,13 @@ void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data
     TextureCapturer *capturer(render_data->get_texture_capturer());
     if (!capturer || !capturer->getAndClearPendingCapture()) {
         // Original rendering
+        float opacity = 1.0f;
+        material->getFloat("opacity", opacity);
         externalRenderer(reinterpret_cast<ExternalRendererTexture*>(texture)->getData(),
                          scratchBuffer, 6,
                          glm::value_ptr(rstate->uniforms.u_mvp), 16,
                          glm::value_ptr(*mesh->tex_coords().data()), mesh->tex_coords().size() * 2,
-                         material->getFloat("opacity"));
+                         opacity);
     } else {
         // Capture texture in RenderTexture
         capturer->beginCapture();

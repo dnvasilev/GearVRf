@@ -139,8 +139,12 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
         NativeShaderData.setFloat(getNative(), key, value);
     }
 
-    public float[] getVec2(String key) {
-        return NativeShaderData.getVec2(getNative(), key);
+    public float[] getVec2(String key)
+    {
+        float[] vec = NativeShaderData.getVec2(getNative(), key);
+        if (vec == null)
+            throw new IllegalArgumentException("key " + key + " not found in material");
+        return vec;
     }
 
     public void setVec2(String key, float x, float y) {
@@ -148,8 +152,12 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
         NativeShaderData.setVec2(getNative(), key, x, y);
     }
 
-    public float[] getVec3(String key) {
-        return NativeShaderData.getVec3(getNative(), key);
+    public float[] getVec3(String key)
+    {
+        float[] vec = NativeShaderData.getVec3(getNative(), key);
+        if (vec == null)
+            throw new IllegalArgumentException("key " + key + " not found in material");
+        return vec;
     }
 
     public void setVec3(String key, float x, float y, float z) {
@@ -157,8 +165,12 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
         NativeShaderData.setVec3(getNative(), key, x, y, z);
     }
 
-    public float[] getVec4(String key) {
-        return NativeShaderData.getVec4(getNative(), key);
+    public float[] getVec4(String key)
+    {
+        float[] vec = NativeShaderData.getVec4(getNative(), key);
+        if (vec == null)
+            throw new IllegalArgumentException("key " + key + " not found in material");
+        return vec;
     }
 
     public void setVec4(String key, float x, float y, float z, float w) {

@@ -145,12 +145,15 @@ void TextureCapturer::endCapture() {
 void TextureCapturer::render(RenderState* rstate, RenderData* render_data) {
 
     Material* material = render_data->pass(0)->material();
+    float opacity = 1.0f;
+
     if (material == NULL) {
         LOGE("No material");
         return;
     }
 
-    mMaterial->setFloat("opacity", material->getFloat("opacity"));
+    material->getFloat("opacity", opacity);
+    mMaterial->setFloat("opacity", opacity);
     int id = render_data->get_shader();
     if (id > 0)
     {

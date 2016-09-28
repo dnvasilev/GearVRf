@@ -32,7 +32,6 @@
 namespace gvr {
 Shader::Shader(long id, const std::string& signature, const std::string& vertex_shader, const std::string& fragment_shader)
     : ShaderBase(id, signature), vertexShader_(vertex_shader), fragmentShader_(fragment_shader) {
-    LOGE("SHADER: constructing shader %s %ld %p", signature.c_str(), id, this);
 }
 
 void Shader::initializeOnDemand(RenderState* rstate) {
@@ -70,8 +69,8 @@ void Shader::initializeOnDemand(RenderState* rstate) {
         for (auto it = textureVariables_.begin(); it != textureVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGE("SHADER::texture:location: variable: %s location: %d", it->variable.c_str(),
-                        it->location);
+                LOGE("SHADER::texture:location: variable: %s location: %d",
+                     it->variable.c_str(), it->location);
             }
         }
         textureVariablesDirty_ = false;
@@ -80,10 +79,10 @@ void Shader::initializeOnDemand(RenderState* rstate) {
     if (uniformVariablesDirty_) {
         std::lock_guard<std::mutex> lock(uniformVariablesLock_);
         for (auto it = uniformVariables_.begin(); it != uniformVariables_.end(); ++it) {
-            LOGE("SHADER::uniform:location: variable: %s", it->variable.c_str());
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGE("SHADER::uniform:location: location: %d", it->location);
+                LOGE("SHADER::uniform:location: variable: %s location: %d",
+                     it->variable.c_str(), it->location);
             }
         }
         uniformVariablesDirty_ = false;
@@ -94,8 +93,8 @@ void Shader::initializeOnDemand(RenderState* rstate) {
         for (auto it = attributeVariables_.begin(); it != attributeVariables_.end(); ++it) {
             if (-1 == it->location) {
                 it->location = it->variableType.f_getLocation(program_->id());
-                LOGE("SHADER::attribute:location: variable: %s location: %d", it->variable.c_str(),
-                        it->location);
+                LOGE("SHADER::attribute:location: variable: %s location: %d",
+                    it->variable.c_str(), it->location);
             }
         }
         attributeVariablesDirty_ = false;
@@ -107,7 +106,7 @@ Shader::~Shader() {
     delete program_;
 }
 
-GLuint Shader::getProgramId(){
+GLuint Shader::getProgramId() {
 	return program_->id();
 }
 
@@ -125,7 +124,7 @@ void Shader::addTextureKey(const std::string& variable_name, const std::string& 
         Texture* texture = material.getTextureNoError(key);
         if (nullptr != texture) {
             glBindTexture(texture->getTarget(), texture->getId());
-            glUniform1i(location, textureIndex++);
+            glUniform1i(location, textureIndex);
             LOGE("SHADER: bind texture:%s loc: %d index: %d", key.c_str(), location, textureIndex);
         }
     };
@@ -210,7 +209,11 @@ void Shader::addUniformFloatKey(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
             [key] (ShaderData& material, GLuint location) {
-                glUniform1f(location, material.getFloat(key));
+                float v = 0.0f;
+                if (!material.getFloat(key, v)) {
+                    LOGE("SHADER: float uniform %s not found", key.c_str());
+                }
+                glUniform1f(location, v);
             };
     addUniformKey(variable_name, key, f);
 }
@@ -220,7 +223,10 @@ void Shader::addUniformVec2Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
             [key] (ShaderData& material, GLuint location) {
-                glm::vec2 v = material.getVec2(key);
+                glm::vec2 v(0, 0);
+                if (!material.getVec2(key, v)) {
+                    LOGE("SHADER: vec2 uniform %s not found", key.c_str());
+                }
                 glUniform2f(location, v.x, v.y);
             };
     addUniformKey(variable_name, key, f);
@@ -231,7 +237,10 @@ void Shader::addUniformVec3Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
             [key] (ShaderData& material, GLuint location) {
-                glm::vec3 v = material.getVec3(key);
+                glm::vec3 v(0, 0, 0);
+                if (!material.getVec3(key, v)) {
+                    LOGE("SHADER: vec3 uniform %s not found", key.c_str());
+                }
                 glUniform3f(location, v.x, v.y, v.z);
             };
     addUniformKey(variable_name, key, f);
@@ -242,7 +251,10 @@ void Shader::addUniformVec4Key(const std::string& variable_name,
         const std::string& key) {
     UniformVariableBind f =
             [key] (ShaderData& material, GLuint location) {
-                glm::vec4 v = material.getVec4(key);
+                glm::vec4 v(0, 0, 0, 1);
+                if (!material.getVec4(key, v)) {
+                    LOGE("SHADER: vec4 uniform %s not found", key.c_str());
+                }
                 glUniform4f(location, v.x, v.y, v.z, v.w);
             };
     addUniformKey(variable_name, key, f);
@@ -256,13 +268,15 @@ void Shader::addUniformMat4Key(const std::string& variable_name,
                 if (material.getMat4(key, m)) {
                     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m));
                 }
+                else {
+                    LOGE("SHADER: mat4 uniform %s not found", key.c_str());
+                }
             };
     addUniformKey(variable_name, key, f);
 }
 
 
 void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
-	LOGE("SHADER: render %s", signature_.c_str());
 	initializeOnDemand(rstate);
     {
         std::lock_guard<std::mutex> lock(textureVariablesLock_);
@@ -361,11 +375,13 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
             texture_index++;
         }
     }
+    LOGE("SHADER: finished binding %d textures", texture_index);
     /*
      * Update the uniforms for the lights
      */
     const std::vector<Light*>& lightlist = rstate->scene->getLightList();
     bool castShadow = false;
+
     for (auto it = lightlist.begin();
          it != lightlist.end();
          ++it) {
@@ -379,6 +395,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     if (castShadow){
     	Light::bindShadowMap(program_->id(), texture_index);
     }
-    checkGlError("Shader::render");
+    //checkGlError("Shader::render");
+    LOGE("SHADER: finished Shader::render");
 }
 } /* namespace gvr */

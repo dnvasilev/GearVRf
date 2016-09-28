@@ -80,13 +80,14 @@ public:
         texture->setReady(true);
     }
 
-    float getFloat(const std::string& key) {
+    bool getFloat(const std::string& key, float& v) {
         auto it = floats_.find(key);
         if (it != floats_.end()) {
-            return it->second;
+            v = it->second;
+            return true;
         } else {
             LOGE("Material::getFloat() : %s not found", key.c_str());
-            return 0.0f;
+            return false;
         }
     }
 
@@ -94,13 +95,14 @@ public:
         floats_[key] = value;
     }
 
-    glm::vec2 getVec2(const std::string& key) {
+    bool getVec2(const std::string& key, glm::vec2& v) {
         auto it = vec2s_.find(key);
         if (it != vec2s_.end()) {
-            return it->second;
+            v = it->second;
+            return true;
         } else {
             LOGE("Material::getVec2() : %s not found", key.c_str());
-            return glm::vec2(0, 0);
+            return false;
         }
     }
 
@@ -108,13 +110,14 @@ public:
         vec2s_[key] = vector;
     }
 
-    glm::vec3 getVec3(const std::string& key) {
+    bool getVec3(const std::string& key, glm::vec3& v) {
         auto it = vec3s_.find(key);
         if (it != vec3s_.end()) {
-            return it->second;
+            v = it->second;
+            return true;
         } else {
             LOGE("Material::getVec3() : %s not found", key.c_str());
-            return glm::vec3(0, 0, 0);
+            return false;
         }
     }
 
@@ -122,13 +125,14 @@ public:
         vec3s_[key] = vector;
     }
 
-    glm::vec4 getVec4(const std::string& key) {
+    bool getVec4(const std::string& key, glm::vec4& v) {
         auto it = vec4s_.find(key);
         if (it != vec4s_.end()) {
-            return it->second;
+            v = it->second;
+            return true;
         } else {
             LOGE("Material::getVec4() : %s not found", key.c_str());
-            return glm::vec4(0, 0, 0, 1);
+            return false;
         }
     }
 
