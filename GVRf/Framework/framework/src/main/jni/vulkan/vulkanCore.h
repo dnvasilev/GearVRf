@@ -23,6 +23,7 @@
 #include "vulkan/vulkan_wrapper.h"
 #include <vector>
 #include "glm/glm.hpp"
+//#include "vulkanThreadPool.h"
 
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
@@ -121,6 +122,8 @@ private:
     void InitSwapchain(uint32_t width, uint32_t height);
     bool GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
     void InitCommandbuffers();
+    void InitTransientCmdPool();
+    VkCommandBuffer GetTransientCmdBuffer();
     void InitVertexBuffers();
     void InitLayouts();
     void InitRenderPass();
@@ -158,6 +161,7 @@ private:
     VkFramebuffer* m_frameBuffers;
 
     VkCommandPool m_commandPool;
+    VkCommandPool m_commandPoolTrans;
     GVR_VK_DepthBuffer* m_depthBuffers;
     GVR_VK_Vertices m_vertices;
 
