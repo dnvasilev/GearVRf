@@ -394,31 +394,28 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
 void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material) {
 
     //Skip the material whose texture is not ready with some exceptions
-    SceneObject* owner = render_data->owner_object();
-    ShaderManager* shader_manager = rstate.shader_manager;
+    SceneObject *owner = render_data->owner_object();
+    ShaderManager *shader_manager = rstate.shader_manager;
 
-    if (rstate.material_override != nullptr)
-    {
+    if (rstate.material_override != nullptr) {
         curr_material = rstate.material_override;
     }
-    if (!curr_material->areTexturesReady())
-    {
+    if (!curr_material->areTexturesReady()) {
         LOGE("SHADER: textures not ready %s", owner->name().c_str());
         return;
     }
-    Transform* const t = owner->transform();
+    Transform *const t = owner->transform();
 
     if (t == nullptr)
         return;
 
     rstate.uniforms.u_model = t->getModelMatrix();
-	rstate.uniforms.u_mv = rstate.uniforms.u_view * rstate.uniforms.u_model;
-	rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
-	rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
+    rstate.uniforms.u_mv = rstate.uniforms.u_view * rstate.uniforms.u_model;
+    rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
+    rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
 
-    if(use_multiview)
-    {
+    if (use_multiview) {
         rstate.uniforms.u_view_[0] = rstate.scene->main_camera_rig()->left_camera()->getViewMatrix();
         rstate.uniforms.u_view_[1] = rstate.scene->main_camera_rig()->right_camera()->getViewMatrix();
         rstate.uniforms.u_mv_[0] = rstate.uniforms.u_view_[0] * rstate.uniforms.u_model;
@@ -428,42 +425,36 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         rstate.uniforms.u_mvp_[0] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[0];
         rstate.uniforms.u_mvp_[1] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[1];
     }
-    Mesh* mesh = render_data->mesh();
+    Mesh *mesh = render_data->mesh();
 
-    ShaderBase* shader = NULL;
-
-    try
-    {
-        Shader* shader = shader_manager->getShader(render_data->get_shader());
-        if (shader == NULL)
-        {
-            shader = shader_manager->findShader(std::string("GVRColorShader"));
-            LOGE("Rendering error: GVRRenderData shader cannot be determined, using GVRColorShader\n");
+    Shader* shader = shader_manager->getShader(render_data->get_shader());
+    if (shader != NULL) {
+        try {
+            if ((render_data->draw_mode() == GL_LINE_STRIP) ||
+                (render_data->draw_mode() == GL_LINES) ||
+                (render_data->draw_mode() == GL_LINE_LOOP)) {
+                float lineWidth;
+                if (curr_material->getFloat("line_width", lineWidth)) {
+                    glLineWidth(lineWidth);
+                }
+                else {
+                    glLineWidth(1.0f);
+                }
+            }
+            LOGE("SHADER: selecting shader %s %ld", shader->signature().c_str(),
+                 shader->getShaderID());
             shader->render(&rstate, render_data, curr_material);
-            return;
         }
-        if ((render_data->draw_mode() == GL_LINE_STRIP) ||
-             (render_data->draw_mode() == GL_LINES) ||
-             (render_data->draw_mode() == GL_LINE_LOOP))
-        {
-            float lineWidth;
-            if (curr_material->getFloat("line_width", lineWidth))
-            {
-                glLineWidth(lineWidth);
-            }
-            else
-            {
-                 glLineWidth(1.0f);
-            }
+        catch (const std::string &error) {
+            LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
+                 render_data->owner_object()->name().c_str(), error.c_str());
+            shader = shader_manager->findShader(std::string("GVRErrorShader"));
+            shader->render(&rstate, render_data, curr_material);
         }
-        LOGE("SHADER: selecting shader %s %ld", shader->signature().c_str(), shader->getShaderID());
-        shader->render(&rstate, render_data, curr_material);
     }
-    catch (const std::string &error)
-    {
-        LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
-             render_data->owner_object()->name().c_str(), error.c_str());
-        shader = shader_manager->findShader(std::string("GVRColorShader"));
+    else {
+        LOGE("Rendering error: GVRRenderData shader cannot be determined, using GVRErrorShader\n");
+        shader = shader_manager->findShader(std::string("GVRErrorShader"));
         shader->render(&rstate, render_data, curr_material);
     }
     GLuint programId = shader->getProgramId();
@@ -492,7 +483,7 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         }
     }
     glBindVertexArray(0);
-    //checkGlError("renderMesh::renderMaterialShader");
+    checkGlError("renderMesh::renderMaterialShader");
 }
 }
 

@@ -143,14 +143,9 @@ public class GVRMaterial extends GVRPostEffect
     public GVRMaterial(GVRContext gvrContext, GVRShaderId shaderId) {
         super(gvrContext, shaderId, NativeMaterial.ctor());
         mShaderId = getGVRContext().getMaterialShaderManager().getShaderType(shaderId.ID);
-        mUniformDescriptor = mShaderId.getTemplate(gvrContext).getUniformDescriptor();
-        // set lighting coefficients to OpenGL default values
-        // TODO: Get rid of this - it does not belong here!
-        setAmbientColor(0.2f, 0.2f, 0.2f, 1.0f);
-        setDiffuseColor(0.8f, 0.8f, 0.8f, 1.0f);
-        setSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
-        setVec4("emissive_color", 0.0f, 0.0f, 0.0f, 1.0f);
-        setSpecularExponent(0.0f);
+        GVRShader shader = mShaderId.getTemplate(gvrContext);
+        mUniformDescriptor = shader.getUniformDescriptor();
+        shader.setMaterialDefaults(this);
         this.mShaderFeatureSet = 0;
     }
 

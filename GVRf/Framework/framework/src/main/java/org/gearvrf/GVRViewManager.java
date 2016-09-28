@@ -41,6 +41,11 @@ abstract class GVRViewManager extends GVRContext {
     @Override
     public synchronized void setMainScene(GVRScene scene) {
         mMainScene = scene;
+        GVRShader errorShader = new GVRErrorShader();
+        errorShader.bindShader(this, (GVRShaderData) null);
+        GVRShader bboxShader = new GVRBoundingBoxShader();
+        bboxShader.bindShader(this, (GVRShaderData) null);
+
         NativeScene.setMainScene(mMainScene.getNative());
 
         if (mNextMainScene == scene) {

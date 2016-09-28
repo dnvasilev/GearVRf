@@ -75,8 +75,16 @@ public class GVRShaderId {
         }
         catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException ex)
         {
-            ctx.getEventManager().sendEvent(ctx, IErrorEvents.class, "onError", new Object[] { ex.getMessage(), this });
-            return null;
+            try
+            {
+                Constructor<? extends GVRShader> maker = id.getDeclaredConstructor();
+                return maker.newInstance();
+            }
+            catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException ex2)
+            {
+                ctx.getEventManager().sendEvent(ctx, IErrorEvents.class, "onError", new Object[] {ex2.getMessage(), this});
+                return null;
+            }
         }
     }
 }

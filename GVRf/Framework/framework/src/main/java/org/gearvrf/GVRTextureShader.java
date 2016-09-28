@@ -66,6 +66,12 @@ public class GVRTextureShader extends GVRShaderTemplate
             defines.put("lightMapTexture", 0);
         return defines;
     }
+
+    protected void setMaterialDefaults(GVRShaderData material)
+    {
+        material.setFloat("u_opacity", 1.0f);
+        material.setVec3("u_color", 0.5f, 0.5f, 0.5f);
+    }
 }
 
 
