@@ -77,7 +77,9 @@ public:
         textures_[key] = texture;
         //By the time the texture is being set to its attaching material, it is ready
         //This is guaranteed by upper java layer scheduling
-        texture->setReady(true);
+        if (texture != NULL) {
+            texture->setReady(true);
+        }
     }
 
     bool getFloat(const std::string& key, float& v) {
@@ -236,7 +238,9 @@ public:
         for (auto it = textures_.begin(); it != textures_.end(); ++it) {
             Texture* tex = it->second;
             if ((tex == NULL) || !tex->isReady())
+            {
                 return false;
+            }
         }
         return true;
     }

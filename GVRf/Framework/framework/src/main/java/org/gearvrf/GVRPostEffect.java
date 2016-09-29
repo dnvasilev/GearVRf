@@ -121,6 +121,9 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
         if (texture != null) {
             NativeShaderData.setTexture(getNative(), key, texture.getNative());
         }
+        else {
+            NativeShaderData.setTexture(getNative(), key, 0);
+        }
     }
 
     public void setTexture(final String key, final Future<GVRTexture> texture) {

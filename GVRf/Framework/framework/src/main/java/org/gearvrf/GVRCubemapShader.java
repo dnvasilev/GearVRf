@@ -68,10 +68,11 @@ public class GVRCubemapShader extends GVRShader
             "uniform mat4 u_model;\n" +
             "uniform mat4 u_mvp;\n" +
             "varying vec3 diffuse_coord;\n" +
+            "vec4 pos = vec4(a_position, 1);\n" +
             "void main() {\n" +
-            "  diffuse_coord = normalize((u_model * a_position).xyz);\n" +
+            "  diffuse_coord = normalize((u_model * pos).xyz);\n" +
             "  diffuse_coord.z = -diffuse_coord.z;\n" +
-            "  gl_Position = u_mvp * vec4(a_position, 1);\n" +
+            "  gl_Position = u_mvp * pos;\n" +
             "}\n";
 
     private String fragmentShader =
@@ -91,6 +92,12 @@ public class GVRCubemapShader extends GVRShader
         super("float3 u_color float u_opacity", "samplerCube u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
+    }
+
+    protected void setMaterialDefaults(GVRShaderData material)
+    {
+        material.setFloat("u_opacity", 1.0f);
+        material.setVec3("u_color", 1.0f, 1.0f, 1.0f);
     }
 }
 

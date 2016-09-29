@@ -218,7 +218,7 @@ Shader::Shader(long id,
 void Shader::initializeOnDemand(RenderState* rstate, Mesh* mesh) {
     if (nullptr == program_) {
         program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
-        LOGE("SHADER: creating GLProgram %d", program_->id());
+        LOGD("SHADER: creating GLProgram %d", program_->id());
         if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
                                && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
                                && strstr(vertexShader_.c_str(), "GL_OVR_multiview2"))) {
@@ -242,20 +242,20 @@ void Shader::initializeOnDemand(RenderState* rstate, Mesh* mesh) {
         u_model_ = glGetUniformLocation(program_->id(), "u_model");
         vertexShader_.clear();
         fragmentShader_.clear();
-        LOGE("SHADER: Custom shader added program %d", program_->id());
+        LOGD("SHADER: Custom shader added program %d", program_->id());
     }
-    LOGE("SHADER: getting texture locations");
+    LOGD("SHADER: getting texture locations");
     UniformLocation uvisit(this);
     {
         std::lock_guard <std::mutex> lock(textureVariablesLock_);
         forEach(textureDescriptor_, uvisit);
     }
-    LOGE("SHADER: getting uniform locations");
+    LOGD("SHADER: getting uniform locations");
     {
         std::lock_guard <std::mutex> lock(uniformVariablesLock_);
         forEach(uniformDescriptor_, uvisit);
     }
-    LOGE("SHADER: getting attribute locations");
+    LOGD("SHADER: getting attribute locations");
     {
         std::lock_guard <std::mutex> lock(attributeVariablesLock_);
         AttributeLocation avisit(this, mesh);
@@ -331,7 +331,11 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
 
     Mesh* mesh = render_data->mesh();
     initializeOnDemand(rstate, mesh);
-    LOGE("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
+    if (program_->id() == 0)
+    {
+        LOGE("SHADER: shader could not be generated %s", signature_.c_str());
+    }
+    LOGD("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
     glUseProgram(program_->id());
     /*
      * Update the bone matrices

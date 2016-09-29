@@ -72,7 +72,7 @@ public class GVRTextureShader extends GVRShaderTemplate
     protected void setMaterialDefaults(GVRShaderData material)
     {
         material.setFloat("u_opacity", 1.0f);
-        material.setVec3("u_color", 0.5f, 0.5f, 0.5f);
+        material.setVec3("u_color", 1.0f, 1.0f, 1.0f);
     }
 }
 
