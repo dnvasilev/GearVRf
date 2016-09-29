@@ -75,7 +75,8 @@ namespace gvr {
     void UniformUpdate::visit(const std::string& key, const std::string& type, int size)
     {
         int loc = shader_->getLocation(key);
-        if (loc < 0) {
+        if (loc < 0)
+        {
             LOGE("SHADER::uniform: %s location not found", key.c_str());
             return;
         }
@@ -86,55 +87,55 @@ namespace gvr {
         {
             case 'f':
             case 'm':
-                fv = material_->getFloatVec(key, size);
-                if (fv != NULL) {
-                    switch (size) {
-                        case 1:
-                            glUniform1fv(loc, 1, fv);
-                            break;
+            fv = material_->getFloatVec(key, size);
+            if (fv != NULL) {
+                switch (size) {
+                    case 1:
+                    glUniform1fv(loc, 1, fv);
+                    break;
 
-                        case 2:
-                            glUniform2fv(loc, 1, fv);
-                            break;
+                    case 2:
+                    glUniform2fv(loc, 1, fv);
+                    break;
 
-                        case 3:
-                            glUniform3fv(loc, 1, fv);
-                            break;
+                    case 3:
+                    glUniform3fv(loc, 1, fv);
+                    break;
 
-                        case 4:
-                            glUniform4fv(loc, 1, fv);
-                            break;
+                    case 4:
+                    glUniform4fv(loc, 1, fv);
+                    break;
 
-                        case 16:
-                            glUniformMatrix4fv(loc, 1, 0, fv);
-                            break;
-                    }
+                    case 16:
+                    glUniformMatrix4fv(loc, 1, 0, fv);
+                    break;
                 }
-                break;
+            }
+            break;
 
             case 'i':
-                iv = material_->getIntVec(key, size);
-                if (iv != NULL)
-                    switch (size)
-                    {
-                        case 1:
-                            glUniform1iv(loc, 1, iv);
-                            break;
+            iv = material_->getIntVec(key, size);
+            if (iv != NULL)
+                switch (size)
+                {
+                    case 1:
+                    glUniform1iv(loc, 1, iv);
+                    break;
 
-                        case 2:
-                            glUniform2iv(loc, 1, iv);
-                            break;
+                    case 2:
+                    glUniform2iv(loc, 1, iv);
+                    break;
 
-                        case 3:
-                            glUniform3iv(loc, 1, iv);
-                            break;
+                    case 3:
+                    glUniform3iv(loc, 1, iv);
+                    break;
 
-                        case 4:
-                            glUniform4iv(loc, 1, iv);
-                            break;
-                    }
-                break;
-        }
+                    case 4:
+                    glUniform4iv(loc, 1, iv);
+                    break;
+                }
+            break;
+            }
     }
 
     void UniformLocation::visit(const std::string& key, const std::string& type, int size)
@@ -171,7 +172,8 @@ namespace gvr {
         if (loc < 0)
         {
             loc = glGetAttribLocation(shader_->getProgramId(), key.c_str());
-            if (loc >= 0) {
+            if (loc >= 0)
+            {
                 shader_->setLocation(key, loc);
                 LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
                 switch (size)
@@ -203,7 +205,9 @@ Shader::Shader(long id,
                const std::string& vertexDescriptor,
                const std::string& vertex_shader,
                const std::string& fragment_shader)
-    : ShaderBase(id, signature),
+    : program_(nullptr),
+      signature_(signature),
+      id_(id),
       uniformDescriptor_(uniformDescriptor),
       textureDescriptor_(textureDescriptor),
       vertexDescriptor_(vertexDescriptor),
@@ -318,20 +322,16 @@ Shader::~Shader() {
     delete program_;
 }
 
-GLuint Shader::getProgramId() {
-	return program_->id();
-}
-
 void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
     if (!material->areTexturesReady())
     {
         LOGE("textures are not ready for %s", render_data->owner_object()->name().c_str());
         return;
     }
-    LOGE("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
 
     Mesh* mesh = render_data->mesh();
     initializeOnDemand(rstate, mesh);
+    LOGE("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
     glUseProgram(program_->id());
     /*
      * Update the bone matrices
