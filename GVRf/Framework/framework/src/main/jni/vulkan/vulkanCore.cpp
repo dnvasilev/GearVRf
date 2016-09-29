@@ -302,6 +302,11 @@ bool VulkanCore::InitDevice() {
 }
 
 void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
+VkResult  err;
+bool pass;
+VkMemoryRequirements mem_reqs;
+VkMemoryAllocateInfo memoryAllocateInfo = {};
+
     VkResult ret = VK_SUCCESS;
        m_width = width;// 320;//surfaceCapabilities.currentExtent.width;
        m_height = height;//240;//surfaceCapabilities.currentExtent.height;
@@ -324,11 +329,12 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
        // Create the image with details as imageCreateInfo
        m_swapchainImageCount = 3;
        m_swapchainBuffers = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
+       outputImage = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
        GVR_VK_CHECK(m_swapchainBuffers);
 
        for(int i = 0; i < m_swapchainImageCount; i++) {
-           VkMemoryRequirements mem_reqs;
-           VkResult  err;
+
+
            bool  pass;
 
            //ret = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_swapchainBuffers[i].image);
@@ -340,6 +346,11 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
                                );
            GVR_VK_CHECK(!ret);
 
+           err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(m_width*m_height*4* sizeof(uint8_t), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT  | VK_IMAGE_USAGE_TRANSFER_SRC_BIT), nullptr, &m_swapchainBuffers[i].buf);
+           GVR_VK_CHECK(!err);
+
+
+
            // discover what memory requirements are for this image.
            vkGetImageMemoryRequirements(m_device, m_swapchainBuffers[i].image, &mem_reqs);
            //LOGD("Vulkan image memreq %", mem_reqs.size);
@@ -347,13 +358,13 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
 
 
            // Allocate memory according to requirements
-           VkMemoryAllocateInfo memoryAllocateInfo = {};
+
            memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
            memoryAllocateInfo.pNext = nullptr;
            memoryAllocateInfo.allocationSize = 0;
            memoryAllocateInfo.memoryTypeIndex = 0;
            memoryAllocateInfo.allocationSize = mem_reqs.size;
-           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryAllocateInfo.memoryTypeIndex);
            GVR_VK_CHECK(pass);
 
            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_swapchainBuffers[i].mem);
@@ -363,6 +374,8 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            err = vkBindImageMemory(m_device, m_swapchainBuffers[i].image, m_swapchainBuffers[i].mem, 0);
            GVR_VK_CHECK(!err);
 
+            err = vkBindBufferMemory(m_device, m_swapchainBuffers[i].buf, m_swapchainBuffers[i].mem, 0);
+                       GVR_VK_CHECK(!err);
 
            VkImageViewCreateInfo imageViewCreateInfo = {};
            imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -390,7 +403,37 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
 
            GVR_VK_CHECK(!err);
 
+
+
+            err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(m_width*m_height*4* sizeof(uint8_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT), nullptr, &outputImage[i].buf);
+                    GVR_VK_CHECK(!err);
+
+                    // Obtain the memory requirements for this buffer.
+                    vkGetBufferMemoryRequirements(m_device, outputImage[i].buf, &mem_reqs);
+                    GVR_VK_CHECK(!err);
+
+                    // And allocate memory according to those requirements.
+                    memoryAllocateInfo = {};
+                    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                    memoryAllocateInfo.pNext = nullptr;
+                    memoryAllocateInfo.allocationSize = 0;
+                    memoryAllocateInfo.memoryTypeIndex = 0;
+                    memoryAllocateInfo.allocationSize  = mem_reqs.size;
+                    pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+                    GVR_VK_CHECK(pass);
+
+                    outputImage[i].size = mem_reqs.size;
+                    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &outputImage[i].mem);
+                    GVR_VK_CHECK(!err);
+
+                    err = vkBindBufferMemory(m_device, outputImage[i].buf, outputImage[i].mem, 0);
+                    GVR_VK_CHECK(!err);
        }
+
+
+
+
+
 
    m_depthBuffers = new GVR_VK_DepthBuffer[m_swapchainImageCount];
        for (int i = 0; i < m_swapchainImageCount; i++) {
@@ -491,6 +534,30 @@ bool VulkanCore::GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags require
     return false;
 }
 
+void VulkanCore::InitTransientCmdPool(){
+    VkResult ret = VK_SUCCESS;
+
+    ret = vkCreateCommandPool(
+                                m_device,
+                                gvr::CmdPoolCreateInfo(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamilyIndex),
+                                nullptr, &m_commandPoolTrans
+                             );
+
+    GVR_VK_CHECK(!ret);
+}
+
+VkCommandBuffer VulkanCore::GetTransientCmdBuffer(){
+    VkResult ret = VK_SUCCESS;
+    VkCommandBuffer cmdBuff;
+    ret = vkAllocateCommandBuffers(
+                                        m_device,
+                                        gvr::CmdBufferCreateInfo(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPoolTrans),
+                                        &cmdBuff
+                                      );
+    GVR_VK_CHECK(!ret);
+    return cmdBuff;
+}
+
 void VulkanCore::InitCommandbuffers(){
     VkResult ret = VK_SUCCESS;
     // Command buffers are allocated from a pool; we define that pool here and create it.
@@ -532,137 +599,7 @@ void VulkanCore::InitCommandbuffers(){
     }
 }
 
-void VulkanCore::InitVertexBuffers(){
-    // Our vertex buffer data is a simple triangle, with associated vertex colors.
-    const float vb[4][7] = {
-            //      position                   color
-            { -0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.9f, -0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.0f,  0.9f,  0.9f, 1.0f},//     1.0f, 0.0f, 0.0f, 1.0f },
-    };
-
-    VkResult   err;
-    bool   pass;
-
-    // Our m_vertices member contains the types required for storing
-    // and defining our vertex buffer within the graphics pipeline.
-    memset(&m_vertices, 0, sizeof(m_vertices));
-
-    // Create our buffer object.
-    VkBufferCreateInfo bufferCreateInfo = {};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.pNext = nullptr;
-    bufferCreateInfo.size = sizeof(vb);
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferCreateInfo.flags = 0;
-    err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
-    GVR_VK_CHECK(!err);
-
-    // Obtain the memory requirements for this buffer.
-    VkMemoryRequirements mem_reqs;
-    vkGetBufferMemoryRequirements(m_device, m_vertices.buf, &mem_reqs);
-    GVR_VK_CHECK(!err);
-
-    // And allocate memory according to those requirements.
-    VkMemoryAllocateInfo memoryAllocateInfo = {};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.pNext = nullptr;
-    memoryAllocateInfo.allocationSize = 0;
-    memoryAllocateInfo.memoryTypeIndex = 0;
-    memoryAllocateInfo.allocationSize  = mem_reqs.size;
-    pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
-    GVR_VK_CHECK(pass);
-
-    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
-    GVR_VK_CHECK(!err);
-
-    // Now we need to map the memory of this new allocation so the CPU can edit it.
-    void *data;
-    err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
-    GVR_VK_CHECK(!err);
-
-    // Copy our triangle verticies and colors into the mapped memory area.
-    memcpy(data, vb, sizeof(vb));
-
-
-    // Unmap the memory back from the CPU.
-    vkUnmapMemory(m_device, m_vertices.mem);
-
-    // Bind our buffer to the memory.
-    err = vkBindBufferMemory(m_device, m_vertices.buf, m_vertices.mem, 0);
-    GVR_VK_CHECK(!err);
-
-    // The vertices need to be defined so that the pipeline understands how the
-    // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
-    // structure with the correct information.
-    m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    m_vertices.vi.pNext = nullptr;
-    m_vertices.vi.vertexBindingDescriptionCount = 1;
-    m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-    m_vertices.vi.vertexAttributeDescriptionCount = 1;
-    m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
-
-    // We bind the buffer as a whole, using the correct buffer ID.
-    // This defines the stride for each element of the vertex array.
-    m_vertices.vi_bindings[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-    m_vertices.vi_bindings[0].stride = sizeof(vb[0]);
-    m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    // Within each element, we define the attributes. At location 0,
-    // the vertex positions, in float3 format, with offset 0 as they are
-    // first in the array structure.
-    m_vertices.vi_attrs[0].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-    m_vertices.vi_attrs[0].location = 0;
-    m_vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT; //float3
-    m_vertices.vi_attrs[0].offset = 0;
-
-    /*// The second location is the vertex colors, in RGBA float4 format.
-    // These appear in each element in memory after the float3 vertex
-    // positions, so the offset is set accordingly.
-    m_vertices.vi_attrs[1].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-    m_vertices.vi_attrs[1].location = 1;
-    m_vertices.vi_attrs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT; //float4
-    m_vertices.vi_attrs[1].offset = sizeof(float) * 3;*/
-
-    // Index buffer
-        std::vector<uint32_t> indexBuffer = { 0, 1, 2 };
-        m_indices.count = static_cast<uint32_t>(indexBuffer.size());
-        uint32_t indexBufferSize = m_indices.count * sizeof(uint32_t);
-
-            VkBufferCreateInfo indexbufferInfo = {};
-            indexbufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            indexbufferInfo.size = indexBufferSize;
-            indexbufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-
-            // Copy index data to a buffer visible to the host
-            err = vkCreateBuffer(m_device, &indexbufferInfo, nullptr, &m_indices.buffer);
-            GVR_VK_CHECK(!err);
-            vkGetBufferMemoryRequirements(m_device, m_indices.buffer, &mem_reqs);
-            memoryAllocateInfo.allocationSize = mem_reqs.size;
-            pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
-            GVR_VK_CHECK(pass);
-            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_indices.memory);
-            GVR_VK_CHECK(!err);
-            err = vkMapMemory(m_device, m_indices.memory, 0, indexBufferSize, 0, &data);
-            GVR_VK_CHECK(!err);
-            memcpy(data, indexBuffer.data(), indexBufferSize);
-            vkUnmapMemory(m_device, m_indices.memory);
-
-            err = vkBindBufferMemory(m_device, m_indices.buffer, m_indices.memory, 0);
-            GVR_VK_CHECK(!err);
-}
-
-
-
 void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& vertices, GVR_VK_Vertices &m_vertices, GVR_VK_Indices &m_indices, const std::vector<unsigned short> & indices){
-//void VulkanCore::InitVertexBuffersFromRenderData(GVR_VK_Vertices &m_vertices, GVR_VK_Indices &m_indices){
-    // Our vertex buffer data is a simple triangle, with associated vertex colors.
-    /*const float vb[3][3] = {
-            //      position                   color
-            { -0.9f, -0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.9f, -0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
-            {  0.0f,  0.9f,  0.9f},//     1.0f, 0.0f, 0.0f, 1.0f },
-    };*/
 
     VkResult   err;
     bool   pass;
@@ -697,12 +634,19 @@ void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& v
     pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
     GVR_VK_CHECK(pass);
 
-    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
+    VkDeviceMemory mem_staging_vert;
+    VkBuffer buf_staging_vert;
+    err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(vertices.size()*sizeof(glm::vec3), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), nullptr, &buf_staging_vert);
+    GVR_VK_CHECK(!err);
+
+    //err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
+    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &mem_staging_vert);
     GVR_VK_CHECK(!err);
 
     // Now we need to map the memory of this new allocation so the CPU can edit it.
     void *data;
-    err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
+    //err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
+    err = vkMapMemory(m_device, mem_staging_vert, 0, memoryAllocateInfo.allocationSize, 0, &data);
     GVR_VK_CHECK(!err);
 
     // Copy our triangle verticies and colors into the mapped memory area.
@@ -711,11 +655,41 @@ void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& v
 
 
     // Unmap the memory back from the CPU.
-    vkUnmapMemory(m_device, m_vertices.mem);
+    vkUnmapMemory(m_device, mem_staging_vert);
+    //vkUnmapMemory(m_device, m_vertices.mem);
+    err = vkBindBufferMemory(m_device, buf_staging_vert, mem_staging_vert, 0);
+    GVR_VK_CHECK(!err);
 
+    // Create Device memory optimal
+    pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryAllocateInfo.memoryTypeIndex);
+    GVR_VK_CHECK(pass);
+    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
+    GVR_VK_CHECK(!err);
     // Bind our buffer to the memory.
     err = vkBindBufferMemory(m_device, m_vertices.buf, m_vertices.mem, 0);
     GVR_VK_CHECK(!err);
+
+    VkCommandBuffer trnCmdBuf = GetTransientCmdBuffer();
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(trnCmdBuf, &beginInfo);
+    VkBufferCopy copyRegion = {};
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = bufferCreateInfo.size;
+    vkCmdCopyBuffer(trnCmdBuf, buf_staging_vert, m_vertices.buf, 1, &copyRegion);
+    vkEndCommandBuffer(trnCmdBuf);
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &trnCmdBuf;
+
+    vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_queue);
+    vkFreeCommandBuffers(m_device, m_commandPoolTrans, 1, &trnCmdBuf);
+
 
     // The vertices need to be defined so that the pipeline understands how the
     // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
@@ -764,20 +738,60 @@ void VulkanCore::InitVertexBuffersFromRenderData(const std::vector<glm::vec3>& v
             //err = vkCreateBuffer(m_device, &indexbufferInfo, nullptr, &m_indices.buffer);
             err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT), nullptr, &m_indices.buffer);
             GVR_VK_CHECK(!err);
+
+            VkDeviceMemory mem_staging_indi;
+            VkBuffer buf_staging_indi;
+            err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT), nullptr, &buf_staging_indi);
+            GVR_VK_CHECK(!err);
+
+
             vkGetBufferMemoryRequirements(m_device, m_indices.buffer, &mem_reqs);
             memoryAllocateInfo.allocationSize = mem_reqs.size;
             pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
             GVR_VK_CHECK(pass);
-            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_indices.memory);
+
+            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &mem_staging_indi);
             GVR_VK_CHECK(!err);
-            err = vkMapMemory(m_device, m_indices.memory, 0, indexBufferSize, 0, &data);
+            err = vkMapMemory(m_device, mem_staging_indi, 0, indexBufferSize, 0, &data);
             GVR_VK_CHECK(!err);
             //memcpy(data, indexBuffer.data(), indexBufferSize);
             memcpy(data, indices.data(), indexBufferSize);
-            vkUnmapMemory(m_device, m_indices.memory);
+            vkUnmapMemory(m_device, mem_staging_indi);
 
-            err = vkBindBufferMemory(m_device, m_indices.buffer, m_indices.memory, 0);
+            //err = vkBindBufferMemory(m_device, m_indices.buffer, m_indices.memory, 0);
+            err = vkBindBufferMemory(m_device, buf_staging_indi, mem_staging_indi, 0);
             GVR_VK_CHECK(!err);
+
+        // Create Device memory optimal
+            pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryAllocateInfo.memoryTypeIndex);
+            GVR_VK_CHECK(pass);
+            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_indices.memory);
+            GVR_VK_CHECK(!err);
+
+    // Bind our buffer to the memory.
+        err = vkBindBufferMemory(m_device, m_indices.buffer, m_indices.memory, 0);
+        GVR_VK_CHECK(!err);
+
+        trnCmdBuf = GetTransientCmdBuffer();
+        beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(trnCmdBuf, &beginInfo);
+        copyRegion = {};
+        copyRegion.srcOffset = 0; // Optional
+        copyRegion.dstOffset = 0; // Optional
+        copyRegion.size = indexBufferSize;
+        vkCmdCopyBuffer(trnCmdBuf, buf_staging_indi, m_indices.buffer, 1, &copyRegion);
+        vkEndCommandBuffer(trnCmdBuf);
+
+        submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &trnCmdBuf;
+
+        vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_queue);
+        vkFreeCommandBuffers(m_device, m_commandPoolTrans, 1, &trnCmdBuf);
 }
 
 void VulkanCore::InitLayouts(){
@@ -1418,8 +1432,8 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
             preRenderBarrier.pNext = nullptr;
             preRenderBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
             preRenderBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             preRenderBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             preRenderBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             preRenderBarrier.image = m_swapchainBuffers[i].image;
@@ -1458,9 +1472,9 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
             rp_begin.pClearValues = clear_values;
 
         vkCmdBeginRenderPass(cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+/*
 
-
- /*       VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
             commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             commandBufferAllocateInfo.pNext = nullptr;
             commandBufferAllocateInfo.commandPool = m_commandPool;
@@ -1494,8 +1508,8 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
 
         //if(m_threadCount){
         if(0){
-             //LOGI("Vulkan THreading start second cmd buff");
-            /*int roundRobin = 0;
+        /*     //LOGI("Vulkan THreading start second cmd buff");
+            int roundRobin = 0;
             for(int j = 0; j < allDescriptors.size(); j++){
                             m_threadPool.pushWorkToThread(roundRobin, [=]
                             {BuildSecondaryCmdBuffer(secondaryCmdBuff[j], secondaryBeginInfo, render_data_vector[j], allDescriptors[j]);});
@@ -1533,6 +1547,25 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
          }
          }
         // Now our render pass has ended.
+/*
+        VkBufferCopy copyRegion = {};
+            copyRegion.srcOffset = 0; // Optional
+            copyRegion.dstOffset = 0; // Optional
+            copyRegion.size = outputImage.size;
+            vkCmdCopyBuffer(cmdBuffer, m_swapchainBuffers[m_swapchainCurrentIdx].buf, outputImage.buf, 1, &copyRegion);*/
+  /*      VkExtent3D extent3D = {};
+                      extent3D.width = m_width;
+                      extent3D.height = m_height;
+        VkBufferImageCopy region = { 0 };
+                        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        region.imageSubresource.layerCount = 1;
+                         region.imageExtent = extent3D;
+
+
+        vkCmdCopyImageToBuffer(cmdBuffer, m_swapchainBuffers[m_swapchainCurrentIdx].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, outputImage.buf, 1,  &region);
+*/
+
+
 
         vkCmdEndRenderPass(cmdBuffer);
 
@@ -1543,7 +1576,7 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
             prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
             prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             prePresentBarrier.image = m_swapchainBuffers[i].image;
@@ -1595,25 +1628,71 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
  //   LOGI("Vulkan after vkqueue submit %d", err);
     err = vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, 4294967295U);
     GVR_VK_CHECK(!err);
+
+
+
+
+    VkCommandBuffer trnCmdBuf = GetTransientCmdBuffer();
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(trnCmdBuf, &beginInfo);
+    VkBufferCopy copyRegion = {};
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = outputImage[m_swapchainCurrentIdx].size;
+    vkCmdCopyBuffer(trnCmdBuf, m_swapchainBuffers[m_swapchainCurrentIdx].buf, outputImage[m_swapchainCurrentIdx].buf, 1, &copyRegion);
+    /* VkExtent3D extent3D = {};
+              extent3D.width = m_width;
+              extent3D.height = m_height;
+     VkBufferImageCopy region = { 0 };
+                region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                region.imageSubresource.layerCount = 1;
+                 region.imageExtent = extent3D;
+
+
+    vkCmdCopyImageToBuffer(trnCmdBuf, m_swapchainBuffers[m_swapchainCurrentIdx].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, outputImage.buf, 1,  &region);*/
+    vkEndCommandBuffer(trnCmdBuf);
+
+    VkSubmitInfo ssubmitInfo = {};
+    ssubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    ssubmitInfo.commandBufferCount = 1;
+    ssubmitInfo.pCommandBuffers = &trnCmdBuf;
+
+    vkQueueSubmit(m_queue, 1, &ssubmitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_queue);
+    vkFreeCommandBuffers(m_device, m_commandPoolTrans, 1, &trnCmdBuf);
+
+
+
+
+
+
+
+
+
+
   //  LOGI("Vulkan after vkWaitForFences submit %d", err);
 
-    static bool memoryAlloc = false;
+/*    static bool memoryAlloc = false;
     if(memoryAlloc == false){
       //  oculusTexData = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
         memoryAlloc = true;
     }
-
+*/
     uint8_t * data;
-    err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
+    //err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
+    err = vkMapMemory(m_device, outputImage[m_swapchainCurrentIdx].mem, 0, outputImage[m_swapchainCurrentIdx].size, 0, (void **)&data);
     GVR_VK_CHECK(!err);
+    oculusTexData = data;
 
  //   LOGI("Vulkna size of %d", sizeof(oculusTexData));
-    memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
+  //  memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
 
  //   LOGI("Vulkan memcpy map done");
 
     /*for (int i = 0; i < (m_width*m_height)-4; i++) {
-        LOGI("Vulkan Data %u, %u %u %u", finaloutput[i], finaloutput[i+1], finaloutput[i+2], finaloutput[i+3]);
+        LOGI("Vulkan Data %u, %u %u %u", data[i], data[i+1], data[i+2], data[i+3]);
         i+=3;
         //break;
     }*/
@@ -1621,7 +1700,8 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
     //oculusTexData = data;
    // texDataVulkan = data;//finaloutput;
  //   LOGI("Vulkan data reading done");
-    vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
+    vkUnmapMemory(m_device,outputImage[m_swapchainCurrentIdx].mem);
+    //vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
 
     // Makes Fence Un-signalled
     err = vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]);
@@ -1759,6 +1839,7 @@ void VulkanCore::initVulkanCore(ANativeWindow * newNativeWindow){
     }
 
     InitSwapchain(1024,1024);
+    InitTransientCmdPool();
     InitCommandbuffers();
     //InitVertexBuffers();
      LOGE("Vulkan after InitVertexBuffers methods");

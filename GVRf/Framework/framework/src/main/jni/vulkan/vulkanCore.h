@@ -23,6 +23,7 @@
 #include "vulkan/vulkan_wrapper.h"
 #include <vector>
 #include "glm/glm.hpp"
+//#include "vulkanThreadPool.h"
 
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
@@ -43,6 +44,7 @@ struct GVR_VK_SwapchainBuffer
     VkImageView view;
     VkDeviceSize size;
     VkDeviceMemory mem;
+    VkBuffer buf;
 };
 
 struct GVR_VK_DepthBuffer {
@@ -121,6 +123,8 @@ private:
     void InitSwapchain(uint32_t width, uint32_t height);
     bool GetMemoryTypeFromProperties( uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
     void InitCommandbuffers();
+    void InitTransientCmdPool();
+    VkCommandBuffer GetTransientCmdBuffer();
     void InitVertexBuffers();
     void InitLayouts();
     void InitRenderPass();
@@ -148,6 +152,7 @@ private:
 
     VkSwapchainKHR m_swapchain;
     GVR_VK_SwapchainBuffer* m_swapchainBuffers;
+    GVR_VK_SwapchainBuffer* outputImage;
 
     uint32_t m_swapchainCurrentIdx;
     uint32_t m_height;
@@ -158,6 +163,7 @@ private:
     VkFramebuffer* m_frameBuffers;
 
     VkCommandPool m_commandPool;
+    VkCommandPool m_commandPoolTrans;
     GVR_VK_DepthBuffer* m_depthBuffers;
     GVR_VK_Vertices m_vertices;
 
