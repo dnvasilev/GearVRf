@@ -65,6 +65,7 @@ public class GVRCubemapShader extends GVRShader
 {
     private String vertexShader =
             "attribute vec3 a_position;\n" +
+            "uniform mat4 u_model;\n" +
             "uniform mat4 u_mvp;\n" +
             "varying vec3 diffuse_coord;\n" +
             "void main() {\n" +
