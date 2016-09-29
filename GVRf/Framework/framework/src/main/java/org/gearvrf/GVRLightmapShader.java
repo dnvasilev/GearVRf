@@ -18,7 +18,6 @@ public class GVRLightmapShader extends GVRShader
 {
     private String vertexShader =
         "attribute vec3 a_position;\n" +
-        "attribute vec3 a_normal;\n" +
         "attribute vec2 a_texcoord;\n" +
         "uniform mat4 u_mvp;\n" +
         "varying vec2 diffuse_coord;\n" +
@@ -46,7 +45,9 @@ public class GVRLightmapShader extends GVRShader
 
     public GVRLightmapShader()
     {
-        super("float2 u_lightmap_offset float2 u_lightmap_scale");
+        super("float2 u_lightmap_offset float2 u_lightmap_scale",
+              "sampler2D u_main_texture, sampler2D u_lightmap_texture",
+              "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

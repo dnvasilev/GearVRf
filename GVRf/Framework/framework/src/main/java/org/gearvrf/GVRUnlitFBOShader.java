@@ -41,7 +41,7 @@ public class GVRUnlitFBOShader extends GVRShader
 
     public GVRUnlitFBOShader()
     {
-        super("float3 u_color float u_opacity");
+        super("float3 u_color float u_opacity", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

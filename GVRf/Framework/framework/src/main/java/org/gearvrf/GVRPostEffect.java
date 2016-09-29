@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import org.gearvrf.utility.Exceptions;
 import org.gearvrf.utility.Threads;
 
 import static org.gearvrf.utility.Assert.checkFloatNotNaNOrInfinity;
@@ -40,6 +41,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     protected final Map<String, GVRTexture> textures = new HashMap<String, GVRTexture>();
     protected GVRShaderId mShaderId;
     protected String mUniformDescriptor = null;
+    protected String mTextureDescriptor = null;
 
     /** Selectors for pre-built post effect shaders. */
     public abstract static class GVRPostEffectShaderType {
@@ -74,6 +76,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
         super(gvrContext, NativeShaderData.ctor());
         mShaderId = getGVRContext().getPostEffectShaderManager().getShaderType(shaderId.ID);
         mUniformDescriptor = mShaderId.getTemplate(gvrContext).getUniformDescriptor();
+        mTextureDescriptor = mShaderId.getTemplate(gvrContext).getTextureDescriptor();
         NativeShaderData.setNativeShader(getNative(), mShaderId.getNativeShader(gvrContext));
     }
 
@@ -111,6 +114,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     public void setTexture(String key, GVRTexture texture) {
+        checkKeyIsTexture(key);
         textures.put(key, texture);
         NativeShaderData.setTexture(getNative(), key, texture.getNative());
     }
@@ -134,7 +138,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     public void setFloat(String key, float value) {
-        checkStringNotNullOrEmpty("key", key);
+        checkKeyIsUniform(key);
         checkFloatNotNaNOrInfinity("value", value);
         NativeShaderData.setFloat(getNative(), key, value);
     }
@@ -148,7 +152,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     public void setVec2(String key, float x, float y) {
-        checkStringNotNullOrEmpty("key", key);
+        checkKeyIsUniform(key);
         NativeShaderData.setVec2(getNative(), key, x, y);
     }
 
@@ -161,7 +165,7 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     public void setVec3(String key, float x, float y, float z) {
-        checkStringNotNullOrEmpty("key", key);
+        checkKeyIsUniform(key);
         NativeShaderData.setVec3(getNative(), key, x, y, z);
     }
 
@@ -174,16 +178,32 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     public void setVec4(String key, float x, float y, float z, float w) {
-        checkStringNotNullOrEmpty("key", key);
+        checkKeyIsUniform(key);
         NativeShaderData.setVec4(getNative(), key, x, y, z, w);
     }
 
     public void setMat4(String key, float x1, float y1, float z1, float w1,
             float x2, float y2, float z2, float w2, float x3, float y3,
             float z3, float w3, float x4, float y4, float z4, float w4) {
-        checkStringNotNullOrEmpty("key", key);
+        checkKeyIsUniform(key);
         NativeShaderData.setMat4(getNative(), key, x1, y1, z1, w1, x2, y2,
                 z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
+    }
+
+    private void checkKeyIsTexture(String key)
+    {
+        checkStringNotNullOrEmpty("key", key);
+        if (!mTextureDescriptor.contains(key)) {
+            throw Exceptions.IllegalArgument("key " + key + " not in material");
+        }
+    }
+
+    private void checkKeyIsUniform(String key)
+    {
+        checkStringNotNullOrEmpty("key", key);
+        if (!mUniformDescriptor.contains(key)) {
+            throw Exceptions.IllegalArgument("key " + key + " not in material");
+        }
     }
 }
 

@@ -23,19 +23,15 @@ public class GVRBoundingBoxShader extends GVRShader
         "precision highp  float;\n" +
         "attribute vec3 a_position;\n" +
         "uniform mat4 u_mvp;\n" +
-        "void main() {\n" +
-        "    gl_Position = u_mvp * vec4(a_position, 1.0);\n" +
-        "}\n";
+        "void main() { gl_Position = u_mvp * vec4(a_position, 1.0); }\n";
 
     private String fragmentShader =
         "precision mediump  float;\n" +
-        "void main() {\n" +
-        "   gl_FragColor =  vec4(0.0, 1.0, 0.0, 0.0);\n" +
-        "}\n";
+        "void main() {n gl_FragColor =  vec4(0.0, 1.0, 0.0, 0.0); }\n";
 
     public GVRBoundingBoxShader()
     {
-        super("");
+        super("", "", "float3 a_position");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

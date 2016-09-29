@@ -52,12 +52,11 @@ public class GVRCubemapShader extends GVRShader
 {
     private String vertexShader =
             "attribute vec3 a_position;\n" +
-            "attribute vec3 a_normal;\n" +
             "uniform mat4 u_mvp;\n" +
-            "varying vec3 v_tex_coord;\n" +
+            "varying vec3 diffuse_coord;\n" +
             "void main() {\n" +
-            "  v_tex_coord = normalize((u_model * a_position).xyz);\n" +
-            "  v_tex_coord.z = -v_tex_coord.z;\n" +
+            "  diffuse_coord = normalize((u_model * a_position).xyz);\n" +
+            "  diffuse_coord.z = -diffuse_coord.z;\n" +
             "  gl_Position = u_mvp * vec4(a_position, 1);\n" +
             "}\n";
 
@@ -66,16 +65,16 @@ public class GVRCubemapShader extends GVRShader
             "uniform samplerCube u_texture;\n" +
             "uniform vec3 u_color;\n" +
             "uniform float u_opacity;\n" +
-            "varying vec3 v_tex_coord;\n" +
+            "varying vec3 diffuse_coord;\n" +
             "void main()\n" +
             "{\n" +
-            "  vec4 color = textureCube(u_texture, v_tex_coord);\n" +
+            "  vec4 color = textureCube(u_texture, diffuse_coord);\n" +
             "  gl_FragColor = vec4(color.r * u_color.r * u_opacity, color.g * u_color.g * u_opacity, color.b * u_color.b * u_opacity, color.a * u_opacity);\n" +
             "}\n";
 
     public GVRCubemapShader()
     {
-        super("float3 u_color float u_opacity");
+        super("float3 u_color float u_opacity", "samplerCube u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

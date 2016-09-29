@@ -428,7 +428,7 @@ class ConsoleShader extends GVRShaderTemplate
 
     ConsoleShader(GVRContext ctx)
     {
-        super("");
+        super("", "sampler2D u_texture sampler2D u_overlay", "float3 a_position float2 a_texcoord");
         if (vertexShader == null)
         {
             vertexShader = TextFile.readTextFile(ctx.getContext(), R.raw.posteffect_quad);

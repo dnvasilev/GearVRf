@@ -42,7 +42,7 @@ public class GVRUnlitHorizontalStereoShader extends GVRShader
 
     public GVRUnlitHorizontalStereoShader()
     {
-        super("float3 u_color float u_opacity int u_right");
+        super("float3 u_color float u_opacity int u_right", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

@@ -43,7 +43,9 @@ public class GVROESShader extends GVRShader
 
     public GVROESShader()
     {
-        super("float3 u_color float u_opacity");
+        super("float3 u_color float u_opacity",
+              "samplerExternalOES u_texture",
+              "float3 a_position float3 a_normal float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

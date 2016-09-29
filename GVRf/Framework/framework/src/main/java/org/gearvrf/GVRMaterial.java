@@ -145,6 +145,7 @@ public class GVRMaterial extends GVRPostEffect
         mShaderId = getGVRContext().getMaterialShaderManager().getShaderType(shaderId.ID);
         GVRShader shader = mShaderId.getTemplate(gvrContext);
         mUniformDescriptor = shader.getUniformDescriptor();
+        mTextureDescriptor = shader.getTextureDescriptor();
         shader.setMaterialDefaults(this);
         this.mShaderFeatureSet = 0;
     }

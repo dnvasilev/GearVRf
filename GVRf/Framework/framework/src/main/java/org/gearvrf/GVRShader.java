@@ -55,31 +55,49 @@ public class GVRShader
     protected Integer mGLSLVersion = 100;
     protected boolean mHasVariants = false;
     protected boolean mUsesLights = false;
+    protected String mUniformDescriptor;
+    protected String mVertexDescriptor;
+    protected String mTextureDescriptor;
+    protected Map<String, String> mShaderSegments;
+
 
     /**
      * Construct a shader using GLSL version 100.
      * To make a shader for another version use the other form of the constructor.
      *
-     * @param descriptor
-     *            string describing uniform names and types
+     * @param uniformDescriptor string describing uniform names and types
+     *                          e.g. "float4 diffuse_color, float4 specular_color, float specular_exponent"
+     * @param textureDescriptor string describing texture names and types
+     *                          e.g. "sampler2D diffuseTexture, sampler2D specularTexture"
+     * @param vertexDescriptor  string describing vertex attributes and types
+     *                          e.g. "float3 a_position, float2 a_texcoord"
      */
-    public GVRShader(String descriptor)
+    public GVRShader(String uniformDescriptor, String textureDescriptor, String vertexDescriptor)
     {
-        mUniformDescriptor = descriptor;
+        mUniformDescriptor = uniformDescriptor;
+        mVertexDescriptor = vertexDescriptor;
+        mTextureDescriptor = textureDescriptor;
         mShaderSegments = new HashMap<String, String>();
     }
 
     /**
      * Construct a shader using GLSL version 300
      *
-     * @param descriptor
+     * @param uniformDescriptor string describing uniform names and types
+     *                          e.g. "float4 diffuse_color, float4 specular_color, float specular_exponent"
+     * @param textureDescriptor string describing texture names and types
+     *                          e.g. "sampler2D diffuseTexture, sampler2D specularTexture"
+     * @param vertexDescriptor  string describing vertex attributes and types
+     *                          e.g. "float3 a_position, float2 a_texcoord"
      *            string describing uniform names and types
      * @param glslVersion
      *            integer giving GLSL version (e.g. 300)
      */
-    public GVRShader(String descriptor, int glslVersion)
+    public GVRShader(String uniformDescriptor, String textureDescriptor, String vertexDescriptor, int glslVersion)
     {
-        mUniformDescriptor = descriptor;
+        mUniformDescriptor = uniformDescriptor;
+        mVertexDescriptor = vertexDescriptor;
+        mTextureDescriptor = textureDescriptor;
         mShaderSegments = new HashMap<String, String>();
         mGLSLVersion = glslVersion;
     }
@@ -127,6 +145,38 @@ public class GVRShader
     public String getUniformDescriptor()
     {
         return mUniformDescriptor;
+    }
+
+    /**
+     * Get the string describing the vertex attributes used by this shader.
+     *
+     * Each vertex attribute represents a channel of float or int vectors.
+     * It is described with the type ("int" or "float") immediately followed by the
+     * size (a small integer) a space and then the name of the vertex attribute in the shader
+     * (e.g. "float3 a_position, float23 a_texcoord") Spaces, commas, and other punctuation
+     * are ignored.
+     *
+     * @return String with uniform descriptor.
+     * {@link GVRLightBase.getVertexDescriptor }
+     */
+    public String getVertexDescriptor()
+    {
+        return mVertexDescriptor;
+    }
+
+    /**
+     * Get the string describing the textures  used by this shader.
+     *
+     * A texture is described with the sampler type (e.g. "sampler2D" or "samplerCube")
+     * a space and then the name of the sampler in the shader.
+     * (e.g. "sampler2D u_texture") Spaces, commas, and other punctuation are ignored.
+     *
+     * @return String with uniform descriptor.
+     * {@link GVRLightBase.getTextureDescriptor }
+     */
+    public String getTextureDescriptor()
+    {
+        return mTextureDescriptor;
     }
 
     /**
@@ -184,7 +234,8 @@ public class GVRShader
         if (nativeShader == 0) {
             String vertexShaderSource = getSegment("VertexTemplate");
             String fragmentShaderSource = getSegment("FragmentTemplate");
-            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = context.getMaterialShaderManager().
+                    addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
         }
         rdata.setShader(nativeShader);
     }
@@ -217,7 +268,8 @@ public class GVRShader
         {
             String vertexShaderSource = getSegment("VertexTemplate");
             String fragmentShaderSource = getSegment("FragmentTemplate");
-            nativeShader = context.getMaterialShaderManager().addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = context.getMaterialShaderManager().addShader(signature,
+                        mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
         }
         return nativeShader;
     }
@@ -254,7 +306,4 @@ public class GVRShader
         if (shaderSource == null)
             throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
     }
-
-    protected Map<String, String> mShaderSegments;
-    protected String mUniformDescriptor;
 }

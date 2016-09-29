@@ -17,8 +17,8 @@ package org.gearvrf;
 public class GVRUnlitVerticalStereoShader extends GVRShader
 {
     private String vertexShader =
-            "attribute vec4 a_position;\n" +
-            "attribute vec4 a_texcoord;\n" +
+            "attribute vec3 a_position;\n" +
+            "attribute vec2 a_texcoord;\n" +
             "uniform mat4 u_mvp;\n" +
             "varying vec2 diffuse_coord;\n" +
             "void main() {\n" +
@@ -42,7 +42,7 @@ public class GVRUnlitVerticalStereoShader extends GVRShader
 
     public GVRUnlitVerticalStereoShader()
     {
-        super("float3 u_color float u_opacity int u_right");
+        super("float3 u_color float u_opacity int u_right", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

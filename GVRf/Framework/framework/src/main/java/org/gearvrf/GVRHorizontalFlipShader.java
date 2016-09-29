@@ -40,7 +40,7 @@ public class GVRHorizontalFlipShader extends GVRShaderTemplate
 
     public GVRHorizontalFlipShader(GVRContext ctx)
     {
-        super("float4 u_color float u_factor");
+        super("float4 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

@@ -92,25 +92,33 @@ public class GVRShaderTemplate extends GVRShader
      * Construct a shader template for a shader using GLSL version 100.
      * To make a shader for another version use the other form of the constructor.
      * 
-     * @param descriptor
-     *            string describing uniform names and types
+     * @param uniformDescriptor string describing uniform names and types
+     *                          e.g. "float4 diffuse_color, float4 specular_color, float specular_exponent"
+     * @param textureDescriptor string describing texture names and types
+     *                          e.g. "sampler2D diffuseTexture, sampler2D specularTexture"
+     * @param vertexDescriptor  string describing vertex attributes and types
+     *                          e.g. "float3 a_position, float2 a_texcoord"
      */
-    public GVRShaderTemplate(String descriptor)
+    public GVRShaderTemplate(String uniformDescriptor, String textureDescriptor, String vertexDescriptor)
     {
-        super(descriptor);
+        super(uniformDescriptor, textureDescriptor, vertexDescriptor);
     }
 
     /**
      * Construct a shader template
      *
-     * @param descriptor
-     *            string describing uniform names and types
+     * @param uniformDescriptor string describing uniform names and types
+     *                          e.g. "float4 diffuse_color, float4 specular_color, float specular_exponent"
+     * @param textureDescriptor string describing texture names and types
+     *                          e.g. "sampler2D diffuseTexture, sampler2D specularTexture"
+     * @param vertexDescriptor  string describing vertex attributes and types
+     *                          e.g. "float3 a_position, float2 a_texcoord"
      * @param glslVersion
      *            integer giving GLSL version (e.g. 300)
      */
-    public GVRShaderTemplate(String descriptor, int glslVersion)
+    public GVRShaderTemplate(String uniformDescriptor, String textureDescriptor, String vertexDescriptor, int glslVersion)
     {
-       super(descriptor, glslVersion);
+       super(uniformDescriptor, textureDescriptor, vertexDescriptor, glslVersion);
     }
 
     /**
@@ -320,7 +328,7 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
-            nativeShader = shaderManager.addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
             GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
             makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
@@ -359,7 +367,7 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
-            nativeShader = shaderManager.addShader(signature, vertexShaderSource, fragmentShaderSource);
+            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
             GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
             makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);

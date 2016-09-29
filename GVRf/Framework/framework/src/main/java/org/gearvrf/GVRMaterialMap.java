@@ -26,6 +26,7 @@ package org.gearvrf;
  * not necessarily the same as the names of the attributes and uniforms in the
  * shader program: the methods of this class let you map names from materials to
  * programs.
+ * @deprecated this entire class does absolutely nothing and is no longer necessary
  */
 public class GVRMaterialMap implements GVRShaderMaps
 {
@@ -36,7 +37,6 @@ public class GVRMaterialMap implements GVRShaderMaps
     }
 
     public void addTextureKey(String variableName, String key) {
-        NativeCustomShader.addTextureKey(mNativePointer, variableName, key);
     }
 
     /**
@@ -48,7 +48,6 @@ public class GVRMaterialMap implements GVRShaderMaps
      *            The float key in the material.
      */
     public void addAttributeFloatKey(String variableName, String key) {
-        NativeCustomShader.addAttributeFloatKey(mNativePointer, variableName, key);
     }
 
     /**
@@ -60,7 +59,6 @@ public class GVRMaterialMap implements GVRShaderMaps
      *            The vec2 key in the material.
      */
     public void addAttributeVec2Key(String variableName, String key) {
-        NativeCustomShader.addAttributeVec2Key(mNativePointer, variableName, key);
     }
 
     /**
@@ -72,7 +70,6 @@ public class GVRMaterialMap implements GVRShaderMaps
      *            The vec3 key in the material.
      */
     public void addAttributeVec3Key(String variableName, String key) {
-        NativeCustomShader.addAttributeVec3Key(mNativePointer, variableName, key);
     }
 
     /**
@@ -84,23 +81,18 @@ public class GVRMaterialMap implements GVRShaderMaps
      *            The vec4 key in the material.
      */
     public void addAttributeVec4Key(String variableName, String key) {
-        NativeCustomShader.addAttributeVec4Key(mNativePointer, variableName, key);
     }
 
     public void addUniformFloatKey(String variableName, String key) {
-        NativeCustomShader.addUniformFloatKey(mNativePointer, variableName, key);
     }
 
     public void addUniformVec2Key(String variableName, String key) {
-        NativeCustomShader.addUniformVec2Key(mNativePointer, variableName, key);
     }
 
     public void addUniformVec3Key(String variableName, String key) {
-        NativeCustomShader.addUniformVec3Key(mNativePointer, variableName, key);
-    }
+     }
 
     public void addUniformVec4Key(String variableName, String key) {
-        NativeCustomShader.addUniformVec4Key(mNativePointer, variableName, key);
     }
 
     /**
@@ -112,38 +104,5 @@ public class GVRMaterialMap implements GVRShaderMaps
      *            The mat4 key in the material.
      */
     public void addUniformMat4Key(String variableName, String key) {
-        NativeCustomShader.addUniformMat4Key(mNativePointer, variableName, key);
     }
-}
-
-class NativeCustomShader {
-    static native void addTextureKey(long customShader, String variableName,
-            String key);
-
-    static native void addAttributeFloatKey(long customShader,
-            String variableName, String key);
-
-    static native void addAttributeVec2Key(long customShader,
-            String variableName, String key);
-
-    static native void addAttributeVec3Key(long customShader,
-            String variableName, String key);
-
-    static native void addAttributeVec4Key(long customShader,
-            String variableName, String key);
-
-    static native void addUniformFloatKey(long customShader,
-            String variableName, String key);
-
-    static native void addUniformVec2Key(long customShader,
-            String variableName, String key);
-
-    static native void addUniformVec3Key(long customShader,
-            String variableName, String key);
-
-    static native void addUniformVec4Key(long customShader,
-            String variableName, String key);
-
-    static native void addUniformMat4Key(long customShader,
-            String variableName, String key);
 }

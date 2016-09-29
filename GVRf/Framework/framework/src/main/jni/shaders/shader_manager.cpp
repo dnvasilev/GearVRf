@@ -9,8 +9,11 @@ namespace gvr {
     }
 
     long ShaderManager::addShader(const std::string& signature,
-            const std::string& vertex_shader,
-            const std::string& fragment_shader) {
+          const std::string& uniformDescriptor,
+          const std::string& textureDescriptor,
+          const std::string& vertexDescriptor,
+          const std::string& vertex_shader,
+          const std::string& fragment_shader) {
         Shader* shader = findShader(signature);
         if (shader != NULL)
         {
@@ -18,7 +21,7 @@ namespace gvr {
         }
         std::lock_guard<std::mutex> lock(lock_);
         long id = ++latest_shader_id_;
-        shader = new Shader(id, signature, vertex_shader, fragment_shader);
+        shader = new Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertex_shader, fragment_shader);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
         LOGE("SHADER: %s added shader %ld %s", name().c_str(), id, signature.c_str());

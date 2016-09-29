@@ -39,7 +39,10 @@ import org.gearvrf.R;
 
        public GVRPhongShader(GVRContext gvrcontext)
        {
-           super("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent", 300);
+           super("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent",
+                 "sampler2D ambientTexture; sampler2D diffuseTexture; sampler2D specularTexture; sampler2D opacityTexture; sampler2D lightmapTexture; sampler2D emissiveTexture",
+                 "float3 a_position float3 a_normal float2 a_texcoord float4 a_bone_weights int4 a_bone_indices float4 a_tangent float4 a_bitangent",
+                   300);
            if (fragTemplate == null) {
                Context context = gvrcontext.getContext();
                fragTemplate = TextFile.readTextFile(context, R.raw.fragment_template);

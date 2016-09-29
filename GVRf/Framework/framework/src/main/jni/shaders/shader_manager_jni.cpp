@@ -28,7 +28,11 @@ extern "C" {
 
     JNIEXPORT jlong JNICALL
     Java_org_gearvrf_NativeShaderManager_addShader(
-            JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature,
+            JNIEnv * env, jobject obj, jlong jshader_manager,
+            jstring signature,
+            jstring uniformDesc,
+            jstring textureDesc,
+            jstring vertexDesc,
             jstring vertex_shader,
             jstring fragment_shader);
 
@@ -51,20 +55,31 @@ JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeShaderManager_addShader(
     JNIEnv * env, jobject obj, jlong jshader_manager,
     jstring signature,
+    jstring uniformDesc,
+    jstring textureDesc,
+    jstring vertexDesc,
     jstring vertex_shader,
     jstring fragment_shader) {
-    ShaderManager* shader_manager =
-    reinterpret_cast<ShaderManager*>(jshader_manager);
     const char *sig_str = env->GetStringUTFChars(signature, 0);
+    const char* uniform_str = env->GetStringUTFChars(uniformDesc, 0);
+    const char* texture_str = env->GetStringUTFChars(textureDesc, 0);
+    const char* vdesc_str = env->GetStringUTFChars(vertexDesc, 0);
     const char *vertex_str = env->GetStringUTFChars(vertex_shader, 0);
     const char *fragment_str = env->GetStringUTFChars(fragment_shader, 0);
     std::string native_sig(sig_str);
     std::string native_vertex_shader(vertex_str);
     std::string native_fragment_shader(fragment_str);
-    long id = shader_manager->addShader(native_sig, native_vertex_shader, native_fragment_shader);
+    std::string native_udesc(uniform_str);
+    std::string native_tdesc(texture_str);
+    std::string native_vdesc(vdesc_str);
+    ShaderManager* shader_manager = reinterpret_cast<ShaderManager*>(jshader_manager);
+    long id = shader_manager->addShader(native_sig, native_udesc, native_tdesc, native_vdesc, native_vertex_shader, native_fragment_shader);
     env->ReleaseStringUTFChars(vertex_shader, vertex_str);
     env->ReleaseStringUTFChars(fragment_shader, fragment_str);
     env->ReleaseStringUTFChars(signature, sig_str);
+    env->ReleaseStringUTFChars(uniformDesc, uniform_str);
+    env->ReleaseStringUTFChars(textureDesc, texture_str);
+    env->ReleaseStringUTFChars(vertexDesc, vdesc_str);
     return id;
 }
 

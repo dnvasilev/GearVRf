@@ -18,7 +18,6 @@ public class GVRColorShader extends GVRShader
 {
     private String vertexShader =
             "attribute vec3 a_position;\n" +
-            "attribute vec3 a_normal;\n" +
             "uniform mat4 u_mvp;\n" +
             "void main() {\n" +
             "  gl_Position = u_mvp * vec4(a_position, 1);\n" +
@@ -33,7 +32,7 @@ public class GVRColorShader extends GVRShader
 
     public GVRColorShader()
     {
-        super("float4 u_color");
+        super("float4 u_color", "", "float3 a_position");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

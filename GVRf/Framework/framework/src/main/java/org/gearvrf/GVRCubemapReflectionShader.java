@@ -84,7 +84,7 @@ public class GVRCubemapReflectionShader extends GVRShader
 
     public GVRCubemapReflectionShader()
     {
-        super("float3 u_color float u_opacity");
+        super("float3 u_color float u_opacity", "samplerCube u_texture", "float3 a_position float3 a_normal");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

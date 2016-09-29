@@ -110,6 +110,55 @@ public:
         vec2s_[key] = vector;
     }
 
+    virtual const float* getFloatVec(const std::string& key, int numfloats) const
+    {
+        std::map<std::string, float>::const_iterator it1;
+        std::map<std::string, glm::vec2>::const_iterator it2;
+        std::map<std::string, glm::vec3>::const_iterator it3;
+        std::map<std::string, glm::vec4>::const_iterator it4;
+        std::map<std::string, glm::mat4>::const_iterator it5;
+        switch (numfloats)
+        {
+            case 1:
+            it1 = floats_.find(key);
+            if (it1 != floats_.end())
+                return &(it1->second);
+            break;
+
+            case 2:
+            it2 = vec2s_.find(key);
+            if (it2 != vec2s_.end())
+                return glm::value_ptr(it2->second);
+            break;
+
+            case 3:
+            it3 = vec3s_.find(key);
+            if (it3 != vec3s_.end())
+                return glm::value_ptr(it3->second);
+            break;
+
+            case 4:
+            it4 = vec4s_.find(key);
+            if (it4 != vec4s_.end())
+                return glm::value_ptr(it4->second);
+            break;
+
+            case 16:
+            it5 = mat4s_.find(key);
+            if (it5 != mat4s_.find(key))
+                return glm::value_ptr(it5->second);
+            break;
+        }
+        LOGE("SHADER: key %s not found in material", key.c_str());
+        return NULL;
+    }
+
+    virtual const int* getIntVec(const std::string& key, int numints) const
+    {
+        LOGE("SHADER: key %s not found in material", key.c_str());
+        return NULL;
+    }
+
     bool getVec3(const std::string& key, glm::vec3& v) {
         auto it = vec3s_.find(key);
         if (it != vec3s_.end()) {

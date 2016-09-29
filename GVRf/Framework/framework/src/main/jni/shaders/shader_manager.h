@@ -38,8 +38,11 @@ public:
     ~ShaderManager();
 
     long addShader(const std::string& signature,
-            const std::string& vertex_shader,
-            const std::string& fragment_shader);
+                   const std::string& uniformDescriptor,
+                   const std::string& textureDescriptor,
+                   const std::string& vertexDescriptor,
+                   const std::string& vertex_shader,
+                   const std::string& fragment_shader);
     Shader* findShader(const std::string& signature);
     Shader* getShader(long id);
     const std::string& name() { return name_; }

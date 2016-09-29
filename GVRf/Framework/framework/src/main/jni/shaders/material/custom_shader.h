@@ -45,72 +45,56 @@ typedef std::function<void(ShaderData&, GLuint)> UniformVariableBind;
 
 class Shader: public ShaderBase {
 public:
+
+    class ShaderVisitor
+    {
+    protected:
+        Shader* shader_;
+
+    public:
+        ShaderVisitor(Shader* shader) : shader_(shader) { };
+        virtual void visit(const std::string& key, const std::string& type, int size) = 0;
+    };
+
     explicit Shader(long id, const std::string& signature,
+            const std::string& uniformDescriptor,
+            const std::string& textureDescriptor,
+            const std::string& vertexDescriptor,
             const std::string& vertex_shader,
             const std::string& fragment_shader);
     virtual ~Shader();
 
-    void addTextureKey(const std::string& variable_name, const std::string& key);
-
-    void addAttributeFloatKey(const std::string& variable_name, const std::string& key);
-    void addAttributeVec2Key(const std::string& variable_name, const std::string& key);
-    void addAttributeVec3Key(const std::string& variable_name, const std::string& key);
-    void addAttributeVec4Key(const std::string& variable_name, const std::string& key);
-    void addUniformFloatKey(const std::string& variable_name, const std::string& key);
-    void addUniformVec2Key(const std::string& variable_name, const std::string& key);
-    void addUniformVec3Key(const std::string& variable_name, const std::string& key);
-    void addUniformVec4Key(const std::string& variable_name, const std::string& key);
-    void addUniformMat4Key(const std::string& variable_name, const std::string& key);
     virtual void render(RenderState* rstate, RenderData* render_data, ShaderData* material);
     virtual void programInit(RenderState* rstate, RenderData* render_data, ShaderData* material,
                         const std::vector<glm::mat4>& model_matrix, int drawcount, bool batching) { }
 
     static int getGLTexture(int n);
     GLuint getProgramId();
+
+    GLuint getLocation(const std::string& key) {
+        auto it = locations_.find(key);
+        if (it != locations_.end()) {
+            return it->second;
+        }
+        return -1;
+    }
+
+    void setLocation(const std::string& key, int loc) {
+        locations_[key] = loc;
+    }
+
 private:
     Shader(const Shader& shader);
     Shader(Shader&& shader);
     Shader& operator=(const Shader& shader);
     Shader& operator=(Shader&& shader);
 
-
-    void addAttributeKey(const std::string& variable_name, const std::string& key, AttributeVariableBind f);
-    void addUniformKey(const std::string& variable_name, const std::string& key, UniformVariableBind f);
-
-    void initializeOnDemand(RenderState* rstate);
-
-    template <class T> struct Descriptor {
-        Descriptor(const std::string& v, const std::string& k) : variable(v), key(k) {
-        }
-
-        const std::string variable;
-        const std::string key;
-        mutable int location = -1;
-        T variableType;
-    };
-
-    template <class T> struct DescriptorComparator {
-        bool operator() (const Descriptor<T>& lhs, const Descriptor<T>& rhs) const {
-            const std::string lhsKey = lhs.variable + lhs.key;
-            const std::string rhsKey = rhs.variable + rhs.key;
-            return lhsKey < rhsKey;
-        }
-    };
-
-    struct TextureVariable {
-        std::function<int(GLuint)> f_getLocation;
-        std::function<void(int&, const ShaderData&, GLuint)> f_bind;
-    };
-
-    struct AttributeVariable {
-        std::function<int(GLuint)> f_getLocation;
-        AttributeVariableBind f_bind;
-    };
-
-    struct UniformVariable {
-        std::function<int(GLuint)> f_getLocation;
-        UniformVariableBind f_bind;
-    };
+    void initializeOnDemand(RenderState* rstate, Mesh* mesh);
+    void forEach(const std::string& descriptor, ShaderVisitor& visitor);
+    static int calcSize(std::string type);
+    bool hasUniform(const std::string& name) { return uniformDescriptor_.find(name) != std::string::npos; }
+    bool hasTexture(const std::string& name) { return textureDescriptor_.find(name) != std::string::npos; }
+    bool hasAttribute(const std::string& name) { return vertexDescriptor_.find(name) != std::string::npos; }
 
 private:
     GLuint u_mvp_;
@@ -119,20 +103,15 @@ private:
     GLuint u_mv_it_;
     GLuint u_right_;
     GLuint u_model_;
-    bool textureVariablesDirty_ = false;
     std::mutex textureVariablesLock_;
-    std::set<Descriptor<TextureVariable>, DescriptorComparator<TextureVariable>> textureVariables_;
-
-    bool attributeVariablesDirty_ = false;
     std::mutex attributeVariablesLock_;
-    std::set<Descriptor<AttributeVariable>, DescriptorComparator<AttributeVariable>> attributeVariables_;
-
-    bool uniformVariablesDirty_ = false;
     std::mutex uniformVariablesLock_;
-    std::set<Descriptor<UniformVariable>, DescriptorComparator<UniformVariable>> uniformVariables_;
-
     std::string vertexShader_;
     std::string fragmentShader_;
+    std::string vertexDescriptor_;
+    std::string textureDescriptor_;
+    std::string uniformDescriptor_;
+    std::map<std::string, int> locations_;
 };
 
 }

@@ -45,7 +45,9 @@ public class GVROESHorizontalStereoShader extends GVRShader
 
     public GVROESHorizontalStereoShader()
     {
-        super("float3 u_color float u_opacity int u_right");
+        super("float3 u_color float u_opacity int u_right",
+                "samplerExternalOES u_texture",
+                "float3 a_position float3 a_normal float2 a_texcoord");
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }

@@ -39,7 +39,9 @@ public class GVRTextureShader extends GVRShaderTemplate
 
     public GVRTextureShader(GVRContext gvrcontext)
     {
-        super("float3 u_color; float u_opacity; float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent", 300);
+        super("float3 u_color; float u_opacity; float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent",
+              "sampler2D u_texture; sampler2D diffuseTexture",
+              "vec3 a_position; vec2 a_texcoord; vec3 a_normal", 300);
         if (fragTemplate == null) {
             Context context = gvrcontext.getContext();
             fragTemplate = TextFile.readTextFile(context, R.raw.fragment_template);
