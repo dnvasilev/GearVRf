@@ -14,11 +14,21 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which samples from an external texture.
+ * This shader does not use light sources.
+ * @<code>
+ *    a_position    position vertex attribute
+ *    a_texcoord    texture coordinate vertex attribute
+ *    u_color       color to modulate texture
+ *    u_opacity     opacity
+ *    u_texture     external texture
+ * </code>
+ */
 public class GVROESShader extends GVRShader
 {
     private String vertexShader =
             "attribute vec3 a_position;\n" +
-            "attribute vec3 a_normal;\n" +
             "attribute vec2 a_texcoord;\n" +
             "uniform mat4 u_mvp;\n" +
             "varying vec2 diffuse_coord;\n" +

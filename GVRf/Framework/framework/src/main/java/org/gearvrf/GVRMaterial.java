@@ -47,7 +47,7 @@ import android.graphics.Color;
  * <p>
  * Each {@link GVRMaterial} contains two main things:
  * <ul>
- * <li>The id of a (stock or custom) shader, which is used to draw the mesh. See
+ * <li>The id of a shader, which is used to draw the mesh. See
  * {@link GVRShaderType} and {@link GVRContext#getMaterialShaderManager()}.
  * 
  * <li>Data to pass to the shader. This usually - but not always - means a

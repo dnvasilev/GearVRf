@@ -81,19 +81,6 @@ public class GVRShaderManager extends GVRHybridObject
     }
 
     /**
-     * Get a name mapping object for the custom shader program.
-     *
-     * @param nativeShader
-     *            Opaque type from {@link #addShader(String, String, String)}
-     * @return A name mapping object
-     */
-    public GVRMaterialMap getShaderMap(int nativeShader)
-    {
-        long nativeMap = NativeShaderManager.getShaderMap(getNative(), nativeShader);
-        return new GVRMaterialMap(getGVRContext(), nativeMap);
-    }
-
-    /**
      * Maps the shader template class to the instance of the template.
      * Only one shader template of each class is necessary since
      * shaders are global.

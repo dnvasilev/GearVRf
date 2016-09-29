@@ -24,7 +24,7 @@ namespace gvr {
         shader = new Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertex_shader, fragment_shader);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
-        LOGE("SHADER: %s added shader %ld %s", name().c_str(), id, signature.c_str());
+        LOGE("SHADER: added shader %ld %s", id, signature.c_str());
         return id;
     }
 
@@ -36,7 +36,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            LOGE("SHADER: %s findShader %s -> %ld", name().c_str(), sig.c_str(), shader->getShaderID());
+            LOGE("SHADER: findShader %s -> %ld", sig.c_str(), shader->getShaderID());
             return shader;
         }
         else
@@ -53,12 +53,12 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            LOGE("SHADER: %s getShader %ld -> %s", name().c_str(), id, sig.c_str());
+            LOGE("SHADER: getShader %ld -> %s", id, sig.c_str());
             return shader;
         }
         else
         {
-            LOGE("SHADER: getShader %s %ld NOT FOUND", name().c_str(), id);
+            LOGE("SHADER: getShader %ld NOT FOUND", id);
             return NULL;
         }
     }

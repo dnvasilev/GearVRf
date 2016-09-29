@@ -14,6 +14,14 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which renders in a solid color.
+ * This shader ignores light sources.
+ * @<code>
+ *     a_position   position vertex attribute
+ *     u_color      color to render
+ * </code>
+ */
 public class GVRColorShader extends GVRShader
 {
     private String vertexShader =

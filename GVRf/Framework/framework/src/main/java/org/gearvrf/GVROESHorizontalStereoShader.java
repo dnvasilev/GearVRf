@@ -14,17 +14,28 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which samples from either the left or right half of an external texture.
+ * This shader does not use light sources.
+ * @<code>
+ *    a_position    position vertex attribute
+ *    a_texcoord    texture coordinate vertex attribute
+ *    u_color       color to modulate texture
+ *    u_opacity     opacity
+ *    u_right       1 = right eye, 0 = left eye
+ *    u_texture     external texture
+ * </code>
+ */
 public class GVROESHorizontalStereoShader extends GVRShader
 {
     private String vertexShader =
             "attribute vec3 a_position;\n" +
-            "attribute vec3 a_normal;\n" +
             "attribute vec2 a_texcoord;\n" +
             "uniform mat4 u_mvp;\n" +
             "varying vec2 diffuse_coord;\n" +
             "void main() {\n" +
             " vec4 pos = u_mvp * a_position;\n" +
-            " varying vec2 v_tex_coord = a_tex_coord;\n" +
+            " varying vec2 v_tex_coord = a_texcoord;\n" +
             " gl_Position = u_mvp * vec4(a_position, 1.0);\n" +
             "}";
 

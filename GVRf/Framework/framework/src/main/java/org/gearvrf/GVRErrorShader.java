@@ -14,6 +14,12 @@
  */
 package org.gearvrf;
 
+/**
+ * Error shader used by GearVRF after a rendering error.
+ * It only accesses the "a_position" vertex attribute
+ * and does not rely on any uniform data. The mesh
+ * will be rendered in SOLID RED.
+ */
 public class GVRErrorShader extends GVRShader
 {
     private String vertexShader =

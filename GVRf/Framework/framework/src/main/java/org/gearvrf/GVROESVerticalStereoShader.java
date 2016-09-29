@@ -14,6 +14,18 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which samples from either the top or bottom half of an external texture.
+ * This shader does not use light sources.
+ * @<code>
+ *    a_position    position vertex attribute
+ *    a_texcoord    texture coordinate vertex attribute
+ *    u_color       color to modulate texture
+ *    u_opacity     opacity
+ *    u_right       1 = right eye, 0 = left eye
+ *    u_texture     external texture
+ * </code>
+ */
 public class GVROESVerticalStereoShader extends GVRShader
 {
     private String vertexShader =

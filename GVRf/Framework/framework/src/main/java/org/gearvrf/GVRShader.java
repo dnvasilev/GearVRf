@@ -36,12 +36,16 @@ import android.util.Log;
  * it into GearVRF.
  *
  * Each shader generated has a unique signature so that the same shader
- * will not be generated twice.
+ * will not be generated twice. For shaders derived directly from
+ * GVRShader, the signature is the simple Java class name.
  *
- * The shader also defines a uniform descriptor which contains the
- * names and types of all the uniforms in the material used by the shader. Each
- * entry is a float or integer type, an optional count and the name of the
- * uniform (e.g. "float3 diffuse_color, float specular_exponent, int is_enabled"
+ * The shader also defines descriptors that define the
+ * names and types of all the uniforms, textures and vertex attributes
+ * used by the shader. For uniforms and attributes, each entry is a
+ * float or integer type, an optional count and the name of the
+ * uniform (e.g. "float3 diffuse_color, float specular_exponent, int is_enabled".
+ * For textures, the descriptor contains the sampler type followed by the name:
+ * (e.g. "sampler2D u_texture; samplerCube u_cubemap")
  *
  * Shaders derived from GVRShader cannot have variants and they ignore
  * light sources in the scene. To generate a more complex shader which
@@ -106,10 +110,10 @@ public class GVRShader
      * Check if this shader template generates variants.
      *
      * If a shader template generates variants, the specific vertex and
-     * fragment shader to use cannot be determined until both
-     * the mesh and the material and lights are known. If no variants
-     * are possible, the vertex and fragment shader can be
-     * generated immediately.
+     * fragment shader to use cannot be determined until
+     * the mesh, the material and lights are known. If the shader
+     * template only makes a single shader, the vertex and fragment
+     * shader programs can be generated immediately.
      *
      * @return true if this template generates variants,
      *         false if only a single shader can be generated.
@@ -126,7 +130,7 @@ public class GVRShader
      * light sources are known. If the shader ignores lighting,
      * it will not need to be regenerated if lights are added
      * or removed from the scene.
-     * @see hasVariants
+     * @see GVRShader.hasVariants
      */
     public boolean usesLights() { return mUsesLights; }
 
@@ -200,10 +204,30 @@ public class GVRShader
      * Sets the default values for material data used by the shader.
      * Subclasses can override this function to provide values for
      * uniforms used by the material that are required by this shader.
+     * This function is called whenever a GVRMaterial is created
+     * that uses this shader class.
      *
      * @param material the material whose values should be set
+     * @see GVRMaterial
      */
     protected void setMaterialDefaults(GVRShaderData material) { }
+
+    /**
+     * Select the specific vertex and fragment shader to use.
+     *
+     * The shader template is used to generate the sources for the vertex and
+     * fragment shader based on the vertex attributes and material properties. This
+     * function may compile the shader if it does not already exist.
+     *
+     * @param context
+     *            GVRContext
+     * @param rdata
+     *            GVRRenderData with mesh and material to use
+     */
+    public void bindShader(GVRContext context, GVRRenderData rdata)
+    {
+        bindShader(context, rdata, null);
+    }
 
     /**
      * Select the specific vertex and fragment shader to use.
@@ -217,14 +241,8 @@ public class GVRShader
      * @param rdata
      *            GVRRenderData with mesh and material to use
      * @param lightlist
-     *            list of lights illuminating the mesh
-     * @return ID of vertex/fragment shader set
+     *            list of light sources
      */
-    public void bindShader(GVRContext context, GVRRenderData rdata)
-    {
-        bindShader(context, rdata, null);
-    }
-
     public void bindShader(GVRContext context, GVRRenderData rdata, GVRLightBase[] lightlist) {
         GVRMesh mesh = rdata.getMesh();
         GVRShaderData material = rdata.getMaterial();
@@ -240,6 +258,22 @@ public class GVRShader
         rdata.setShader(nativeShader);
     }
 
+    /**
+     * Select the specific vertex and fragment shader to use
+     * for a render pass.
+     *
+     * The shader template is used to generate the sources for the vertex and
+     * fragment shader based on the vertex attributes and material properties.
+     * Shaders used by GVRRenderPass do not look at light sources.
+     * Only the GVRRenderData shaders generate variants that incorporate lighting.
+     *
+     * @param context
+     *            GVRContext
+     * @param rdata
+     *            GVRRenderData with mesh and material to use
+     * @param lightlist
+     *            list of light sources
+     */
     public void bindShader(GVRContext context, GVRRenderPass rpass, GVRMesh mesh)
     {
         rpass.setShader(bindShader(context, rpass.getMaterial()));

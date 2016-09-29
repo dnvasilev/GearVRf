@@ -26,6 +26,12 @@
 #include "util/gvr_log.h"
 
 namespace gvr {
+/**
+ * Keeps track of a set of PostEffect shaders.
+ * The only real difference between this class and the ShaderManager
+ * is that it contains geometry for a full screen quad.
+ * This class should not exist - the geometry can be kept elsewhere.
+ */
 class PostEffectShaderManager: public ShaderManager {
 public:
     PostEffectShaderManager() :
@@ -57,7 +63,6 @@ public:
         mesh->set_triangles(quad_triangles);
         render_data = new RenderData();
         render_data->set_mesh(mesh);
-        name_ = "PostEffectShaderManager";
     }
 
     RenderData* get_render_data()

@@ -39,6 +39,7 @@ package org.gearvrf;
  * </tr>
  * </table>
  * </p>
+ * @deprecated GVRShaderMaps and subclasses do absolutely nothing now
  */
 public interface GVRShaderMaps {
     /**

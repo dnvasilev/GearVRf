@@ -14,6 +14,17 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which modulates a texture by a color.
+ * This shader does not use light sources.
+ * @<code>
+ *    a_position    position vertex attribute
+ *    a_texcoord    texture coordinate vertex attribute
+ *    u_color       color to modulate texture
+ *    u_opacity     opacity
+ *    u_texture     texture
+ * </code>
+ */
 public class GVRUnlitFBOShader extends GVRShader
 {
     private String vertexShader =

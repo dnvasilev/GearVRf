@@ -48,6 +48,19 @@ package org.gearvrf;
 //
 // (http://www.nvidia.com/object/cube_map_ogl_tutorial.html)
 // (http://stackoverflow.com/questions/11685608/convention-of-faces-in-opengl-cubemapping)
+
+/**
+ * Shader which renders a cubemap texture modulated by a color.
+ * This shader ignores light sources.
+ * @<code>
+ *     a_position   position vertex attribute
+ *     a_normal     normal vertex attribute
+ *     u_mvp        model/view/projection matrix
+ *     u_color      color to modulate texture map
+ *     u_opacity    opacity
+ *     u_texture    cubemap texture
+ * </code>
+ */
 public class GVRCubemapShader extends GVRShader
 {
     private String vertexShader =

@@ -19,31 +19,18 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * The API shared by {@link GVRMaterial} and {@link GVRPostEffect}.
+ * Provides access to the uniform data used with a shader.
  *
- * <p>
- * <table border="1">
- * <tr>
- * <td>{@link GVRMaterialShaderManager} {@code implements}
- * {@link GVRShaderManagers}</td>
- * <td>{@link GVRMaterialMap} {@code implements} {@link GVRShaderMaps}</td>
- * <td>{@link GVRMaterial} {@code implements} {@link GVRShaderData}</td>
- * </tr>
- * <tr>
- * <td>{@link GVRPostEffectShaderManager} {@code implements}
- * {@link GVRShaderManagers}</td>
- * <td>{@link GVRPostEffectMap} {@code implements} {@link GVRShaderMaps}</td>
- * <td>{@link GVRPostEffect} {@code implements} {@link GVRShaderData}</td>
- * </tr>
- * </table>
- * </p>
+ * This interface defines how the Java API accesses the
+ * shader uniforms which are kept in the native layer.
+ * @see GVRMaterial GVRPostEffect
  */
 public interface GVRShaderData {
 
     public GVRShaderId getShaderType();
 
     /**
-     * Return the names of all the textures used by this post effect.
+     * Return the names of all the textures used by this material.
      * @return list of texture names
      */
     public Set<String> getTextureNames();
@@ -88,8 +75,10 @@ public interface GVRShaderData {
 
     /**
      * Determine whether a named uniform has been set.
-     * @param name of uniform in shader and material
+     * This function does not handle textures.
+     * @param name of uniform
      * @return true if uniform has been set, else false
+     * @see getTexture
      */
     public boolean hasUniform(String name);
 

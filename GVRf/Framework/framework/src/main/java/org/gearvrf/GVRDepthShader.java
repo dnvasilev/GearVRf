@@ -22,10 +22,9 @@ import android.content.Context;
 
 import org.gearvrf.R;
 
-   /**
-    * Manages a set of variants on vertex and fragment shaders from the same source
-    * code.
-    */
+/**
+ * Shader used internally to generate shadow maps
+ */
 public class GVRDepthShader extends GVRShaderTemplate
 {
     private static String fragTemplate = null;

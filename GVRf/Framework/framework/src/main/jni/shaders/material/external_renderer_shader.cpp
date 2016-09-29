@@ -76,7 +76,7 @@ void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data
     if (!capturer || !capturer->getAndClearPendingCapture()) {
         // Original rendering
         float opacity = 1.0f;
-        material->getFloat("opacity", opacity);
+        material->getFloat("u_opacity", opacity);
         externalRenderer(reinterpret_cast<ExternalRendererTexture*>(texture)->getData(),
                          scratchBuffer, 6,
                          glm::value_ptr(rstate->uniforms.u_mvp), 16,

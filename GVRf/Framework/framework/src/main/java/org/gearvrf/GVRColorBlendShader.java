@@ -14,6 +14,17 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which blends between a color and a texture.
+ * This shader ignores light sources.
+ * @<code>
+ *     a_position   position vertex attribute
+ *     a_texcoord   texture coordinate vertex attribute
+ *     u_texture    texture to blend
+ *     u_color      color to blend
+ *     u_factor     blend factor (0 to 1)
+ * </code>
+ */
 public class GVRColorBlendShader extends GVRShader
 {
     private String vertexShader =

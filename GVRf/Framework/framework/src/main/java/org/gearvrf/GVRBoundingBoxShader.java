@@ -15,7 +15,12 @@
 package org.gearvrf;
 
 /**
- * Renders a bounding box for occlusion query
+ * Renders a bounding box for occlusion query.
+ * This shader ignores light sources.
+ * @<code>
+ *     u_mvp        model/view/projection matrix
+ *     a_position   position vertex attribute
+ * </code>
  */
 public class GVRBoundingBoxShader extends GVRShader
 {
@@ -27,7 +32,7 @@ public class GVRBoundingBoxShader extends GVRShader
 
     private String fragmentShader =
         "precision mediump  float;\n" +
-        "void main() {n gl_FragColor =  vec4(0.0, 1.0, 0.0, 0.0); }\n";
+        "void main() { gl_FragColor = vec4(0.0, 1.0, 0.0, 0.0); }\n";
 
     public GVRBoundingBoxShader()
     {

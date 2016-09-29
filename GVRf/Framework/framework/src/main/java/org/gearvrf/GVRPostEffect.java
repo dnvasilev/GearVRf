@@ -31,8 +31,8 @@ import static org.gearvrf.utility.Assert.checkStringNotNullOrEmpty;
  * A "post effect" shader is a GL shader which can be inserted into the pipeline
  * between rendering the scene graph and applying lens distortion.
  * 
- * A {@link GVRPostEffect} combines the id of a (stock or custom) post effect
- * shader with shader data: you can, for example, apply the same shader to each
+ * A {@link GVRPostEffect} combines the id of a post effect shader
+ * with shader data: you can, for example, apply the same shader to each
  * eye, using different parameters for each eye. It is actually quite similar to
  * {@link GVRMaterial}.
  */

@@ -14,6 +14,20 @@
  */
 package org.gearvrf;
 
+/**
+ * Shader which horizontally flips a texture and blends it with a color.
+ * This shader assumes the vertex position is in eye coordinates - it
+ * does not use the model, view or projection matrices.
+ * It also ignores light sources.
+ *
+ * @<code>
+ *     a_position   position vertex attribute
+ *     a_texcoord   normal vertex attribute
+ *     u_color      color to blend
+ *     u_factor     blend factor (0 to 1)
+ *     u_texture    texture to blend
+ * </code>
+ */
 public class GVRHorizontalFlipShader extends GVRShaderTemplate
 {
     private String vertexShader =

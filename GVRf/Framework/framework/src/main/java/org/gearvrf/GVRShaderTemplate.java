@@ -30,7 +30,7 @@ import org.mozilla.javascript.NativeGenerator.GeneratorClosedException;
 import org.gearvrf.utility.Log;
 
 /**
- * Generates a set of vertex and fragment shaders from the same source template.
+ * Generates a set of native vertex and fragment shaders from source code segments.
  *
  * Each shader template keeps a set of named source code segments which are used
  * to compose the shaders. The code in the "FragmentTemplate" slot is the master
@@ -52,10 +52,13 @@ import org.gearvrf.utility.Log;
  * Each shader variant generated has a unique signature so that the same variant
  * will not be generated twice.
  *
- * The shader template also defines a uniform descriptor which contains the
- * names and types of all the uniforms in the material used by the shader. Each
- * entry is a float or integer type, an optional count and the name of the
- * uniform (e.g. "float3 diffuse_color, float specular_exponent, int is_enabled"
+ * The shader also defines descriptors that define the
+ * names and types of all the uniforms, textures and vertex attributes
+ * used by the shader. For uniforms and attributes, each entry is a
+ * float or integer type, an optional count and the name of the
+ * uniform (e.g. "float3 diffuse_color, float specular_exponent, int is_enabled".
+ * For textures, the descriptor contains the sampler type followed by the name:
+ * (e.g. "sampler2D u_texture; samplerCube u_cubemap")
  * 
  * Multiple lights are supported by specifying light shader source code segments
  * in GVRLightBase. You can define different light implementations with
@@ -151,7 +154,10 @@ public class GVRShaderTemplate extends GVRShader
 
     /**
      * Create a unique signature for this shader variant.
-     * 
+     * The signature will include the names of the vertex attributes,
+     * texture samplers, material uniforms and light sources actually used by this
+     * shader variant.
+     *
      * @param defined
      *            names to be defined for this shader
      * @return string signature for shader
@@ -329,8 +335,6 @@ public class GVRShaderTemplate extends GVRShader
             String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
             nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
-            GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
-            makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
         rdata.setShader(nativeShader);
@@ -368,8 +372,6 @@ public class GVRShaderTemplate extends GVRShader
             String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
             nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
-            GVRMaterialMap materialMap = shaderManager.getShaderMap(nativeShader);
-            makeMaterialMap(material, materialMap);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
         return nativeShader;
@@ -597,57 +599,6 @@ public class GVRShaderTemplate extends GVRShader
             desc += "   " + outBase + "." + name + " = " +  inBase + "_" + name + ";\n";
         }
         return desc;
-    }
-
-    /**
-     * Makes the material map for the shader.
-     * The material map does not change any names, just maps
-     * the keys in the material to themselves.
-     */
-    private void makeMaterialMap(GVRShaderData material, GVRMaterialMap map)
-    {
-        Pattern uniformPattern = Pattern.compile("[ ]*([A-Za-z0-9_]+)[ ]+([A-Za-z0-9_]+)[,;:]*");
-        Pattern uniformTypePattern = Pattern.compile("([A-Za-z]+)([0-9_]+)");
-        Matcher matcher1 = uniformPattern.matcher(mUniformDescriptor);
-        Set<String> texNames = material.getTextureNames();
-
-        for (String s : texNames)
-        {
-            map.addTextureKey(s, s);
-        }
-        while (matcher1.find())
-        {
-            String type = matcher1.group(1);
-            String name = matcher1.group(2);
-            Matcher matcher2 = uniformTypePattern.matcher(type);
-            int nfloats = 1;
-
-            if (matcher2.find())
-            {
-                String size = matcher2.group(2);
-                if (size.length() > 0)
-                {
-                    nfloats = Integer.parseInt(size);
-                }
-            }
-            switch (nfloats)
-            {
-                case 1:
-                    map.addUniformFloatKey(name, name);
-                    break;
-                case 2:
-                    map.addUniformVec2Key(name, name);
-                    break;
-                case 3:
-                    map.addUniformVec3Key(name, name);
-                    break;
-                case 4:
-                    map.addUniformVec4Key(name, name);
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Vertex attribute size " + nfloats + " unsupported");
-            }
-        }
     }
 
     protected Set<String> mShaderDefines;
