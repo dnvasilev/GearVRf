@@ -44,6 +44,7 @@ struct GVR_VK_SwapchainBuffer
     VkImageView view;
     VkDeviceSize size;
     VkDeviceMemory mem;
+    VkBuffer buf;
 };
 
 struct GVR_VK_DepthBuffer {
@@ -151,6 +152,7 @@ private:
 
     VkSwapchainKHR m_swapchain;
     GVR_VK_SwapchainBuffer* m_swapchainBuffers;
+    GVR_VK_SwapchainBuffer* outputImage;
 
     uint32_t m_swapchainCurrentIdx;
     uint32_t m_height;

@@ -302,6 +302,11 @@ bool VulkanCore::InitDevice() {
 }
 
 void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
+VkResult  err;
+bool pass;
+VkMemoryRequirements mem_reqs;
+VkMemoryAllocateInfo memoryAllocateInfo = {};
+
     VkResult ret = VK_SUCCESS;
        m_width = width;// 320;//surfaceCapabilities.currentExtent.width;
        m_height = height;//240;//surfaceCapabilities.currentExtent.height;
@@ -324,11 +329,12 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
        // Create the image with details as imageCreateInfo
        m_swapchainImageCount = 3;
        m_swapchainBuffers = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
+       outputImage = new GVR_VK_SwapchainBuffer[m_swapchainImageCount];
        GVR_VK_CHECK(m_swapchainBuffers);
 
        for(int i = 0; i < m_swapchainImageCount; i++) {
-           VkMemoryRequirements mem_reqs;
-           VkResult  err;
+
+
            bool  pass;
 
            //ret = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_swapchainBuffers[i].image);
@@ -340,6 +346,11 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
                                );
            GVR_VK_CHECK(!ret);
 
+           err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(m_width*m_height*4* sizeof(uint8_t), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT  | VK_IMAGE_USAGE_TRANSFER_SRC_BIT), nullptr, &m_swapchainBuffers[i].buf);
+           GVR_VK_CHECK(!err);
+
+
+
            // discover what memory requirements are for this image.
            vkGetImageMemoryRequirements(m_device, m_swapchainBuffers[i].image, &mem_reqs);
            //LOGD("Vulkan image memreq %", mem_reqs.size);
@@ -347,15 +358,14 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
 
 
            // Allocate memory according to requirements
-           VkMemoryAllocateInfo memoryAllocateInfo = {};
+
            memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
            memoryAllocateInfo.pNext = nullptr;
            memoryAllocateInfo.allocationSize = 0;
            memoryAllocateInfo.memoryTypeIndex = 0;
            memoryAllocateInfo.allocationSize = mem_reqs.size;
-           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+           pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryAllocateInfo.memoryTypeIndex);
            GVR_VK_CHECK(pass);
-        //VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 
            err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_swapchainBuffers[i].mem);
            GVR_VK_CHECK(!err);
@@ -364,6 +374,8 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
            err = vkBindImageMemory(m_device, m_swapchainBuffers[i].image, m_swapchainBuffers[i].mem, 0);
            GVR_VK_CHECK(!err);
 
+            err = vkBindBufferMemory(m_device, m_swapchainBuffers[i].buf, m_swapchainBuffers[i].mem, 0);
+                       GVR_VK_CHECK(!err);
 
            VkImageViewCreateInfo imageViewCreateInfo = {};
            imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -391,7 +403,37 @@ void VulkanCore::InitSwapchain(uint32_t width, uint32_t height){
 
            GVR_VK_CHECK(!err);
 
+
+
+            err = vkCreateBuffer(m_device, gvr::BufferCreateInfo(m_width*m_height*4* sizeof(uint8_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT), nullptr, &outputImage[i].buf);
+                    GVR_VK_CHECK(!err);
+
+                    // Obtain the memory requirements for this buffer.
+                    vkGetBufferMemoryRequirements(m_device, outputImage[i].buf, &mem_reqs);
+                    GVR_VK_CHECK(!err);
+
+                    // And allocate memory according to those requirements.
+                    memoryAllocateInfo = {};
+                    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                    memoryAllocateInfo.pNext = nullptr;
+                    memoryAllocateInfo.allocationSize = 0;
+                    memoryAllocateInfo.memoryTypeIndex = 0;
+                    memoryAllocateInfo.allocationSize  = mem_reqs.size;
+                    pass = GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocateInfo.memoryTypeIndex);
+                    GVR_VK_CHECK(pass);
+
+                    outputImage[i].size = mem_reqs.size;
+                    err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &outputImage[i].mem);
+                    GVR_VK_CHECK(!err);
+
+                    err = vkBindBufferMemory(m_device, outputImage[i].buf, outputImage[i].mem, 0);
+                    GVR_VK_CHECK(!err);
        }
+
+
+
+
+
 
    m_depthBuffers = new GVR_VK_DepthBuffer[m_swapchainImageCount];
        for (int i = 0; i < m_swapchainImageCount; i++) {
@@ -1390,8 +1432,8 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
             preRenderBarrier.pNext = nullptr;
             preRenderBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
             preRenderBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            preRenderBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            preRenderBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             preRenderBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             preRenderBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             preRenderBarrier.image = m_swapchainBuffers[i].image;
@@ -1505,6 +1547,25 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
          }
          }
         // Now our render pass has ended.
+/*
+        VkBufferCopy copyRegion = {};
+            copyRegion.srcOffset = 0; // Optional
+            copyRegion.dstOffset = 0; // Optional
+            copyRegion.size = outputImage.size;
+            vkCmdCopyBuffer(cmdBuffer, m_swapchainBuffers[m_swapchainCurrentIdx].buf, outputImage.buf, 1, &copyRegion);*/
+  /*      VkExtent3D extent3D = {};
+                      extent3D.width = m_width;
+                      extent3D.height = m_height;
+        VkBufferImageCopy region = { 0 };
+                        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        region.imageSubresource.layerCount = 1;
+                         region.imageExtent = extent3D;
+
+
+        vkCmdCopyImageToBuffer(cmdBuffer, m_swapchainBuffers[m_swapchainCurrentIdx].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, outputImage.buf, 1,  &region);
+*/
+
+
 
         vkCmdEndRenderPass(cmdBuffer);
 
@@ -1515,7 +1576,7 @@ void VulkanCore::BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allD
             prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
             prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             prePresentBarrier.image = m_swapchainBuffers[i].image;
@@ -1567,25 +1628,71 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
  //   LOGI("Vulkan after vkqueue submit %d", err);
     err = vkWaitForFences(m_device, 1, &waitFences[m_swapchainCurrentIdx], VK_TRUE, 4294967295U);
     GVR_VK_CHECK(!err);
+
+
+
+
+    VkCommandBuffer trnCmdBuf = GetTransientCmdBuffer();
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(trnCmdBuf, &beginInfo);
+    VkBufferCopy copyRegion = {};
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = outputImage[m_swapchainCurrentIdx].size;
+    vkCmdCopyBuffer(trnCmdBuf, m_swapchainBuffers[m_swapchainCurrentIdx].buf, outputImage[m_swapchainCurrentIdx].buf, 1, &copyRegion);
+    /* VkExtent3D extent3D = {};
+              extent3D.width = m_width;
+              extent3D.height = m_height;
+     VkBufferImageCopy region = { 0 };
+                region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                region.imageSubresource.layerCount = 1;
+                 region.imageExtent = extent3D;
+
+
+    vkCmdCopyImageToBuffer(trnCmdBuf, m_swapchainBuffers[m_swapchainCurrentIdx].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, outputImage.buf, 1,  &region);*/
+    vkEndCommandBuffer(trnCmdBuf);
+
+    VkSubmitInfo ssubmitInfo = {};
+    ssubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    ssubmitInfo.commandBufferCount = 1;
+    ssubmitInfo.pCommandBuffers = &trnCmdBuf;
+
+    vkQueueSubmit(m_queue, 1, &ssubmitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_queue);
+    vkFreeCommandBuffers(m_device, m_commandPoolTrans, 1, &trnCmdBuf);
+
+
+
+
+
+
+
+
+
+
   //  LOGI("Vulkan after vkWaitForFences submit %d", err);
 
-    static bool memoryAlloc = false;
+/*    static bool memoryAlloc = false;
     if(memoryAlloc == false){
       //  oculusTexData = (uint8_t*)malloc(m_width*m_height*4* sizeof(uint8_t));
         memoryAlloc = true;
     }
-
+*/
     uint8_t * data;
-    err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
+    //err = vkMapMemory(m_device, m_swapchainBuffers[m_swapchainCurrentIdx].mem, 0, m_swapchainBuffers[m_swapchainCurrentIdx].size, 0, (void **)&data);
+    err = vkMapMemory(m_device, outputImage[m_swapchainCurrentIdx].mem, 0, outputImage[m_swapchainCurrentIdx].size, 0, (void **)&data);
     GVR_VK_CHECK(!err);
+    oculusTexData = data;
 
  //   LOGI("Vulkna size of %d", sizeof(oculusTexData));
-    memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
+  //  memcpy(oculusTexData, data, (m_width*m_height*4* sizeof(uint8_t)));
 
  //   LOGI("Vulkan memcpy map done");
 
     /*for (int i = 0; i < (m_width*m_height)-4; i++) {
-        LOGI("Vulkan Data %u, %u %u %u", finaloutput[i], finaloutput[i+1], finaloutput[i+2], finaloutput[i+3]);
+        LOGI("Vulkan Data %u, %u %u %u", data[i], data[i+1], data[i+2], data[i+3]);
         i+=3;
         //break;
     }*/
@@ -1593,7 +1700,8 @@ void VulkanCore::DrawFrameForRenderData(int &swapChainIndex){
     //oculusTexData = data;
    // texDataVulkan = data;//finaloutput;
  //   LOGI("Vulkan data reading done");
-    vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
+    vkUnmapMemory(m_device,outputImage[m_swapchainCurrentIdx].mem);
+    //vkUnmapMemory(m_device,m_swapchainBuffers[m_swapchainCurrentIdx].mem);
 
     // Makes Fence Un-signalled
     err = vkResetFences(m_device, 1, &waitFences[m_swapchainCurrentIdx]);
