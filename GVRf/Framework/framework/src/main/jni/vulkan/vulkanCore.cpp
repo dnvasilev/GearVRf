@@ -1029,7 +1029,7 @@ void VulkanCore::InitRenderPass(){
     // of attachment.
     VkAttachmentDescription attachmentDescriptions[2] = {};
     attachmentDescriptions[0].flags = 0;
-    attachmentDescriptions[0].format = m_surfaceFormat.format;
+    attachmentDescriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;//.format;
     attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
