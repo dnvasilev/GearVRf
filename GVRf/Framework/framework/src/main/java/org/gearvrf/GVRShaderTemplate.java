@@ -220,7 +220,7 @@ public class GVRShaderTemplate extends GVRShader
     protected void updateDescriptors(GVRMesh mesh, GVRShaderData material,
                                      StringBuilder uniformDesc, StringBuilder textureDesc, StringBuilder vertexDesc)
     {
-        Pattern pattern = Pattern.compile("[ \t]+([a-zA-Z0-9]+)[ \t]+([a-zA-Z0-9_]+)[,;]*");
+        Pattern pattern = Pattern.compile("([a-zA-Z0-9]+)[ \t]+([a-zA-Z0-9_]+)[^ ]*");
         Matcher matcher = pattern.matcher(mTextureDescriptor);
         int index = 0;
 

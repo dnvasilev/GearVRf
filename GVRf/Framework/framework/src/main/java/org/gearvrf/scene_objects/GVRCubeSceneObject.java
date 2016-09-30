@@ -404,9 +404,8 @@ public class GVRCubeSceneObject extends GVRSceneObject {
             mesh.setTriangles(SIMPLE_INWARD_INDICES);
         }
 
-        GVRRenderData renderData = new GVRRenderData(gvrContext);
-        renderData.setMaterial(material);
-        attachRenderData(renderData);
+        GVRRenderData renderData = new GVRRenderData(gvrContext, material);
+        attachComponent(renderData);
         renderData.setMesh(mesh);
     }
 

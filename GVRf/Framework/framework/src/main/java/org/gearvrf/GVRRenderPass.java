@@ -86,6 +86,13 @@ public class GVRRenderPass extends GVRHybridObject {
         mShader = 0;
     }
 
+    public GVRRenderPass(GVRContext gvrContext, GVRMaterial material) {
+        super(gvrContext, NativeRenderPass.ctor());
+        mMaterial = material;
+        mCullFace = GVRCullFaceEnum.Back;
+        mShader = 0;
+    }
+
     /**
      * Set the {@link GVRMaterial material} for this pass.
      * 

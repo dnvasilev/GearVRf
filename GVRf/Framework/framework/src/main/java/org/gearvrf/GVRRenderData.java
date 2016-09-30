@@ -113,14 +113,16 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
         GVRRenderPass basePass = new GVRRenderPass(gvrContext);
         mRenderPassList = new ArrayList<GVRRenderPass>();
         addPass(basePass);
-        isLightEnabled = false;
+        isLightEnabled = true;
         mLightMapEnabled = false;
     }
 
-    public GVRRenderData(GVRContext gvrContext, GVRSceneObject owner) {
+    public GVRRenderData(GVRContext gvrContext, GVRMaterial material) {
         super(gvrContext, NativeRenderData.ctor());
         setOwnerObject(owner);
-        GVRRenderPass basePass = new GVRRenderPass(gvrContext);
+        GVRRenderPass basePass = new GVRRenderPass(gvrContext, material);
+        isLightEnabled = true;
+        mLightMapEnabled = false;
         mRenderPassList = new ArrayList<GVRRenderPass>();
         addPass(basePass);
     }
@@ -255,6 +257,7 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      * cheaper - though less accurate - to use the bounding box.
      * 
      * @return Either a {@code Future<GVREyePointee>} or {@code null}.
+     * @deprecated use GVRMeshCollider(context, useBoundingBox) instead
      */
     public Future<GVREyePointee> getMeshEyePointee() {
         return getMeshEyePointee(true);
@@ -283,6 +286,7 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      *            use the bounding box.
      * 
      * @return Either a {@code Future<GVREyePointee>} or {@code null}.
+     * @deprecated use GVRMeshCollider(context, useBoundingBox) instead
      */
     public Future<GVREyePointee> getMeshEyePointee(boolean useBoundingBox) {
         synchronized (this) {
