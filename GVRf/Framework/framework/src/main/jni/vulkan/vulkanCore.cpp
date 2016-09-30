@@ -30,7 +30,7 @@
 #include <thread>
 
 #include <shaderc/shaderc.hpp>
-#define UINT64_MAX 99999
+
 namespace gvr {
 
 VulkanCore* VulkanCore::theInstance = NULL;
