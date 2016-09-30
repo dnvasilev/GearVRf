@@ -134,6 +134,9 @@ private:
 
     void InitUniformBuffers();
 
+    void DebugLogPhysicalDeviceProperties();
+    void DebugLogPhysicalDeviceMemoryProperties();
+
 
     bool m_Vulkan_Initialised;
     ANativeWindow * m_androidWindow;

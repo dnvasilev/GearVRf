@@ -30,7 +30,7 @@
 #include <thread>
 
 #include <shaderc/shaderc.hpp>
-#define UINT64_MAX 99999
+
 namespace gvr {
 
 VulkanCore* VulkanCore::theInstance = NULL;
@@ -137,6 +137,36 @@ bool VulkanCore::CreateInstance(){
     return true;
 }
 
+void VulkanCore::DebugLogPhysicalDeviceProperties()
+{
+    uint32_t api = m_physicalDeviceProperties.apiVersion;
+    int apiMajor = VK_VERSION_MAJOR(api);
+    int apiMinor = VK_VERSION_MINOR(api);
+    int apiPatch = VK_VERSION_PATCH(api);
+
+    LOGI("Vulkan Device: %s [Vulkan API %d.%d.%d]", m_physicalDeviceProperties.deviceName, apiMajor, apiMinor, apiPatch);
+}
+
+void VulkanCore::DebugLogPhysicalDeviceMemoryProperties()
+{
+    for(int i=0;i<m_physicalDeviceMemoryProperties.memoryTypeCount;++i) {
+        LOGI("memoryType %d propertyFlags 0x%08X heapIndex %d",
+            i,
+            m_physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags,
+            m_physicalDeviceMemoryProperties.memoryTypes[i].heapIndex
+        );
+    }
+
+    for(int i=0;i<m_physicalDeviceMemoryProperties.memoryHeapCount;++i) {
+        LOGI("memoryHeap %d size %lld [0x%016llX] flags 0x%08X",
+            i,
+            m_physicalDeviceMemoryProperties.memoryHeaps[i].size,
+            m_physicalDeviceMemoryProperties.memoryHeaps[i].size,
+            m_physicalDeviceMemoryProperties.memoryHeaps[i].flags
+        );
+    }
+}
+
 bool VulkanCore::GetPhysicalDevices(){
     VkResult ret = VK_SUCCESS;
 
@@ -163,11 +193,13 @@ bool VulkanCore::GetPhysicalDevices(){
     // other details.
     vkGetPhysicalDeviceProperties(m_physicalDevice, &(m_physicalDeviceProperties));
 
-    LOGI("Vulkan Device: %s", m_physicalDeviceProperties.deviceName);
+    DebugLogPhysicalDeviceProperties();
 
     // Get Memory information and properties - this is required later, when we begin
     // allocating buffers to store data.
     vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &(m_physicalDeviceMemoryProperties));
+
+    DebugLogPhysicalDeviceMemoryProperties();
 
     return true;
 }
