@@ -65,7 +65,7 @@ namespace gvr {
         }
         else
         {
-            LOGE("SHADER: getShader %ld NOT FOUND", id);
+            LOGE("SHADER: getShader %d NOT FOUND", id);
             return NULL;
         }
     }
