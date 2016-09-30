@@ -202,7 +202,7 @@ namespace gvr {
 
 const bool Shader::LOG_SHADER = true;
 
-Shader::Shader(long id,
+Shader::Shader(int id,
                const std::string& signature,
                const std::string& uniformDescriptor,
                const std::string& textureDescriptor,
@@ -323,7 +323,7 @@ int Shader::calcSize(std::string type)
 
 
 Shader::~Shader() {
-    if (LOG_SHADER) LOGE("SHADER: deleting shader %s %ld %p", signature_.c_str(), id_, this);
+    if (LOG_SHADER) LOGE("SHADER: deleting shader %s %d %p", signature_.c_str(), id_, this);
     delete program_;
 }
 

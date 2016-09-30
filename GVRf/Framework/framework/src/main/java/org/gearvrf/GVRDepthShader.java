@@ -14,13 +14,9 @@
  */
 package org.gearvrf;
 
-import java.util.HashMap;
-
-import org.gearvrf.utility.TextFile;
-
 import android.content.Context;
 
-import org.gearvrf.R;
+import org.gearvrf.utility.TextFile;
 
 /**
  * Shader used internally to generate shadow maps
@@ -33,7 +29,7 @@ public class GVRDepthShader extends GVRShaderTemplate
 
     public GVRDepthShader(GVRContext gvrcontext)
     {
-        super("", "", "float3 a_position float3 a_normal float4 a_bone_weights int4 a_bone_indices");
+        super("", "", "float3 a_position float3 a_normal float4 a_bone_weights int4 a_bone_indices", 300);
         if (fragTemplate == null) {
             Context context = gvrcontext.getContext();
             fragTemplate = TextFile.readTextFile(context, R.raw.depth_shader);

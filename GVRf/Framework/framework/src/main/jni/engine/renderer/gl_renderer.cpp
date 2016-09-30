@@ -441,8 +441,7 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
                     glLineWidth(1.0f);
                 }
             }
-            LOGE("SHADER: selecting shader %s %ld", shader->signature().c_str(),
-                 shader->getShaderID());
+            LOGE("SHADER: selecting shader %s %d", shader->signature().c_str(), shader->getShaderID());
             shader->render(&rstate, render_data, curr_material);
         }
         catch (const std::string &error) {

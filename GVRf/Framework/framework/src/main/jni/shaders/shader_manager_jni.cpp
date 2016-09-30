@@ -26,7 +26,7 @@ extern "C" {
     JNIEXPORT jlong JNICALL
     Java_org_gearvrf_NativeShaderManager_ctor(JNIEnv * env, jobject obj);
 
-    JNIEXPORT jlong JNICALL
+    JNIEXPORT jint JNICALL
     Java_org_gearvrf_NativeShaderManager_addShader(
             JNIEnv * env, jobject obj, jlong jshader_manager,
             jstring signature,
@@ -35,10 +35,6 @@ extern "C" {
             jstring vertexDesc,
             jstring vertex_shader,
             jstring fragment_shader);
-
-    JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeShaderManager_getShaderMap(
-            JNIEnv * env, jobject obj, jlong jshader_manager, jint id);
 
     JNIEXPORT jint JNICALL
     Java_org_gearvrf_NativeShaderManager_getShader(
@@ -51,7 +47,7 @@ Java_org_gearvrf_NativeShaderManager_ctor(JNIEnv * env,
     return reinterpret_cast<jlong>(new ShaderManager());
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT jint JNICALL
 Java_org_gearvrf_NativeShaderManager_addShader(
     JNIEnv * env, jobject obj, jlong jshader_manager,
     jstring signature,
@@ -83,14 +79,6 @@ Java_org_gearvrf_NativeShaderManager_addShader(
     return id;
 }
 
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeShaderManager_getShaderMap(
-    JNIEnv * env, jobject obj, jlong jshader_manager, jint id) {
-    ShaderManager* shader_manager = reinterpret_cast<ShaderManager*>(jshader_manager);
-    Shader* shader = shader_manager->getShader(id);
-    return reinterpret_cast<jlong>(shader);
-}
-
 JNIEXPORT jint JNICALL
 Java_org_gearvrf_NativeShaderManager_getShader(
     JNIEnv * env, jobject obj, jlong jshader_manager, jstring signature) {
@@ -102,7 +90,8 @@ Java_org_gearvrf_NativeShaderManager_getShader(
     env->ReleaseStringUTFChars(signature, sig_str);
     if (shader != NULL)
     {
-        return shader->getShaderID();
+        int id = shader->getShaderID();
+        return reinterpret_cast<jint>(id);
     }
     return 0;
 }

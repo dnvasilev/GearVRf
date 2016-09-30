@@ -61,12 +61,12 @@ public:
  * it description is added to the table.
  * @returns ID of shader (integer that is unique within this ShaderManager).
  */
-    long addShader(const std::string& signature,
-                   const std::string& uniformDescriptor,
-                   const std::string& textureDescriptor,
-                   const std::string& vertexDescriptor,
-                   const std::string& vertex_shader,
-                   const std::string& fragment_shader);
+    int addShader(const std::string& signature,
+                  const std::string& uniformDescriptor,
+                  const std::string& textureDescriptor,
+                  const std::string& vertexDescriptor,
+                  const std::string& vertex_shader,
+                  const std::string& fragment_shader);
 
     /*
      * Find a shader by its signature.
@@ -82,7 +82,7 @@ public:
      * @param ID returned from addShader
      * @returns -> Shader or NULL if not found
      */
-    Shader* getShader(long id);
+    Shader* getShader(int id);
 
     /*
      * Print signatures and IDS of all shaders to logcat
@@ -96,9 +96,9 @@ private:
     ShaderManager& operator=(ShaderManager&& shader_manager);
 
 private:
-    long latest_shader_id_ = 0;
+    int latest_shader_id_ = 0;
     std::map<std::string, Shader*> shadersBySignature;
-    std::map<long, Shader*> shadersByID;
+    std::map<int, Shader*> shadersByID;
     std::mutex lock_;
 };
 

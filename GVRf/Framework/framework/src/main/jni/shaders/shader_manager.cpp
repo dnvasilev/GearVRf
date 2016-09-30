@@ -14,7 +14,7 @@ namespace gvr {
         shadersBySignature.clear();
     }
 
-    long ShaderManager::addShader(const std::string& signature,
+    int ShaderManager::addShader(const std::string& signature,
           const std::string& uniformDescriptor,
           const std::string& textureDescriptor,
           const std::string& vertexDescriptor,
@@ -27,11 +27,11 @@ namespace gvr {
             return shader->getShaderID();
         }
         std::lock_guard<std::mutex> lock(lock_);
-        long id = ++latest_shader_id_;
+        int id = ++latest_shader_id_;
         shader = new Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertex_shader, fragment_shader);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
-        if (Shader::LOG_SHADER) LOGD("SHADER: added shader %ld %s", id, signature.c_str());
+        if (Shader::LOG_SHADER) LOGD("SHADER: added shader %d %s", id, signature.c_str());
         return id;
     }
 
@@ -43,7 +43,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            if (Shader::LOG_SHADER) LOGD("SHADER: findShader %s -> %ld", sig.c_str(), shader->getShaderID());
+            if (Shader::LOG_SHADER) LOGD("SHADER: findShader %s -> %d", sig.c_str(), shader->getShaderID());
             return shader;
         }
         else
@@ -52,7 +52,7 @@ namespace gvr {
         }
     }
 
-    Shader* ShaderManager::getShader(long id)
+    Shader* ShaderManager::getShader(int id)
     {
         std::lock_guard<std::mutex> lock(lock_);
         auto it = shadersByID.find(id);
@@ -60,7 +60,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            if (Shader::LOG_SHADER) LOGD("SHADER: getShader %ld -> %s", id, sig.c_str());
+            if (Shader::LOG_SHADER) LOGD("SHADER: getShader %d -> %s", id, sig.c_str());
             return shader;
         }
         else

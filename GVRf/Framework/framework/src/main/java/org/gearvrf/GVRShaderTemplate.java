@@ -186,7 +186,7 @@ public class GVRShaderTemplate extends GVRShader
             for (Map.Entry<Class<? extends GVRLightBase>, Integer> entry : lightCount.entrySet())
                 sig += ":" + entry.getKey().getSimpleName() + entry.getValue().toString();
         }
-        return sig;
+        return sig.trim();
     }
 
     /**
@@ -222,14 +222,14 @@ public class GVRShaderTemplate extends GVRShader
     {
         Pattern pattern = Pattern.compile("([a-zA-Z0-9]+)[ \t]+([a-zA-Z0-9_]+)[^ ]*");
         Matcher matcher = pattern.matcher(mTextureDescriptor);
-        int index = 0;
+        String name;
+        String type;
 
-        while (matcher.find(index))
+        while (matcher.find())
         {
-            String type = matcher.group(1);
-            String name = matcher.group(2);
-            index = matcher.end();
-            if (material.getTexture(name) != null)
+            type = matcher.group(1);
+            name = matcher.group(2);
+            if (material.hasTexture(name))
             {
                 textureDesc.append(type);
                 textureDesc.append(' ');
@@ -238,12 +238,10 @@ public class GVRShaderTemplate extends GVRShader
             }
         }
         matcher = pattern.matcher(mUniformDescriptor);
-        index = 0;
-        while (matcher.find(index))
+        while (matcher.find())
         {
-            String type = matcher.group(1);
-            String name = matcher.group(2);
-            index = matcher.end();
+            type = matcher.group(1);
+            name = matcher.group(2);
             if (material.hasUniform(name))
             {
                 uniformDesc.append(type);
@@ -255,12 +253,10 @@ public class GVRShaderTemplate extends GVRShader
         if (mesh != null)
         {
             matcher = pattern.matcher(mVertexDescriptor);
-            index = 0;
-            while (matcher.find(index))
+            while (matcher.find())
             {
-                String type = matcher.group(1);
-                String name = matcher.group(2);
-                index = matcher.end();
+                type = matcher.group(1);
+                name = matcher.group(2);
                 if (mesh.hasAttribute(name))
                 {
                     vertexDesc.append(type);

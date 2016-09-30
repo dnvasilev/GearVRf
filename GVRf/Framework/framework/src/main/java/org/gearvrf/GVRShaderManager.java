@@ -96,6 +96,4 @@ class NativeShaderManager {
                                 String vertexShader, String fragmentShader);
 
     static native int getShader(long shaderManager, String signature);
-
-    static native long getShaderMap(long shaderManager, int nativeShader);
 }
