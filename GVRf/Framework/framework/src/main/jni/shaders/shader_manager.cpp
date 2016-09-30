@@ -5,7 +5,7 @@
 namespace gvr {
     ShaderManager::~ShaderManager()
     {
-        LOGE("SHADER: deleting ShaderManager");
+        if (Shader::LOG_SHADER) LOGE("SHADER: deleting ShaderManager");
         for (auto it = shadersByID.begin(); it != shadersByID.end(); ++it) {
             Shader *shader = it->second;
             delete shader;
@@ -31,7 +31,7 @@ namespace gvr {
         shader = new Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertex_shader, fragment_shader);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
-        LOGD("SHADER: added shader %ld %s", id, signature.c_str());
+        if (Shader::LOG_SHADER) LOGD("SHADER: added shader %ld %s", id, signature.c_str());
         return id;
     }
 
@@ -43,7 +43,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            LOGD("SHADER: findShader %s -> %ld", sig.c_str(), shader->getShaderID());
+            if (Shader::LOG_SHADER) LOGD("SHADER: findShader %s -> %ld", sig.c_str(), shader->getShaderID());
             return shader;
         }
         else
@@ -60,12 +60,12 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            LOGD("SHADER: getShader %ld -> %s", id, sig.c_str());
+            if (Shader::LOG_SHADER) LOGD("SHADER: getShader %ld -> %s", id, sig.c_str());
             return shader;
         }
         else
         {
-            LOGD("SHADER: getShader %ld NOT FOUND", id);
+            LOGE("SHADER: getShader %ld NOT FOUND", id);
             return NULL;
         }
     }

@@ -53,6 +53,7 @@ typedef std::function<void(ShaderData&, GLuint)> UniformVariableBind;
 class Shader
 {
 public:
+    static const bool LOG_SHADER;
 
 /*
  * Facilitates visiting the individual elements of a descriptor string.
@@ -145,6 +146,7 @@ public:
      */
     void programInit(RenderState* rstate, RenderData* render_data, ShaderData* material,
                      const std::vector<glm::mat4>& model_matrix, int drawcount, bool batching) { }
+
 private:
     Shader(const Shader& shader);
     Shader(Shader&& shader);

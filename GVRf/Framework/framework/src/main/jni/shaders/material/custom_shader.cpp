@@ -29,6 +29,7 @@
 
 #include <sys/time.h>
 
+
 namespace gvr {
     class UniformLocation : public Shader::ShaderVisitor
     {
@@ -82,7 +83,7 @@ namespace gvr {
         }
         const float* fv;
         const int* iv;
-        LOGE("SHADER::uniform:value: %s location: %d", key.c_str(), loc);
+        if (Shader::LOG_SHADER) LOGE("SHADER::uniform:value: %s location: %d", key.c_str(), loc);
         switch (tolower(type[0]))
         {
             case 'f':
@@ -146,7 +147,7 @@ namespace gvr {
             loc = glGetUniformLocation(shader_->getProgramId(), key.c_str());
             if (loc >= 0) {
                 shader_->setLocation(key, loc);
-                LOGE("SHADER::uniform:location: %s location: %d", key.c_str(), loc);
+                if (Shader::LOG_SHADER) LOGE("SHADER::uniform:location: %s location: %d", key.c_str(), loc);
             }
         }
     }
@@ -156,7 +157,7 @@ namespace gvr {
         int loc = shader_->getLocation(key);
         if (loc < 0)
         {
-            LOGE("SHADER::texture: %s location not found", key.c_str());
+            if (Shader::LOG_SHADER) LOGE("SHADER::texture: %s location not found", key.c_str());
             AllTexturesAvailable = false;
             return;
         }
@@ -176,7 +177,7 @@ namespace gvr {
             if (loc >= 0)
             {
                 shader_->setLocation(key, loc);
-                LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
+                if (Shader::LOG_SHADER) LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
                 switch (size)
                 {
                     case 1:
@@ -199,6 +200,8 @@ namespace gvr {
         }
     }
 
+const bool Shader::LOG_SHADER = true;
+
 Shader::Shader(long id,
                const std::string& signature,
                const std::string& uniformDescriptor,
@@ -219,7 +222,7 @@ Shader::Shader(long id,
 void Shader::initializeOnDemand(RenderState* rstate, Mesh* mesh) {
     if (nullptr == program_) {
         program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
-        LOGD("SHADER: creating GLProgram %d", program_->id());
+        if (LOG_SHADER) LOGD("SHADER: creating GLProgram %d", program_->id());
         if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
                                && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
                                && strstr(vertexShader_.c_str(), "GL_OVR_multiview2"))) {
@@ -243,19 +246,19 @@ void Shader::initializeOnDemand(RenderState* rstate, Mesh* mesh) {
         u_model_ = glGetUniformLocation(program_->id(), "u_model");
         vertexShader_.clear();
         fragmentShader_.clear();
-        LOGD("SHADER: Custom shader added program %d", program_->id());
-        LOGD("SHADER: getting texture locations");
+        if (LOG_SHADER) LOGD("SHADER: Custom shader added program %d", program_->id());
+        if (LOG_SHADER) LOGD("SHADER: getting texture locations");
         UniformLocation uvisit(this);
         {
             std::lock_guard <std::mutex> lock(textureVariablesLock_);
             forEach(textureDescriptor_, uvisit);
         }
-        LOGD("SHADER: getting uniform locations");
+        if (LOG_SHADER) LOGD("SHADER: getting uniform locations");
         {
             std::lock_guard <std::mutex> lock(uniformVariablesLock_);
             forEach(uniformDescriptor_, uvisit);
         }
-        LOGD("SHADER: getting attribute locations");
+        if (LOG_SHADER) LOGD("SHADER: getting attribute locations");
         {
             std::lock_guard <std::mutex> lock(attributeVariablesLock_);
             AttributeLocation avisit(this, mesh);
@@ -320,14 +323,14 @@ int Shader::calcSize(std::string type)
 
 
 Shader::~Shader() {
-    LOGE("SHADER: deleting shader %s %ld %p", signature_.c_str(), id_, this);
+    if (LOG_SHADER) LOGE("SHADER: deleting shader %s %ld %p", signature_.c_str(), id_, this);
     delete program_;
 }
 
 void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* material) {
     if (!material->areTexturesReady())
     {
-        LOGE("textures are not ready for %s", render_data->owner_object()->name().c_str());
+        if (LOG_SHADER) LOGE("textures are not ready for %s", render_data->owner_object()->name().c_str());
         return;
     }
 
@@ -337,7 +340,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     {
         LOGE("SHADER: shader could not be generated %s", signature_.c_str());
     }
-    LOGD("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
+    if (LOG_SHADER) LOGD("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
     glUseProgram(program_->id());
 
     /*

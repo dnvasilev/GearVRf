@@ -458,7 +458,7 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         shader->render(&rstate, render_data, curr_material);
     }
     GLuint programId = shader->getProgramId();
-    LOGE("SHADER: binding vertex arrays to program %d", programId);
+    if (Shader::LOG_SHADER) LOGE("SHADER: binding vertex arrays to program %d", programId);
     glBindVertexArray(mesh->getVAOId(programId));
     if (mesh->indices().size() > 0)
     {
