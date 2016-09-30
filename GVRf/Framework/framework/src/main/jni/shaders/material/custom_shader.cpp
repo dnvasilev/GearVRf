@@ -54,10 +54,10 @@ namespace gvr {
     {
     private:
         ShaderData* material_;
-        int texIndex;
 
     public:
         int     TextureIndex;
+        bool    AllTexturesAvailable = true;
         TextureUpdate(Shader* shader, ShaderData* material) : ShaderVisitor(shader), material_(material), TextureIndex(0) { }
         void setLocation(const std::string& key, const std::string& type, int size);
         void visit(const std::string& key, const std::string& type, int size);
@@ -157,6 +157,7 @@ namespace gvr {
         if (loc < 0)
         {
             LOGE("SHADER::texture: %s location not found", key.c_str());
+            AllTexturesAvailable = false;
             return;
         }
         Texture* texture = material_->getTexture(key);
@@ -243,24 +244,25 @@ void Shader::initializeOnDemand(RenderState* rstate, Mesh* mesh) {
         vertexShader_.clear();
         fragmentShader_.clear();
         LOGD("SHADER: Custom shader added program %d", program_->id());
+        LOGD("SHADER: getting texture locations");
+        UniformLocation uvisit(this);
+        {
+            std::lock_guard <std::mutex> lock(textureVariablesLock_);
+            forEach(textureDescriptor_, uvisit);
+        }
+        LOGD("SHADER: getting uniform locations");
+        {
+            std::lock_guard <std::mutex> lock(uniformVariablesLock_);
+            forEach(uniformDescriptor_, uvisit);
+        }
+        LOGD("SHADER: getting attribute locations");
+        {
+            std::lock_guard <std::mutex> lock(attributeVariablesLock_);
+            AttributeLocation avisit(this, mesh);
+            forEach(vertexDescriptor_, avisit);
+        }
     }
-    LOGD("SHADER: getting texture locations");
-    UniformLocation uvisit(this);
-    {
-        std::lock_guard <std::mutex> lock(textureVariablesLock_);
-        forEach(textureDescriptor_, uvisit);
-    }
-    LOGD("SHADER: getting uniform locations");
-    {
-        std::lock_guard <std::mutex> lock(uniformVariablesLock_);
-        forEach(uniformDescriptor_, uvisit);
-    }
-    LOGD("SHADER: getting attribute locations");
-    {
-        std::lock_guard <std::mutex> lock(attributeVariablesLock_);
-        AttributeLocation avisit(this, mesh);
-        forEach(vertexDescriptor_, avisit);
-    }
+
 }
 
 
@@ -337,6 +339,22 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     }
     LOGD("SHADER: rendering %s with program %d", render_data->owner_object()->name().c_str(), program_->id());
     glUseProgram(program_->id());
+
+    /*
+     * Bind textures
+     */
+    int texIndex = 0;
+    {
+        std::lock_guard<std::mutex> lock(textureVariablesLock_);
+        TextureUpdate tvisit(this, material);
+        forEach(textureDescriptor_, tvisit);
+        texIndex = tvisit.TextureIndex;
+        if (!tvisit.AllTexturesAvailable)
+        {
+            LOGE("textures are not ready for %s", render_data->owner_object()->name().c_str());
+            return;
+        }
+    }
     /*
      * Update the bone matrices
      */
@@ -400,16 +418,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
         UniformUpdate uvisit(this, material);
         forEach(uniformDescriptor_, uvisit);
     }
-    /*
-     * Bind textures
-     */
-    int texIndex = 0;
-    {
-        std::lock_guard<std::mutex> lock(textureVariablesLock_);
-        TextureUpdate tvisit(this, material);
-        forEach(textureDescriptor_, tvisit);
-        texIndex = tvisit.TextureIndex;
-    }
+
     /*
      * Update the uniforms for the lights
      */

@@ -206,19 +206,69 @@ public class GVRShaderTemplate extends GVRShader
      */
     protected void generateVariantDefines(HashMap<String, Integer> definedNames, GVRMesh mesh, GVRShaderData material)
     {
-        Set<String> texNames = material.getTextureNames();
-        Set<String> vertNames = null;
-
-        if (mesh != null)
-            vertNames = mesh.getAttributeNames();
         for (String name : mShaderDefines)
         {
             if (definedNames.containsKey(name))
                 continue;
-            if (material.hasUniform(name) || texNames.contains(name))
+            if (material.hasUniform(name) || (material.getTexture(name) != null))
                 definedNames.put(name, 1);
-            else if ((vertNames != null) && vertNames.contains(name))
+            else if ((mesh != null) && mesh.hasAttribute(name))
                 definedNames.put(name, 1);
+        }
+    }
+
+    protected void updateDescriptors(GVRMesh mesh, GVRShaderData material,
+                                     StringBuilder uniformDesc, StringBuilder textureDesc, StringBuilder vertexDesc)
+    {
+        Pattern pattern = Pattern.compile("[ \t]+([a-zA-Z0-9]+)[ \t]+([a-zA-Z0-9_]+)[,;]*");
+        Matcher matcher = pattern.matcher(mTextureDescriptor);
+        int index = 0;
+
+        while (matcher.find(index))
+        {
+            String type = matcher.group(1);
+            String name = matcher.group(2);
+            index = matcher.end();
+            if (material.getTexture(name) != null)
+            {
+                textureDesc.append(type);
+                textureDesc.append(' ');
+                textureDesc.append(name);
+                textureDesc.append(' ');
+            }
+        }
+        matcher = pattern.matcher(mUniformDescriptor);
+        index = 0;
+        while (matcher.find(index))
+        {
+            String type = matcher.group(1);
+            String name = matcher.group(2);
+            index = matcher.end();
+            if (material.hasUniform(name))
+            {
+                uniformDesc.append(type);
+                uniformDesc.append(' ');
+                uniformDesc.append(name);
+                uniformDesc.append(' ');
+            }
+        }
+        if (mesh != null)
+        {
+            matcher = pattern.matcher(mVertexDescriptor);
+            index = 0;
+            while (matcher.find(index))
+            {
+                String type = matcher.group(1);
+                String name = matcher.group(2);
+                index = matcher.end();
+                if (mesh.hasAttribute(name))
+                {
+                    vertexDesc.append(type);
+                    vertexDesc.append(' ');
+                    vertexDesc.append(name);
+                    vertexDesc.append(' ');
+                }
+            }
         }
     }
 
@@ -334,7 +384,13 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet,"Vertex", variantDefines, lightlist, lightClasses);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, lightlist, lightClasses);
-            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
+            StringBuilder uniformDescriptor = new StringBuilder();
+            StringBuilder textureDescriptor = new StringBuilder();;
+            StringBuilder vertexDescriptor = new StringBuilder();;
+            updateDescriptors(mesh, material, uniformDescriptor, textureDescriptor, vertexDescriptor);
+            nativeShader = shaderManager.addShader(signature, uniformDescriptor.toString(),
+                                                    textureDescriptor.toString(), vertexDescriptor.toString(),
+                                                    vertexShaderSource, fragmentShaderSource);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
         rdata.setShader(nativeShader);
@@ -371,7 +427,12 @@ public class GVRShaderTemplate extends GVRShader
             boolean isMultiviewSet = context.getActivity().getAppSettings().isMultiviewSet();
             String vertexShaderSource = generateShaderVariant(isMultiviewSet, "Vertex", variantDefines, null, null);
             String fragmentShaderSource = generateShaderVariant(isMultiviewSet,"Fragment", variantDefines, null, null);
-            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
+            StringBuilder uniformDescriptor = new StringBuilder();
+            StringBuilder textureDescriptor = new StringBuilder();;
+            updateDescriptors(null, material, uniformDescriptor, textureDescriptor, null);
+            nativeShader = shaderManager.addShader(signature, uniformDescriptor.toString(),
+                                                    textureDescriptor.toString(), mVertexDescriptor,
+                                                    vertexShaderSource, fragmentShaderSource);
             Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
         }
         return nativeShader;

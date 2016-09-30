@@ -6,6 +6,12 @@ namespace gvr {
     ShaderManager::~ShaderManager()
     {
         LOGE("SHADER: deleting ShaderManager");
+        for (auto it = shadersByID.begin(); it != shadersByID.end(); ++it) {
+            Shader *shader = it->second;
+            delete shader;
+        }
+        shadersByID.clear();
+        shadersBySignature.clear();
     }
 
     long ShaderManager::addShader(const std::string& signature,
@@ -13,7 +19,8 @@ namespace gvr {
           const std::string& textureDescriptor,
           const std::string& vertexDescriptor,
           const std::string& vertex_shader,
-          const std::string& fragment_shader) {
+          const std::string& fragment_shader)
+    {
         Shader* shader = findShader(signature);
         if (shader != NULL)
         {

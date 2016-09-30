@@ -382,7 +382,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
     private void createSimpleCube(GVRContext gvrContext, boolean facingOut,
             GVRMaterial material, Vector3f dimensions) {
 
-        GVRMesh mesh = new GVRMesh(gvrContext);
+        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
         float[] vertices = SIMPLE_VERTICES;
         if (dimensions != null) {
             vertices = new float[SIMPLE_VERTICES.length];
@@ -442,7 +442,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
         GVRSceneObject[] children = new GVRSceneObject[6];
         GVRMesh[] meshes = new GVRMesh[6];
         for (int i = 0; i < 6; i++) {
-            meshes[i] = new GVRMesh(gvrContext);
+            meshes[i] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
         }
 
         if (facingOut) {
@@ -579,7 +579,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -641,7 +641,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -703,7 +703,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -765,7 +765,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -822,7 +822,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -879,7 +879,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext);
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);

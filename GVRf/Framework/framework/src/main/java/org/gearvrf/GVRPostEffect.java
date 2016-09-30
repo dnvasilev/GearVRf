@@ -101,6 +101,18 @@ public class GVRPostEffect extends GVRHybridObject implements  GVRShaderData {
     }
 
     /**
+     * Determine whether a named texture has been set.
+     * This function will return true if the texture
+     * has been set even if it is NULL.
+     * @param name of texture
+     * @return true if texture has been set, else false
+     * @see getTexture hasUniform
+     */
+    public boolean hasTexture(String name) {
+        return NativeShaderData.hasTexture(getNative(), name);
+    }
+
+    /**
      * Return the names of all the textures used by this post effect.
      * @return list of texture names
      */
@@ -256,6 +268,8 @@ class NativeShaderData {
     static native void setNativeShader(long shaderData, long nativeShader);
 
     static native boolean hasUniform(long shaderData, String key);
+
+    static native boolean hasTexture(long shaderData, String key);
 
     static native void setTexture(long shaderData, String key, long texture);
 

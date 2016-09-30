@@ -27,7 +27,8 @@
 namespace gvr {
 extern "C" {
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeMesh_ctor(JNIEnv* env, jobject obj);
+    Java_org_gearvrf_NativeMesh_ctor(JNIEnv* env, jobject obj, jstring descriptor);
+
     JNIEXPORT jfloatArray JNICALL
     Java_org_gearvrf_NativeMesh_getVertices(JNIEnv * env,
             jobject obj, jlong jmesh);
@@ -107,6 +108,10 @@ extern "C" {
     Java_org_gearvrf_NativeMesh_getAttribNames(JNIEnv * env,
             jobject obj, jlong jmesh);
 
+    JNIEXPORT jboolean JNICALL
+    Java_org_gearvrf_NativeMesh_hasAttribute(JNIEnv * env,
+            jobject obj, jlong jmesh, jstring key);
+
 };
 
 JNIEXPORT jobjectArray JNICALL
@@ -129,8 +134,12 @@ Java_org_gearvrf_NativeMesh_getAttribNames(JNIEnv * env,
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeMesh_ctor(JNIEnv* env, jobject obj) {
-    return reinterpret_cast<jlong>(new Mesh());
+Java_org_gearvrf_NativeMesh_ctor(JNIEnv* env, jobject obj, jstring jdescriptor) {
+    const char* char_desc = env->GetStringUTFChars(jdescriptor, 0);
+    std::string native_desc = std::string(char_desc);
+    jlong newmesh = reinterpret_cast<jlong>(new Mesh(native_desc));
+    env->ReleaseStringUTFChars(jdescriptor, char_desc);
+    return newmesh;
 }
 
 JNIEXPORT jfloatArray JNICALL
@@ -444,4 +453,16 @@ Java_org_gearvrf_NativeMesh_getSphereBound(JNIEnv * env,
     sphere[3] = bvol.radius();
     env->SetFloatArrayRegion(jsphere, 0, 4, sphere);
 }
+
+JNIEXPORT jboolean JNICALL
+Java_org_gearvrf_NativeMesh_hasAttribute(JNIEnv * env, jobject obj, jlong jmesh, jstring key) {
+    Mesh* mesh = reinterpret_cast<Mesh*>(jmesh);
+    const char* char_key = env->GetStringUTFChars(key, 0);
+    std::string native_key = std::string(char_key);
+    bool rc = mesh->hasAttribute(native_key);
+    env->ReleaseStringUTFChars(key, char_key);
+    return rc;
+}
+
+
 }

@@ -138,6 +138,9 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
         if (mesh != null) {
             renderData.setMesh(mesh);
         }
+        if (shaderId == null) {
+            shaderId = GVRShaderType.Phong.ID;
+        }
         GVRMaterial material = new GVRMaterial(gvrContext, shaderId);
         renderData.setMaterial(material);
 

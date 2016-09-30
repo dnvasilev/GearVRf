@@ -43,8 +43,8 @@
 namespace gvr {
 class Mesh: public HybridObject {
 public:
-    Mesh() :
-            vertices_(), normals_(), tex_coords_(), indices_(), float_vectors_(), vec2_vectors_(), vec3_vectors_(), vec4_vectors_(),
+    Mesh(const std::string& descriptor) :
+            vertexDescriptor_(descriptor), vertices_(), normals_(), tex_coords_(), indices_(), float_vectors_(), vec2_vectors_(), vec3_vectors_(), vec4_vectors_(),
                     have_bounding_volume_(false), vao_dirty_(true), listener_(new Listener()),
                     boneVboID_(GVR_INVALID), vertexBoneData_(this), bone_data_dirty_(true), regenerate_vao_(true)
     {
@@ -178,20 +178,9 @@ public:
         listener_->notify_listeners(true);
     }
 
-    bool hasAttribute(std::string key) const {
-        if (vec3_vectors_.find(key) != vec3_vectors_.end()) {
-            return true;
-        }
-        if (vec2_vectors_.find(key) != vec2_vectors_.end()) {
-            return true;
-        }
-        if (vec4_vectors_.find(key) != vec4_vectors_.end()) {
-            return true;
-        }
-        if (float_vectors_.find(key) != float_vectors_.end()) {
-            return true;
-        }
-        return false;
+    bool hasAttribute(const std::string& key) const {
+        size_t found = vertexDescriptor_.find(key);
+        return (found != std::string::npos);
     }
 
     const std::vector<float>& getFloatVector(std::string key) const {
@@ -454,6 +443,7 @@ private:
     GLuint boneVboID_;
     bool bone_data_dirty_;
     GlDelete* deleter_ = nullptr;
+    std::string vertexDescriptor_;
     static std::vector<std::string> dynamicAttribute_Names_;
 };
 }

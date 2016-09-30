@@ -57,7 +57,7 @@ public:
         quad_triangles.push_back(1);
         quad_triangles.push_back(3);
         quad_triangles.push_back(2);
-        Mesh* mesh = new Mesh();
+        Mesh* mesh = new Mesh(std::string("float3 a_position float2 a_texcoord"));
         mesh->set_vertices(quad_vertices);
         mesh->set_tex_coords(quad_uvs);
         mesh->set_triangles(quad_triangles);

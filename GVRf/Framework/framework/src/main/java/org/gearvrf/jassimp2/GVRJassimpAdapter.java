@@ -73,45 +73,51 @@ public class GVRJassimpAdapter {
     }
 
     public GVRMesh createMesh(GVRContext ctx, AiMesh aiMesh) {
-        GVRMesh mesh = new GVRMesh(ctx);
+        String vertexDescriptor = "float3 a_position";
+        float[] verticesArray = null;
+        float[] tangentsArray = null;
+        float[] bitangentsArray = null;
+        float[] normalsArray = null;
+        FloatBuffer coords = null;
+        List<GVRBone> bones = null;
 
         // Vertices
         FloatBuffer verticesBuffer = aiMesh.getPositionBuffer();
         if (verticesBuffer != null) {
-            float[] verticesArray = new float[verticesBuffer.capacity()];
+            verticesArray = new float[verticesBuffer.capacity()];
             verticesBuffer.get(verticesArray, 0, verticesBuffer.capacity());
-            mesh.setVertices(verticesArray);
+        }
+
+        // Normals
+        FloatBuffer normalsBuffer = aiMesh.getNormalBuffer();
+        if (normalsBuffer != null) {
+            vertexDescriptor += " float3 a_normal";
+            normalsArray = new float[normalsBuffer.capacity()];
+            normalsBuffer.get(normalsArray, 0, normalsBuffer.capacity());
         }
 
         // Tangents
         FloatBuffer tangetsBuffer = aiMesh.getTangentBuffer();
         if(tangetsBuffer != null) {
-            float[] tangentsArray = new float[tangetsBuffer.capacity()];
+            vertexDescriptor += " float3 a_tangent";
+            tangentsArray = new float[tangetsBuffer.capacity()];
             tangetsBuffer.get(tangentsArray, 0, tangetsBuffer.capacity());
-            mesh.setVec3Vector("a_tangent", tangentsArray);
         }
         
         // Bitangents
         FloatBuffer bitangentsBuffer = aiMesh.getBitangentBuffer();
         if(bitangentsBuffer != null) {
-            float[] bitangentsArray = new float[bitangentsBuffer.capacity()];
+            vertexDescriptor += " float3 a_bitangent";
+            bitangentsArray = new float[bitangentsBuffer.capacity()];
             bitangentsBuffer.get(bitangentsArray, 0, bitangentsBuffer.capacity());
-            mesh.setVec3Vector("a_bitangent", bitangentsArray);
         }
         
-        // Normals
-        FloatBuffer normalsBuffer = aiMesh.getNormalBuffer();
-        if (normalsBuffer != null) {
-            float[] normalsArray = new float[normalsBuffer.capacity()];
-            normalsBuffer.get(normalsArray, 0, normalsBuffer.capacity());
-            mesh.setNormals(normalsArray);
-        }
-
         // TexCoords
         final int coordIdx = 0;
         FloatBuffer fbuf = aiMesh.getTexCoordBuffer(coordIdx);
         if (fbuf != null) {
-            FloatBuffer coords = FloatBuffer.allocate(aiMesh.getNumVertices() * 2);
+            coords = FloatBuffer.allocate(aiMesh.getNumVertices() * 2);
+            vertexDescriptor += "float2 a_texcoord";
             if (aiMesh.getNumUVComponents(coordIdx) == 2) {
                 FloatBuffer coordsSource = aiMesh.getTexCoordBuffer(coordIdx);
                 coords.put(coordsSource);
@@ -123,8 +129,8 @@ public class GVRJassimpAdapter {
                     coords.put(v);
                 }
             }
-            mesh.setTexCoords(coords.array());
         }
+        GVRMesh mesh = new GVRMesh(ctx, vertexDescriptor);
 
         // Triangles
         IntBuffer indexBuffer = aiMesh.getIndexBuffer();
@@ -138,13 +144,30 @@ public class GVRJassimpAdapter {
 
         // Bones
         if (aiMesh.hasBones()) {
-            List<GVRBone> bones = new ArrayList<GVRBone>();
+            bones = new ArrayList<GVRBone>();
+            vertexDescriptor += "float4 a_bone_weights int4 a_bone_indices";
             for (AiBone bone : aiMesh.getBones()) {
                 bones.add(createBone(ctx, bone));
             }
+        }
+        if (verticesArray != null) {
+            mesh.setVertices(verticesArray);
+        }
+        if (normalsArray != null) {
+            mesh.setNormals(normalsArray);
+        }
+        if (tangentsArray != null) {
+            mesh.setVec3Vector("a_tangent", tangentsArray);
+        }
+        if (bitangentsArray != null) {
+            mesh.setVec3Vector("a_bitangent", bitangentsArray);
+        }
+        if (coords != null) {
+            mesh.setTexCoords(coords.array());
+        }
+        if (bones != null) {
             mesh.setBones(bones);
         }
-
         return mesh;
     }
 

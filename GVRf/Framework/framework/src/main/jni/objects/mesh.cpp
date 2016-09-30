@@ -31,12 +31,11 @@
 #include "../gl/gl_program.h"
 
 namespace gvr {
-
 std::vector<std::string> Mesh::dynamicAttribute_Names_ = {"a_bone_indices", "a_bone_weights"};
 
 Mesh* Mesh::createBoundingBox() {
 
-    Mesh* mesh = new Mesh();
+    Mesh* mesh = new Mesh(std::string("float3 a_position"));
 
     getBoundingVolume(); // Make sure bounding_volume is valid
 

@@ -1370,7 +1370,7 @@ public class X3Dobject
         }
         else
         {
-          gvrMesh = new GVRMesh(gvrContext);
+          gvrMesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
           attributeValue = attributes.getValue("DEF");
           if (attributeValue != null)
           {

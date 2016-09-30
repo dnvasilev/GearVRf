@@ -78,6 +78,9 @@ extern "C" {
             jfloat x4, jfloat y4, jfloat z4, jfloat w4);
     JNIEXPORT jboolean JNICALL
             Java_org_gearvrf_NativeShaderData_hasUniform(JNIEnv *, jobject, jlong, jstring);
+    JNIEXPORT jboolean JNICALL
+            Java_org_gearvrf_NativeShaderData_hasTexture(JNIEnv *, jobject, jlong, jstring);
+
 };
 
 JNIEXPORT jlong JNICALL
@@ -254,4 +257,17 @@ Java_org_gearvrf_NativeShaderData_hasUniform(JNIEnv *env, jobject obj,
     env->ReleaseStringUTFChars(key, char_key);
     return (jboolean) hasKey;
 }
+
+JNIEXPORT jboolean JNICALL
+        Java_org_gearvrf_NativeShaderData_hasTexture(JNIEnv *env, jobject obj,
+        jlong jshader_data, jstring key)
+{
+    ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
+    const char* char_key = env->GetStringUTFChars(key, 0);
+    std::string native_key = std::string(char_key);
+    bool hasKey = shader_data->hasTexture(native_key);
+    env->ReleaseStringUTFChars(key, char_key);
+    return (jboolean) hasKey;
+}
+
 }

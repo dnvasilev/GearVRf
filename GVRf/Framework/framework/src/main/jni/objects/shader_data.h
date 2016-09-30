@@ -207,8 +207,9 @@ public:
         return textures_;
     }
 
-    virtual bool hasTexture() const {
-        return (textures_.size() > 0);
+    virtual bool hasTexture(const std::string& key) const {
+        auto it = textures_.find(key);
+        return (it != textures_.end());
     }
 
     bool hasUniform(const std::string& key) const {

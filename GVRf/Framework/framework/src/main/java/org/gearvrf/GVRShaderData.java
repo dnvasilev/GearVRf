@@ -83,6 +83,16 @@ public interface GVRShaderData {
     public boolean hasUniform(String name);
 
     /**
+     * Determine whether a named texture has been set.
+     * This function will return true if the texture
+     * has been set even if it is NULL.
+     * @param name of texture
+     * @return true if texture has been set, else false
+     * @see getTexture hasUniform
+     */
+    public boolean hasTexture(String name);
+
+    /**
      * Get the {@code float} bound to the shader uniform {@code key}.
      * 
      * @param key

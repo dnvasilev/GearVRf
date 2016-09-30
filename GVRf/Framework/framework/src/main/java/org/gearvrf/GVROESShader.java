@@ -33,9 +33,8 @@ public class GVROESShader extends GVRShader
             "uniform mat4 u_mvp;\n" +
             "varying vec2 diffuse_coord;\n" +
             "void main() {\n" +
-            " vec4 pos = u_mvp * a_position;\n" +
-            " varying vec2 diffuse_coord = a_texcoord;\n" +
-            " gl_Position = u_mvp * vec4(a_position, 1.0);\n" +
+            "   vec2 diffuse_coord = a_texcoord;\n" +
+            "   gl_Position = u_mvp * vec4(a_position, 1.0);\n" +
             "}";
 
     private String fragmentShader =
