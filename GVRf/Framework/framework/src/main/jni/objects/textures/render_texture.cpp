@@ -18,6 +18,7 @@
  * A frame buffer object.
  ***************************************************************************/
 
+#define EGL_EGLEXT_PROTOTYPES // for egl*SyncKHR
 #include "render_texture.h"
 #include "util/gvr_gl_ext.h"
 #include "eglextension/msaa/msaa.h"
@@ -248,6 +249,9 @@ void RenderTexture::endRendering() {
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
         invalidateFrameBuffer(GL_READ_FRAMEBUFFER, true, true, false);
     }
+    EGLDisplay display=eglGetCurrentDisplay();
+    eglDestroySyncKHR(display, fence_);
+    fence_ = eglCreateSyncKHR(display, EGL_SYNC_FENCE_KHR, NULL);
 }
 
 void RenderTexture::invalidateFrameBuffer(GLenum target, bool is_fbo, const bool color_buffer, const bool depth_buffer) {
@@ -256,6 +260,13 @@ void RenderTexture::invalidateFrameBuffer(GLenum target, bool is_fbo, const bool
     const GLenum fboAttachments[3] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT };
     const GLenum attachments[3] = { GL_COLOR_EXT, GL_DEPTH_EXT, GL_STENCIL_EXT };
     glInvalidateFramebuffer(target, count, (is_fbo ? fboAttachments : attachments) + offset);
+}
+
+bool RenderTexture::doneRendering() {
+    // EGL_TIMEOUT_EXPIRED_KHR = rendering is in progress
+    // EGL_CONDITION_SATISFIED_KHR = rendering done
+    // EGL_FALSE = error, e.g. we didn't start yet... report as if rendering done
+    return eglClientWaitSyncKHR(eglGetCurrentDisplay(), fence_, 0, 0) != EGL_TIMEOUT_EXPIRED_KHR;
 }
 
 void RenderTexture::startReadBack() {

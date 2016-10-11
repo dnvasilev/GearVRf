@@ -112,9 +112,9 @@ public class GVRRenderTexture extends GVRTexture {
         NativeRenderTexture.beginRendering(getNative());
     }
 
-    void endRendering() {
-        NativeRenderTexture.endRendering(getNative());
-    }
+    void endRendering() { NativeRenderTexture.endRendering(getNative()); }
+
+    boolean doneRendering() { return NativeRenderTexture.doneRendering(getNative()); }
 
     /**
      * Return the render texture.
@@ -154,6 +154,8 @@ class NativeRenderTexture {
     static native void beginRendering(long ptr);
 
     static native void endRendering(long ptr);
+
+    static native boolean doneRendering(long ptr);
 
     static native boolean readRenderResult(long ptr, int[] readbackBuffer);
 

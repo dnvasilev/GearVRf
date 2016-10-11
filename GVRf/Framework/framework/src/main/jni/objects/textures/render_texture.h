@@ -79,6 +79,7 @@ public:
 
     void beginRendering();
     void endRendering();
+    bool doneRendering();
 
     // Start to read back texture in the background. It can be optionally called before
     // readRenderResult() to read pixels asynchronously. This function returns immediately.

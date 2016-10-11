@@ -42,6 +42,9 @@ JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeRenderTexture_endRendering(JNIEnv * env, jobject obj,
         jlong ptr);
 JNIEXPORT bool JNICALL
+Java_org_gearvrf_NativeRenderTexture_doneRendering(JNIEnv * env, jobject obj,
+        jlong ptr);
+JNIEXPORT bool JNICALL
 Java_org_gearvrf_NativeRenderTexture_readRenderResult(JNIEnv * env, jobject obj,
         jlong ptr, jintArray jreadback_buffer);
 
@@ -89,6 +92,13 @@ Java_org_gearvrf_NativeRenderTexture_endRendering(JNIEnv * env, jobject obj,
         jlong ptr) {
     RenderTexture *render_texture = reinterpret_cast<RenderTexture*>(ptr);
     render_texture->endRendering();
+}
+
+JNIEXPORT bool JNICALL
+Java_org_gearvrf_NativeRenderTexture_doneRendering(JNIEnv * env, jobject obj,
+        jlong ptr) {
+    RenderTexture *render_texture = reinterpret_cast<RenderTexture*>(ptr);
+    return render_texture->doneRendering();
 }
 
 JNIEXPORT bool JNICALL
