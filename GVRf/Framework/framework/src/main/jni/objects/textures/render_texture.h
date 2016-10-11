@@ -111,5 +111,6 @@ private:
                                      // when resolveDepth is on.
     GLuint renderTexture_gl_pbo_ = 0;
     bool readback_started_;          // set by startReadBack()
+    EGLSyncKHR fence_;
 };}
 #endif

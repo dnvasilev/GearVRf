@@ -24,9 +24,13 @@
 
 namespace gvr {
 RenderTexture::RenderTexture(int width, int height) :
-        Texture(new GLTexture(TARGET)), width_(width), height_(height), sample_count_(
-                0), renderTexture_gl_render_buffer_(new GLRenderBuffer()), renderTexture_gl_frame_buffer_ (
-                new GLFrameBuffer()) {
+        Texture(new GLTexture(TARGET)),
+        width_(width),
+        height_(height),
+        sample_count_(0),
+        renderTexture_gl_render_buffer_(new GLRenderBuffer()),
+        renderTexture_gl_frame_buffer_ (new GLFrameBuffer()),
+        fence_(EGL_NO_SYNC_KHR) {
     initialize(width, height);
     glBindTexture(TARGET, gl_texture_->id());
     glTexImage2D(TARGET, 0, GL_RGBA, width_, height_, 0, GL_RGBA,
@@ -47,9 +51,13 @@ RenderTexture::RenderTexture(int width, int height) :
 }
 
 RenderTexture::RenderTexture(int width, int height, int sample_count) :
-        Texture(new GLTexture(TARGET)), width_(width), height_(height), sample_count_(
-                sample_count), renderTexture_gl_render_buffer_(new GLRenderBuffer()), renderTexture_gl_frame_buffer_(
-                new GLFrameBuffer()) {
+        Texture(new GLTexture(TARGET)),
+        width_(width),
+        height_(height),
+        sample_count_(sample_count),
+        renderTexture_gl_render_buffer_(new GLRenderBuffer()),
+        renderTexture_gl_frame_buffer_(new GLFrameBuffer()),
+        fence_(EGL_NO_SYNC_KHR) {
     initialize(width, height);
     glBindTexture(TARGET, gl_texture_->id());
     glTexImage2D(TARGET, 0, GL_RGBA, width_, height_, 0, GL_RGBA,
@@ -73,8 +81,12 @@ RenderTexture::RenderTexture(int width, int height, int sample_count) :
 RenderTexture::RenderTexture(int width, int height, int sample_count,
         int jcolor_format, int jdepth_format, bool resolve_depth,
         int* texture_parameters) :
-        Texture(new GLTexture(TARGET, texture_parameters)), width_(width), height_(
-                height), sample_count_(sample_count), renderTexture_gl_frame_buffer_(new GLFrameBuffer()) {
+            Texture(new GLTexture(TARGET, texture_parameters)),
+            width_(width),
+            height_(height),
+            sample_count_(sample_count),
+            renderTexture_gl_frame_buffer_(new GLFrameBuffer()),
+            fence_(EGL_NO_SYNC_KHR) {
     initialize(width, height);
     GLenum depth_format;
     glBindTexture(TARGET, gl_texture_->id());
