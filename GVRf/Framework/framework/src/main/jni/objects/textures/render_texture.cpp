@@ -161,6 +161,19 @@ RenderTexture::RenderTexture(int width, int height, int sample_count,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+RenderTexture::~RenderTexture() {
+    delete renderTexture_gl_render_buffer_;
+    delete renderTexture_gl_frame_buffer_;
+    delete renderTexture_gl_color_buffer_;
+    delete renderTexture_gl_resolve_buffer_;
+
+    if (0 != renderTexture_gl_pbo_) {
+        glDeleteBuffers(1, &renderTexture_gl_pbo_);
+    }
+
+    eglDestroySyncKHR(eglGetCurrentDisplay(), fence_);
+}
+
 void RenderTexture::generateRenderTextureNoMultiSampling(int jdepth_format,
         GLenum depth_format, int width, int height) {
     if (jdepth_format != DepthFormat::DEPTH_0) {

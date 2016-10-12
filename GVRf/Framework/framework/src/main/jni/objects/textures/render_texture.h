@@ -37,16 +37,7 @@ public:
             int jcolor_format, int jdepth_format, bool resolve_depth,
             int* texture_parameters);
 
-    virtual ~RenderTexture() {
-        delete renderTexture_gl_render_buffer_;
-        delete renderTexture_gl_frame_buffer_;
-        delete renderTexture_gl_color_buffer_;
-        delete renderTexture_gl_resolve_buffer_;
-
-        if (0 != renderTexture_gl_pbo_) {
-            glDeleteBuffers(1, &renderTexture_gl_pbo_);
-        }
-    }
+    virtual ~RenderTexture();
 
     void initialize(int width, int height) {
         glGenBuffers(1, &renderTexture_gl_pbo_);
