@@ -1,15 +1,7 @@
 apply plugin: 'com.android.model.library'
 
-def demoAppDir = "../../../../../../GearVRf-Tests/gvr-unittestutils/"
-
 model {
     android {
-        buildTypes {
-            release {
-                minifyEnabled false
-            }
-        }
-
         compileSdkVersion 21
         buildToolsVersion '23.0.3'
 
@@ -18,26 +10,38 @@ model {
             targetSdkVersion.apiLevel 19
         }
 
+        buildTypes {
+            release {
+                minifyEnabled false
+                proguardFiles.add(file('proguard-project.txt'))
+            }
+        }
+
         sources {
             main {
                 java {
                     source {
-                        srcDirs = [demoAppDir+"src/main/java"]
+                        srcDirs = ["../../../Extensions/3DCursor/3DCursorLibrary/src/main/java"]
+                    }
+                }
+                jni {
+                    source {
+                        srcDirs = ["../../../Extensions/3DCursor/3DCursorLibrary/src/main/jni"]
                     }
                 }
                 assets {
                     source {
-                        srcDirs = [demoAppDir+"src/main/assets"]
+                        srcDirs = ["../../../Extensions/3DCursor/3DCursorLibrary/src/main/assets"]
                     }
                 }
                 res {
                     source {
-                        srcDirs = [demoAppDir+"src/main/res"]
+                        srcDirs = ["../../../Extensions/3DCursor/3DCursorLibrary/src/main/res"]
                     }
                 }
                 manifest {
                     source {
-                        srcDirs = [demoAppDir+"src/main/"]
+                        srcDirs = ["../../../Extensions/3DCursor/3DCursorLibrary/src/main/"]
                         include 'AndroidManifest.xml'
                     }
                 }
@@ -46,10 +50,7 @@ model {
     }
 }
 
-
-
 dependencies {
+    compile fileTree(dir: 'src/main/libs', include: ['*.jar'])
     compile project(':framework')
-    compile project(':backend_oculus')
-    compile 'net.jodah:concurrentunit:0.4.2'
 }
