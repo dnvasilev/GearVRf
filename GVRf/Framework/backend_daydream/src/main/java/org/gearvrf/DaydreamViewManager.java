@@ -18,6 +18,7 @@ package org.gearvrf;
 
 import android.app.Activity;
 import android.content.Context;
+import android.opengl.GLES30;
 import android.view.KeyEvent;
 
 import com.google.vr.sdk.base.AndroidCompat;
@@ -58,7 +59,8 @@ class DaydreamViewManager extends GVRViewManager {
     }
 
     private static class GoogleVRViewRenderer implements GvrView.StereoRenderer {
-        private DaydreamViewManager mViewManager = null;
+        private DaydreamViewManager mViewManager;
+        private final boolean[] mBlendEnabled = new boolean[1];
 
         public GoogleVRViewRenderer(DaydreamViewManager viewManager) {
             mViewManager = viewManager;
@@ -84,9 +86,16 @@ class DaydreamViewManager extends GVRViewManager {
 
         @Override
         public void onNewFrame(HeadTransform headTransform) {
+            GLES30.glGetBooleanv(GLES30.GL_BLEND, mBlendEnabled, 0);
+            GLES30.glDisable(GLES30.GL_BLEND);
+
             //todo move onnewframe to impl in viewmgr; run it before before draw
             mViewManager.beforeDrawEyes();
             mViewManager.onNewFrame(headTransform);
+
+            if (mBlendEnabled[0]) {
+                GLES30.glEnable(GLES30.GL_BLEND);
+            }
         }
 
         @Override
@@ -100,14 +109,11 @@ class DaydreamViewManager extends GVRViewManager {
     }
 
     private static class GoogleVRView extends GvrView {
-        public GoogleVRView(Activity activity) {
-            super(activity);
-        }
-
         public GoogleVRView(Activity activity, final DaydreamViewManager viewManager,
                             GoogleVRViewRenderer renderer) {
             super(activity);
-             setEGLConfigChooser(8, 8, 8, 8, 16, 8);
+            setEGLContextClientVersion(3);
+            setEGLConfigChooser(8, 8, 8, 8, 24, 8);
 
             if (renderer != null) {
                 renderer.setViewManager(viewManager);
@@ -115,7 +121,7 @@ class DaydreamViewManager extends GVRViewManager {
             } else {
                 setRenderer(new GoogleVRViewRenderer(viewManager));
             }
-            setTransitionViewEnabled(true);
+            setTransitionViewEnabled(false);
 
             /**
              * Taken from here:
