@@ -16,6 +16,7 @@
 package org.gearvrf;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -36,6 +37,7 @@ import org.gearvrf.asynchronous.GVRCompressedTexture;
 import org.gearvrf.asynchronous.GVRCompressedTextureLoader;
 import org.gearvrf.jassimp.GVROldWrapperProvider;
 import org.gearvrf.GVRJassimpAdapter;
+import org.gearvrf.jassimp2.AiTexture;
 import org.gearvrf.jassimp2.Jassimp;
 import org.gearvrf.jassimp2.JassimpFileIO;
 import org.gearvrf.scene_objects.GVRModelSceneObject;
@@ -49,9 +51,12 @@ import org.gearvrf.x3d.X3DparseLights;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import org.gearvrf.utility.ResourceCacheBase;
 import org.gearvrf.utility.ResourceReader;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * {@link GVRAssetLoader} provides methods for importing 3D models and making them
@@ -110,18 +115,19 @@ public final class GVRAssetLoader {
 
         /**
          * Request to load an asset and add it to the scene.
-         * @param context GVRContext to get asset load events.
+         * @param model GVRSceneObject to be the root of the loaded asset.
          * @param filePath path to file
          * @param scene GVRScene to add the asset to.
          * @param replaceScene true to replace entire scene with model, false to add model to scene
          */
-        public AssetRequest(GVRContext context, String filePath, GVRScene scene, boolean replaceScene)
+        public AssetRequest(GVRSceneObject model, String filePath, GVRScene scene, boolean replaceScene)
         {
             mScene = scene;
-            mContext = context;
+            mContext = model.getGVRContext();
             mNumTextures = 0;
             mFileName = filePath;
             mUserHandler = null;
+            mModel = null;
             mErrors = "";
             mReplaceScene = replaceScene;
             mContext.getEventReceiver().addListener(this);
@@ -131,16 +137,17 @@ public final class GVRAssetLoader {
 
         /**
          * Request to load an asset and raise asset events.
-         * @param context GVRContext to get asset load events.
+         * @param model GVRSceneObject to be the root of the loaded asset.
          * @param filePath path to file
          * @param userHandler user event handler to get asset events.
          */
-        public AssetRequest(GVRContext context, String filePath, IAssetEvents userHandler) {
+        public AssetRequest(GVRSceneObject model, String filePath, IAssetEvents userHandler) {
             mScene = null;
-            mContext = context;
+            mContext = model.getGVRContext();;
             mNumTextures = 0;
             mFileName = filePath;
             mUserHandler = userHandler;
+            mModel = null;
             mErrors = "";
             mContext.getEventReceiver().addListener(this);
             mVolume = new GVRResourceVolume(mContext, filePath);
@@ -180,11 +187,12 @@ public final class GVRAssetLoader {
          */
         public void loadTexture(TextureRequest request)
         {
-            ++mNumTextures;
+           ++mNumTextures;
+            Log.d(TAG, "ASSET: loadTexture %s %d", request.TextureFile, mNumTextures);
             try
             {
                 GVRAndroidResource resource = mVolume.openResource(request.TextureFile);
-                mContext.loadTexture(request, resource, GVRContext.DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
+                mContext.getAssetLoader().loadTexture(resource, request);
             }
             catch (IOException ex)
             {
@@ -200,6 +208,7 @@ public final class GVRAssetLoader {
         public Future<GVRTexture> loadFutureTexture(TextureRequest request)
         {
             ++mNumTextures;
+            Log.d(TAG, "ASSET: loadFutureTexture %s %d", request.TextureFile, mNumTextures);
             try
             {
                 GVRAndroidResource resource = mVolume.openResource(request.TextureFile);
@@ -215,6 +224,46 @@ public final class GVRAssetLoader {
             return null;
          }
 
+
+        /**
+         * Load an embedded RGBA texture from the JASSIMP AiScene.
+         * An embedded texture is represented as an AiTexture object in Java.
+         * The AiTexture contains the pixel data for the bitmap.
+         *
+         * @param request TextureRequest for the embedded texture reference.
+         *                The filename inside starts with '*' followed
+         *                by an integer texture index into AiScene embedded textures
+         * @param aitex   Assimp texture containing the pixel data
+         * @return GVRTexture made from embedded texture
+         */
+        public GVRTexture loadEmbeddedTexture(TextureRequest request, AiTexture aitex, GVRTextureParameters texParams) throws IOException
+        {
+            Bitmap bmap = null;
+            GVRAndroidResource resource = new GVRAndroidResource(request.TextureFile);
+            GVRTexture texture = mContext.getAssetLoader().findTexture(resource);
+
+            if (texture != null)
+            {
+                return texture;
+            }
+            ++mNumTextures;
+            Log.d(TAG, "ASSET: loadEmbeddedTexture %s %d", request.TextureFile, mNumTextures);
+            if (aitex.getHeight() == 0)
+            {
+                ByteArrayInputStream input = new ByteArrayInputStream(aitex.getByteData());
+                bmap = BitmapFactory.decodeStream(input);
+            }
+            else
+            {
+                bmap = Bitmap.createBitmap(aitex.getWidth(), aitex.getHeight(), Bitmap.Config.ARGB_8888);
+                bmap.setPixels(aitex.getIntData(), 0, aitex.getWidth(), 0, 0, aitex.getWidth(), aitex.getHeight());
+            }
+            GVRBitmapTexture bmapTex = new GVRBitmapTexture(mContext, bmap, texParams);
+            mContext.getAssetLoader().cacheTexture(resource, bmapTex);
+            request.loaded(bmapTex, resource);
+            return bmapTex;
+        }
+
         /**
          * Called when a model is successfully loaded.
          * @param context   GVRContext which loaded the model
@@ -223,10 +272,14 @@ public final class GVRAssetLoader {
          */
         public void onModelLoaded(GVRContext context, GVRSceneObject model, String modelFile) {
             mModel = model;
-            Log.d(TAG, "ASSET: successfully loaded model %s", modelFile);
+            Log.d(TAG, "ASSET: successfully loaded model %s %d", modelFile, mNumTextures);
             if (mNumTextures == 0)
             {
                 generateLoadEvent();
+            }
+            else
+            {
+                Log.d(TAG, "ASSET: %s has %d outstanding textures", modelFile, mNumTextures);
             }
         }
 
@@ -238,13 +291,18 @@ public final class GVRAssetLoader {
          */
         public void onTextureLoaded(GVRContext context, GVRTexture texture, String texFile)
         {
-            if (mNumTextures > 0)
+            Log.e(TAG, "ASSET: successfully loaded texture %s %d", texFile, mNumTextures);
+            if (mNumTextures == 1)
             {
-                --mNumTextures;
-                if ((mNumTextures == 0) && (mModel != null))
+                mNumTextures = 0;
+                if (mModel != null)
                 {
                     generateLoadEvent();
                 }
+            }
+            else if (mNumTextures > 1)
+            {
+                --mNumTextures;
             }
         }
 
@@ -259,6 +317,7 @@ public final class GVRAssetLoader {
             Log.e(TAG, "ASSET: ERROR: model %s did not load %s", modelFile, error);
             mErrors += "Model " + modelFile + " did not load " + error + "\n";
             mModel = null;
+            mNumTextures = 0;
             generateLoadEvent();
         }
 
@@ -270,15 +329,19 @@ public final class GVRAssetLoader {
         */
         public void onTextureError(GVRContext context, String error, String texFile)
         {
-            Log.e(TAG, "ASSET: ERROR: texture did %s not load %s", texFile, error);
+            Log.e(TAG, "ASSET: ERROR: texture did %s not load %s %d", texFile, error, mNumTextures);
             mErrors += "Texture " + texFile + " did not load " + error + "\n";
-            if (mNumTextures > 0)
+            if (mNumTextures == 1)
             {
-                --mNumTextures;
-                if ((mNumTextures == 0) && (mModel != null))
+                mNumTextures = 0;
+                if (mModel != null)
                 {
                     generateLoadEvent();
                 }
+            }
+            else if (mNumTextures > 1)
+            {
+                --mNumTextures;
             }
         }
 
@@ -286,7 +349,7 @@ public final class GVRAssetLoader {
          * Called when the model and all of its textures have loaded.
          * @param context GVRContext which loaded the texture
          * @param model model that was loaded (will be null if model failed to load)
-         * @param error error messages (will be null if no errors)
+         * @param errors error messages (will be null if no errors)
          * @param modelFile filename of model loaded
          */
         @Override
@@ -344,22 +407,25 @@ public final class GVRAssetLoader {
         public final String TextureFile;
         protected final GVRContext mContext;
         protected GVRTextureParameters mTexParams;
+        private boolean loadFinished;
 
         public TextureRequest(GVRContext context, String texFile, final GVRTextureParameters texParams)
         {
             mContext = context;
             TextureFile = texFile;
             mTexParams = texParams;
+            loadFinished = false;
         }
 
         public TextureRequest(GVRContext context, String texFile)
         {
             mContext = context;
             TextureFile = texFile;
-            mTexParams = context.DEFAULT_TEXTURE_PARAMETERS;
+            mTexParams = GVRAssetLoader.DEFAULT_TEXTURE_PARAMETERS;
+            loadFinished = false;
         }
 
-        public void loaded(final GVRTexture texture, GVRAndroidResource ignored)
+        public void loaded(final GVRTexture texture, GVRAndroidResource resource)
         {
             mContext.runOnGlThread(new Runnable()
             {
@@ -368,21 +434,26 @@ public final class GVRAssetLoader {
                     texture.updateTextureParameters(mTexParams);
                 }
             });
-            if (ignored != null)
+            if (!loadFinished)
             {
                 mContext.getEventManager().sendEvent(mContext,
                         IAssetEvents.class,
                         "onTextureLoaded", new Object[] { mContext, texture, TextureFile });
             }
+            loadFinished = true;
         }
 
         @Override
         public void failed(Throwable t, GVRAndroidResource androidResource)
         {
-            loaded(getDefaultTexture(mContext), null);
-            mContext.getEventManager().sendEvent(mContext,
-                    IAssetEvents.class,
-                    "onTextureError", new Object[] { mContext, t.getMessage(), TextureFile });
+            if (!loadFinished)
+            {
+                mContext.getEventManager().sendEvent(mContext,
+                        IAssetEvents.class,
+                        "onTextureError", new Object[]{mContext, t.getMessage(), TextureFile});
+                loadFinished = true;
+                loaded(getDefaultTexture(mContext), null);
+            }
         }
 
         @Override
@@ -499,11 +570,11 @@ public final class GVRAssetLoader {
      * from your {@link GVRMain#onStep() onStep()} callback as that is called
      * once per frame, and a long call will cause you to miss frames. For large
      * images, you should use
-     * {@link #loadTexture(GVRAndroidResource, GVRAndroidResource.TextureCallback).
+     * {@link #loadTexture(GVRAndroidResource, GVRAndroidResource.TextureCallback)}.
      * <p>
      * This method automatically scales large images to fit the GPU's
      * restrictions and to avoid {@linkplain OutOfMemoryError out of memory
-     * errors.} </ul>
+     * errors.}
      *
      * @param resource
      *            Basically, a stream containing a bitmap texture. The
@@ -518,7 +589,7 @@ public final class GVRAssetLoader {
      *            default texture parameters are used.
      * @return The file as a texture, or {@code null} if the file can not be
      *         decoded into a Bitmap.
-     * @see GVRAssetLoader.DEFAULT_TEXTURE_PARAMETERS
+     * @see GVRAssetLoader#DEFAULT_TEXTURE_PARAMETERS
      */
     public GVRTexture loadTexture(GVRAndroidResource resource,
                                   GVRTextureParameters textureParameters)
@@ -762,7 +833,8 @@ public final class GVRAssetLoader {
                 }
                 byte data[] = ResourceReader.readStream(stream);
                 return data;
-            } catch (IOException e) {
+            } catch (Exception e) {
+                Log.e("GVRAssetLoader", path + " exception loading asset from " + e.getMessage());
                 return null;
             } finally {
                 if (resource != null) {
@@ -792,11 +864,16 @@ public final class GVRAssetLoader {
                 GVRByteArray byteArray = cache.get(resource);
                 if (byteArray == null) {
                     resource.closeStream(); // needed to avoid hanging
-                    byteArray = GVRByteArray.wrap(uncachedIO.read(path));
+                    byte[] data = uncachedIO.read(path);
+                    if (data == null) {
+                        return null;
+                    }
+                    byteArray = GVRByteArray.wrap(data);
                     cache.put(resource, byteArray);
                 }
                 return byteArray.getByteArray();
             } catch (IOException e) {
+                Log.e("GVRAssetLoader", path + " exception loading asset from " + e.getMessage());
                 return null;
             }
         }
@@ -806,7 +883,7 @@ public final class GVRAssetLoader {
      * Loads a scene object {@link GVRModelSceneObject} from
      * a 3D model and adds it to the scene.
      *
-     * @param assetFile
+     * @param filePath
      *            A filename, relative to the root of the volume.
      *            If the filename starts with "sd:" the file is assumed to reside on the SD Card.
      *            If the filename starts with "http:" or "https:" it is assumed to be a URL.
@@ -842,8 +919,8 @@ public final class GVRAssetLoader {
      */
     public GVRModelSceneObject loadModel(String filePath, GVRScene scene) throws IOException
     {
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, scene, false);
         GVRModelSceneObject model = new GVRModelSceneObject(mContext);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, scene, false);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
 
         model.setName(assetRequest.getBaseName());
@@ -873,8 +950,8 @@ public final class GVRAssetLoader {
      */
     public GVRModelSceneObject loadScene(String filePath, GVRScene scene) throws IOException
     {
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, scene, true);
         GVRModelSceneObject model = new GVRModelSceneObject(mContext);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, scene, true);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
 
         model.setName(assetRequest.getBaseName());
@@ -909,7 +986,7 @@ public final class GVRAssetLoader {
      */
     public GVRSceneObject loadScene(GVRSceneObject model, String filePath, GVRScene scene) throws IOException
     {
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, scene, true);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, scene, true);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
 
         model.setName(assetRequest.getBaseName());
@@ -947,7 +1024,7 @@ public final class GVRAssetLoader {
         {
             throw new IllegalArgumentException("Cannot load a model without a filename");
         }
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, scene, false);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, scene, false);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
 
         model.setName(assetRequest.getBaseName());
@@ -978,8 +1055,8 @@ public final class GVRAssetLoader {
      */
     public GVRModelSceneObject loadModel(String filePath, IAssetEvents handler) throws IOException
     {
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, handler);
         GVRModelSceneObject model = new GVRModelSceneObject(mContext);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, handler);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
 
         model.setName(assetRequest.getBaseName());
@@ -1021,9 +1098,9 @@ public final class GVRAssetLoader {
             boolean cacheEnabled,
             GVRScene scene) throws IOException
     {
-        AssetRequest assetRequest = new AssetRequest(mContext, filePath, scene, false);
         String ext = filePath.substring(filePath.length() - 3).toLowerCase();
         GVRModelSceneObject model = new GVRModelSceneObject(mContext);
+        AssetRequest assetRequest = new AssetRequest(model, filePath, scene, false);
         model.setName(assetRequest.getBaseName());
 
 		if (ext.equals("x3d"))

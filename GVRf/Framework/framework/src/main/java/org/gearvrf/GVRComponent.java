@@ -30,8 +30,8 @@ import org.gearvrf.utility.Exceptions;
  * GVROrthographicCamera and GVRPerspectiveCamera both have the
  * same type. All of the light classes have the same type as well.
  * 
- * @see GVRSceneObject.attachComponent
- * @see GVRSceneObject.getComponent
+ * @see GVRSceneObject#attachComponent(GVRComponent)
+ * @see GVRSceneObject#getComponent(long)
  */
 public class GVRComponent extends GVRHybridObject {
     protected boolean mIsEnabled;
@@ -43,8 +43,8 @@ public class GVRComponent extends GVRHybridObject {
      * @param gvrContext    The current GVRF context
      * @param nativePointer Pointer to the native object, returned by the native constructor
      */
-    protected GVRComponent(GVRContext gvrContext, long nativeConstructor) {
-        super(gvrContext, nativeConstructor);
+    protected GVRComponent(GVRContext gvrContext, long nativePointer) {
+        super(gvrContext, nativePointer);
         mIsEnabled = true;
     }
     
@@ -124,7 +124,11 @@ public class GVRComponent extends GVRHybridObject {
      * @see isEnabled
      */
     public void setEnable(boolean flag) {
+        if (flag == mIsEnabled)
+            return;
+
         mIsEnabled = flag;
+
         if (getNative() != 0)
         {
             NativeComponent.setEnable(getNative(), flag);
@@ -187,6 +191,8 @@ public class GVRComponent extends GVRHybridObject {
      * 
      * If the scene object that owns this component also has a component
      * of the given type, it will be returned.
+     * @param type  type of component to find. This must be a value
+     *              returned by getComponentType.
      * @return GVRComponent of requested type or null if none exists.
      */
     public GVRComponent getComponent(long type) {
@@ -206,7 +212,21 @@ public class GVRComponent extends GVRHybridObject {
      * @param oldOwner  GVRSceneObject the component was detached from.
      */
     public void onDetach(GVRSceneObject oldOwner) { }
-    
+
+    /**
+     * Called when the component's owner gets a new parent.
+     *
+     * @param newOwnersParent New parent of the component's owner.
+     */
+    public void onNewOwnersParent(GVRSceneObject newOwnersParent) { }
+
+    /**
+     * Called when the component's owner is detached from its parent.
+     *
+     * @param oldOwnersParent Old parent of the component's owner.
+     */
+    public void onRemoveOwnersParent(GVRSceneObject oldOwnersParent) { }
+
     /**
      * Called when a component is enabled.
      */
