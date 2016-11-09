@@ -40,3 +40,9 @@ lib.jar
 import-summary.txt
 
 !**/libgdx.so
+
+.externalNativeBuild
+buildinfo.h
+buildinfo.cpp
+BuildInfo.java
+OvrBuildInfo.java

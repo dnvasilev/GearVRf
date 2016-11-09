@@ -64,8 +64,6 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
     private StringBuilder mStatMessage = new StringBuilder();
     private Set<GVRLightBase> mLightList = new HashSet<GVRLightBase>();
     private GVREventReceiver mEventReceiver = new GVREventReceiver(this);
-    private GVRMaterial mShadowMaterial = null;
-    private boolean mShadowMapDirty = true;
     private GVRSceneObject mSceneRoot;
     /**
      * Constructs a scene with a camera rig holding left & right cameras in it.
@@ -139,12 +137,10 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
     	GVRCameraRig rig = getMainCameraRig();
         GVRSceneObject head = rig.getOwnerObject();
         rig.removeAllChildren();
-        head.getParent().removeChildObject(head);
 
         for (GVRSceneObject child : mSceneRoot.getChildren()) {
             child.getParent().removeChildObject(child);
         }
-
         NativeScene.removeAllSceneObjects(getNative());
         synchronized (mLightList)
         {
@@ -323,9 +319,8 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
         if (mStatsEnabled && mStatsConsole == null) {
             mStatsConsole = new GVRConsole(getGVRContext(),
                     GVRConsole.EyeMode.BOTH_EYES);
-            mStatsConsole.setCanvasWidthHeight(512, 512);
-            mStatsConsole.setXOffset(125.0f);
-            mStatsConsole.setYOffset(125.0f);
+            mStatsConsole.setXOffset(250.0f);
+            mStatsConsole.setYOffset(350.0f);
         }
 
         if (mStatsEnabled && mStatsConsole != null) {

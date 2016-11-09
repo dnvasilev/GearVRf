@@ -17,17 +17,30 @@ package org.gearvrf;
 
 import static org.gearvrf.utility.Assert.*;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.gearvrf.GVRSceneObject;
+import org.gearvrf.utility.ImageUtils;
+import org.gearvrf.utility.Threads;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import android.graphics.Bitmap;
+import android.os.Environment;
 import android.util.Log;
 
 /**
@@ -49,8 +62,8 @@ import android.util.Log;
  * advantage of these shadow maps.
  * 
  * @see GVRShaderTemplate
- * @see GVRRenderData.bindShader
- * @see GVRLightBase.setCastShadow
+ * @see GVRRenderData#bindShader(GVRScene)
+ * @see GVRLightBase#setCastShadow(boolean)
  */
 public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
 {
@@ -119,15 +132,13 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
     public void setCastShadow(boolean enableFlag)
     {
         GVRContext context = getGVRContext();
+
         if (enableFlag)
         {
-            if (mShadowMaterial == null)
-            {
-                mShadowMaterial = new GVRMaterial(context);
-                GVRShaderTemplate depthShader = context.getMaterialShaderManager().retrieveShaderTemplate(GVRDepthShader.class);
-                depthShader.bindShader(context, mShadowMaterial);
-            }
-            NativeLight.setCastShadow(getNative(), mShadowMaterial.getNative());
+            GVRMaterial mtl = getShadowMaterial(context);
+            GVRShaderTemplate depthShader = context.getMaterialShaderManager().retrieveShaderTemplate(GVRDepthShader.class);
+            depthShader.bindShader(context, mtl);
+            NativeLight.setCastShadow(getNative(), mtl.getNative());
         }
         else
         {
@@ -156,6 +167,33 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
         else if (owner != null)
             getGVRContext().unregisterDrawFrameListener(this);
         super.setOwnerObject(newOwner);
+    }
+
+    /**
+     * Gets the shadow material used in constructing shadow maps.
+     *
+     * The shadow material has several public attributes which affect the shadow
+     * map construction:
+     *  - shadow_near   near plane of the shadow map camera (default 0.1)
+     *  - shadow_far    far plane of the shadow map camera (default 50)
+     *
+     * The shadow map is constructed using a depth map rendered
+     * from the viewpoint of the light. This global material
+     * contains the shadow map properties. Modifying the near and far
+     * planes change how much of the scene is visible from the light.
+     * The shadow map will be more detailed if this range is small.
+     * It may be blocky if the range is too large.
+     *
+     * @return shadow map material
+     */
+    public static GVRMaterial getShadowMaterial(GVRContext ctx) {
+        if (mShadowMaterial == null)
+        {
+            mShadowMaterial = new GVRMaterial(ctx);
+            mShadowMaterial.setFloat("shadow_near", 0.1f);
+            mShadowMaterial.setFloat("shadow_far", 50);
+        }
+        return mShadowMaterial;
     }
 
     /**
@@ -221,13 +259,13 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      *
      * The shader code defines a function which computes the
      * color contributed by this light. It takes a structure of uniforms and a
-     * <Surface> structure as input and outputs a <Radiance> structure. The
+     * Surface structure as input and outputs a Radiance structure. The
      * contents of the uniform structure is defined by the uniform descriptor. The fragment
      * shader is responsible for computing the surface color and integrating the
      * contribution of each light to the final fragment color. It defines the
-     * format of the <Radiance> and <Surface> structures.
+     * format of the Radiance and Surface structures.
      * @see GVRShaderTemplate
-     * @see GVRLightBase.getUniformDescriptor
+     * @see GVRLightBase#getUniformDescriptor()
      * 
      * @return string with source for light fragment shader
      */
@@ -246,7 +284,7 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * by the vertex shader descriptor.
      * 
      * @see GVRShaderTemplate
-     * @see GVRLightBase.getVertexDescriptor
+     * @see GVRLightBase#getVertexDescriptor()
      * 
      * @return string with source for light vertex shader
      */
@@ -264,7 +302,7 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * shader when they are updated.
      * 
      * @see GVRShaderTemplate
-     * @see GVRLightBase.getFragmentShaderSource
+     * @see GVRLightBase#getFragmentShaderSource()
      * 
      * @return String describing light shader uniforms
      */
@@ -294,10 +332,7 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * @param key
      *            name of uniform to get
      * @return floating point value of uniform
-     * @throws exception
-     *             if uniform name not found
      */
-    @SuppressWarnings("unused")
     public float getFloat(String key)
     {
         return NativeLight.getFloat(getNative(), key);
@@ -308,12 +343,9 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * 
      * @param key
      *            name of uniform to get
-     * @param new
+     * @param value
      *            floating point value of uniform
-     * @throws exception
-     *             if uniform name not found
      */
-    @SuppressWarnings("unused")
     public void setFloat(String key, float value)
     {
         checkStringNotNullOrEmpty("key", key);
@@ -327,8 +359,6 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * @param key
      *            name of uniform to get
      * @return vec3 value of uniform
-     * @throws exception
-     *             if uniform name not found
      */
     public float[] getVec3(String key)
     {
@@ -340,10 +370,9 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * 
      * @param key
      *            name of uniform to get
-     * @param new
-     *            vec3 value of uniform
-     * @throws exception
-     *             if uniform name not found
+     * @param x     X coordinate of vector
+     * @param y     Y coordinate of vector
+     * @param z     Z coordinate of vector
      */
     public void setVec3(String key, float x, float y, float z)
     {
@@ -357,8 +386,6 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * @param key
      *            name of uniform to get
      * @return vec4 value of uniform
-     * @throws exception
-     *             if uniform name not found
      */
     public float[] getVec4(String key)
     {
@@ -368,12 +395,11 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
     /**
      * Sets the value of a vec4 uniform based on its name.
      * 
-     * @param key
-     *            name of uniform to get
-     * @param new
-     *            vec4 value of uniform
-     * @throws exception
-     *             if uniform name not found
+     * @param key   name of uniform to get
+     * @param x     X coordinate of vector
+     * @param y     Y coordinate of vector
+     * @param z     Z coordinate of vector
+     * @param w     W coordinate of vector
      */
     public void setVec4(String key, float x, float y, float z, float w)
     {
@@ -386,10 +412,8 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * 
      * @param key
      *            name of uniform to get
-     * @param new
+     * @param matrix
      *            4x4 matrix value of uniform
-     * @throws exception
-     *             if uniform name not found
      */
     public void setMat4(String key, Matrix4f matrix)
     {
@@ -404,8 +428,6 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
      * 
      * @param key
      *            name of uniform to get
-     * @throws exception
-     *             if uniform name not found
      */
     public Matrix4f getMat4(String key)
     {
@@ -445,11 +467,11 @@ public class GVRLightBase extends GVRComponent implements GVRDrawFrameListener
         defaultDir = orientation;
     }
 
-    /**
-     * Updates the position and direction of this light from the transform of
-     * scene object that owns it.
-     */
-    
+
+/**
+ * Updates the position and direction of this light from the transform of
+ * scene object that owns it.
+ */
     public void onDrawFrame(float frameTime)
     {     
         if ((getFloat("enabled") <= 0.0f) || (owner == null)) { return; }

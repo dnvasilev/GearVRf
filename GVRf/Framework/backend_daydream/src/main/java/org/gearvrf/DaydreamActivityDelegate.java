@@ -60,6 +60,7 @@ final class DaydreamActivityDelegate implements GVRActivity.GVRActivityDelegate 
             public boolean isHmtConnected() {
                 return false;
             }
+            public boolean usingMultiview() { return false; }
         };
     }
 
@@ -72,6 +73,7 @@ final class DaydreamActivityDelegate implements GVRActivity.GVRActivityDelegate 
 
     @Override
     public void parseXmlSettings(AssetManager assetManager, String dataFilename) {
+        new DaydreamXMLParser(assetManager, dataFilename, mActivity.getAppSettings());
     }
 
     @Override

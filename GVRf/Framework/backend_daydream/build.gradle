@@ -51,6 +51,27 @@ android {
             srcDir 'src/main/libs'
         }
     }
+
+    task uploadToGitHub(type: Exec) {
+        onlyIf {
+            System.env['ACCESS_TOKEN'] != null
+        }
+
+        commandLine '../../tools/upload_to_github', file('build/outputs/aar/backend_daydream-debug.aar').absolutePath
+    }
+    uploadToGitHub.doFirst {
+        println('uploading to github')
+    }
+    task deleteAllFromGitHub(type: Exec) {
+        onlyIf {
+            System.env['ACCESS_TOKEN'] != null
+        }
+
+        commandLine '../../tools/delete_all_from_github'
+    }
+    deleteAllFromGitHub.doFirst {
+        println('deleting all assets from github release')
+    }    
 }
 
 dependencies {
@@ -96,5 +117,10 @@ assembleDebug {}.doLast {
         from 'build/outputs/aar'
         into gearvrfLibs
         include '*-debug.aar'
-    }   
+    }
+
+    if (System.env['ACCESS_TOKEN'] != null) {
+        deleteAllFromGitHub.execute();
+        uploadToGitHub.execute();
+    }
 }

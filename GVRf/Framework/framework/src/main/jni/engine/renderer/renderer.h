@@ -65,6 +65,7 @@ struct ShaderUniformsPerObject {
     glm::mat4   u_mv_it;        // inverse transpose of ModelView
     glm::mat4   u_mv_it_[2];        // inverse transpose of ModelView
     int         u_right;        // 1 = right eye, 0 = left
+
 };
 
 struct RenderState {
@@ -77,6 +78,7 @@ struct RenderState {
     Material*               material_override;
     ShaderUniformsPerObject uniforms;
     ShaderManager*          shader_manager;
+    bool shadow_map;
 };
 
 class Renderer {
@@ -99,10 +101,10 @@ public:
         return numberTriangles;
      }
      int incrementTriangles(int number=1){
-        numberTriangles += number;
+        return numberTriangles += number;
      }
      int incrementDrawCalls(){
-        numberDrawCalls++;
+        return ++numberDrawCalls;
      }
      static Renderer* getInstance(const char* type = " ");
      static void resetInstance(){
@@ -181,13 +183,18 @@ protected:
             ShaderManager* shader_manager,
             std::vector<SceneObject*>& scene_objects);
 
-    virtual void renderPostEffectData(Camera* camera,
+    virtual void
+            renderPostEffectData(Camera* camera,
             RenderTexture* render_texture, PostEffectData* post_effect_data,
             PostEffectShaderManager* post_effect_shader_manager);
 
     std::vector<RenderData*> render_data_vector;
     int numberDrawCalls;
     int numberTriangles;
+
+public:
+    //to be used only on the gl thread
+    const std::vector<RenderData*>& getRenderDataVector() const { return render_data_vector; }
 };
 extern Renderer* gRenderer;
 }
