@@ -186,6 +186,11 @@ public class CursorManager {
         unusedIoDevices.addAll(inputManager.getAvailableIoDevices());
         assignIoDevicesToCursors();
 
+        // disable all unused devices
+        for(IoDevice device:unusedIoDevices){
+            device.setEnable(false);
+        }
+
         settingsCursor = new LaserCursor(context, this);
         settingsCursor.setScene(scene);
 
@@ -200,7 +205,12 @@ public class CursorManager {
         }
     }
 
-    // TODO switch to default scope after settings ui is implemented
+    /**
+     * Gives a list of all the {@link CursorTheme}s listed in the settings.xml file. Use this
+     * call to get a list of available {@link CursorTheme}s and {@link Cursor#setCursorTheme(CursorTheme)}
+     * to change the {@link CursorTheme} associated with a {@link Cursor}
+     * @return A list of {@link CursorTheme}s as defined in the settings.xml
+     */
     public List<CursorTheme> getCursorThemes() {
         return new ArrayList<CursorTheme>(themes.values());
     }
@@ -270,6 +280,12 @@ public class CursorManager {
         return unusedCursors;
     }
 
+    /**
+     * This returns a list of {@link IoDevice}s that are connected and currently controlling a
+     * {@link Cursor}. This list will not include any {@link IoDevice} that is not connected or
+     * connected but not controlling a {@link Cursor}.
+     * @return The list of used {@link IoDevice}s
+     */
     public List<IoDevice> getUsedIoDevices() {
         return new ArrayList<IoDevice>(usedIoDevices);
     }
@@ -600,8 +616,12 @@ public class CursorManager {
      * <p/>
      *
      * The listener notifies the application whenever a Cursor is added/removed from the
-     * manager. The {@link CursorActivationListener#onActivated(Cursor)} method is automatically
-     * called for all active {@link Cursor}s when a new {@link CursorActivationListener} is added.
+     * manager.
+     *
+     * Note that this call {@link CursorActivationListener#onActivated(Cursor)} would only return
+     * the future {@link Cursor} objects activated. To know the list of {@link Cursor} objects
+     * activated at the time of this call, make use of the {@link #getActiveCursors()}.
+     *
      *
      * @param listener the {@link CursorActivationListener} to be added.<code>null</code>
      *                 objects are ignored.
@@ -611,9 +631,6 @@ public class CursorManager {
         if (null == listener) {
             // ignore null input
             return;
-        }
-        for (Cursor cursor : cursors) {
-            listener.onActivated(cursor);
         }
         activationListeners.add(listener);
     }
@@ -747,14 +764,28 @@ public class CursorManager {
         return true;
     }
 
+    /**
+     * This call is for objects for which {@link CursorManager#addSelectableObject(GVRSceneObject)}
+     * was called. After calling this on a {@link GVRSceneObject} there will be no
+     * {@link CursorEvent}s generated when a {@link Cursor} interacts with this
+     * {@link GVRSceneObject}. The {@link GVRSceneObject} that was passed in
+     * {@link CursorManager#addSelectableObject(GVRSceneObject)} should be passed in here.
+     * @param object The {@link GVRSceneObject} that is to be made un-selectable.
+     * @return <code>true</code> on success or <code>false</code> if {@link GVRSceneObject} was not
+     * set as selectable using the {@link CursorManager#addSelectableObject(GVRSceneObject)}
+     */
     public boolean removeSelectableObject(GVRSceneObject object) {
         if (null == object) {
             throw new IllegalArgumentException("GVRSceneObject cannot be null");
         }
         removeSelectableBehavior(object);
-        object.setSensor(null);
-        object.getEventReceiver().removeListener(cursorSensor);
-        return true;
+        if(object.getSensor() != null) {
+            object.setSensor(null);
+            object.getEventReceiver().removeListener(cursorSensor);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void addSelectableBehavior(GVRSceneObject object) {
@@ -815,12 +846,19 @@ public class CursorManager {
         globalSettings.setSoundEnabled(enable);
     }
 
+    /**
+     * Gets the status of the Sounds for the {@link CursorManager}
+     * @return <code>true</code> if sound is enabled, <code>false</code> if it is disabled
+     */
     public boolean isSoundEnabled() {
         return globalSettings.isSoundEnabled();
     }
 
     /**
-     * Close the {@link CursorManager} object.
+     * Called to perform post clean up of the {@link CursorManager}. All devices registered with
+     * the {@link Cursor} objects are cleared and the all device listeners are unregistered.
+     *
+     * Usually called on destroy.
      */
     public void close() {
         // Use this to perform post cleanup.
@@ -905,6 +943,10 @@ public class CursorManager {
             Log.d(TAG, "IoDevice added:" + addedIoDevice.getDeviceId());
             unusedIoDevices.add(addedIoDevice);
             assignIoDevicesToCursors();
+
+            if(unusedIoDevices.contains(addedIoDevice)){
+                addedIoDevice.setEnable(false);
+            }
         }
 
         @Override
@@ -972,6 +1014,7 @@ public class CursorManager {
      * <br> 1. The themes being used by each {@link Cursor}
      * <br> 2. The state of the {@link Cursor}s i.e. enabled/disabled
      * <br> 3. The {@link IoDevice} being used by each active {@link Cursor}.
+     * The configuration will be persisted across app launches.
      */
     public void saveSettings() {
         try {
@@ -1002,7 +1045,14 @@ public class CursorManager {
                 cursor.addCursorEventListener(cursorEventListener);
             }
         };
+
         addCursorActivationListener(activationListener);
+        // Collect all active cursors and register for all future active cursors.
+        for (Cursor cursor : cursors) {
+            if (cursor.isActive()) {
+                activationListener.onActivated(cursor);
+            }
+        }
     }
 
     private CursorEventListener cursorEventListener = new CursorEventListener() {
@@ -1031,6 +1081,11 @@ public class CursorManager {
         }
     }
 
+    /**
+     * Gets the {@link GVRContext} instance associated with the {@link CursorManager}. This is
+     * the {@link GVRContext} object passed in the constructor.
+     * @return the {@link GVRContext} instance.
+     */
     public GVRContext getGVRContext() {
         return context;
     }
