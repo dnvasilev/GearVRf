@@ -101,7 +101,11 @@ abstract class GVRViewManager extends GVRContext {
         if (mNextMainScene == scene) {
             mNextMainScene = null;
             if (mOnSwitchMainScene != null) {
-                mOnSwitchMainScene.run();
+                try {
+                    mOnSwitchMainScene.run();
+                } catch (final Exception exc) {
+                    Log.e(TAG, "onSwitchMainScene runnable threw " + exc);
+                }
                 mOnSwitchMainScene = null;
             }
         }
@@ -110,8 +114,6 @@ abstract class GVRViewManager extends GVRContext {
             mInputManager.setScene(mMainScene);
         }
     }
-
-    void setUseTheFrameworkThread(boolean b) {}
 
     protected boolean updateSensoredScene() {
         if (mSensoredScene != null && mMainScene.equals(mSensoredScene)) {
@@ -348,10 +350,11 @@ abstract class GVRViewManager extends GVRContext {
             // splash screen post-init animations
             long currentTime = doMemoryManagementAndPerFrameCallbacks();
 
-            if (mSplashScreen != null && (currentTime >= mSplashScreen.mTimeout || mSplashScreen.closeRequested())) {
-                if (mSplashScreen.closeRequested()
-                        || mMain.getSplashMode() == GVRScript.SplashMode.AUTOMATIC) {
+            final boolean timeoutExpired = (null == mSplashScreen
+                    || (0 <= mMain.getSplashDisplayTime() && currentTime >= mSplashScreen.mTimeout));
 
+            if (mSplashScreen != null && (timeoutExpired || mSplashScreen.closeRequested())) {
+                if (mSplashScreen.closeRequested() || mMain.getSplashMode() == GVRScript.SplashMode.AUTOMATIC) {
                     final SplashScreen splashScreen = mSplashScreen;
                     new GVROpacityAnimation(mSplashScreen, mMain.getSplashFadeTime(), 0) //
                             .setOnFinish(new GVROnFinish() {
