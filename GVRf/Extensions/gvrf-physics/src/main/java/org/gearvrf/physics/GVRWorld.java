@@ -40,11 +40,16 @@ public class GVRWorld extends GVRBehavior implements ISceneObjectEvents, Compone
     }
 
     private final LongSparseArray<GVRRigidBody> mRigidBodies = new LongSparseArray<GVRRigidBody>();
-    private final LinkedList<GVRCollisionInfo> mPreviousCollisions = new LinkedList<GVRCollisionInfo>();
+    private final GVRCollisionMatrix mCollisionMatrix;
 
     public GVRWorld(GVRContext gvrContext) {
+        this(gvrContext, null);
+    }
+
+    public GVRWorld(GVRContext gvrContext, GVRCollisionMatrix collisionMatrix) {
         super(gvrContext, NativePhysics3DWorld.ctor());
         mHasFrameCallback = false;
+        mCollisionMatrix = collisionMatrix;
     }
 
     static public long getComponentType() {
@@ -67,10 +72,20 @@ public class GVRWorld extends GVRBehavior implements ISceneObjectEvents, Compone
      * @param gvrBody The {@link GVRRigidBody} to add.
      */
     public void addBody(GVRRigidBody gvrBody) {
-        if (!contains(gvrBody)) {
-            NativePhysics3DWorld.addRigidBody(getNative(), gvrBody.getNative());
-            mRigidBodies.put(gvrBody.getNative(), gvrBody);
+        if (contains(gvrBody)) {
+            return;
         }
+
+        if (gvrBody.getCollisionGroup() < 0 || gvrBody.getCollisionGroup() > 15
+                || mCollisionMatrix == null) {
+            NativePhysics3DWorld.addRigidBody(getNative(), gvrBody.getNative());
+        } else {
+            NativePhysics3DWorld.addRigidBodyWithMask(getNative(), gvrBody.getNative(),
+                    mCollisionMatrix.getCollisionFilterGroup(gvrBody.getCollisionGroup()),
+                    mCollisionMatrix.getCollisionFilterMask(gvrBody.getCollisionGroup()));
+        }
+
+        mRigidBodies.put(gvrBody.getNative(), gvrBody);
     }
 
     /**
@@ -95,24 +110,17 @@ public class GVRWorld extends GVRBehavior implements ISceneObjectEvents, Compone
     private void generateCollisionEvents() {
         GVRCollisionInfo collisionInfos[] = NativePhysics3DWorld.listCollisions(getNative());
 
-        String eventName = "onEnter";
-        for (GVRCollisionInfo info : collisionInfos) {
+        String onEnter = "onEnter";
+        String onExit = "onExit";
 
-            if (mPreviousCollisions.contains(info)) {
-                //eventName = "onInside";
-                mPreviousCollisions.remove(info);
-            } else {
-                sendCollisionEvent(info, eventName);
+        for (GVRCollisionInfo info : collisionInfos) {
+            if (info.isHit) {
+                sendCollisionEvent(info, onEnter);
+            }
+            else {
+                sendCollisionEvent(info, onExit);
             }
         }
-
-        eventName = "onExit";
-        for (GVRCollisionInfo cp: mPreviousCollisions) {
-            sendCollisionEvent(cp, eventName);
-        }
-
-        mPreviousCollisions.clear();
-        Collections.addAll(mPreviousCollisions, collisionInfos);
     }
 
     private void sendCollisionEvent(GVRCollisionInfo info, String eventName) {
@@ -212,6 +220,8 @@ class NativePhysics3DWorld {
     static native long getComponentType();
 
     static native boolean addRigidBody(long jphysics_world, long jrigid_body);
+
+    static native boolean addRigidBodyWithMask(long jphysics_world, long jrigid_body, long collisionType, long collidesWith);
 
     static native void removeRigidBody(long jphysics_world, long jrigid_body);
 

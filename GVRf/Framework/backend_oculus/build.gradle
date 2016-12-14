@@ -9,12 +9,12 @@ repositories {
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion '23.0.3'
+    compileSdkVersion 24
+    buildToolsVersion '24.0.3'
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 19
+        targetSdkVersion 24
     }
 
     task buildInfo(type:Exec){
@@ -139,10 +139,13 @@ android {
     }
 }
 
+project.ext.jomlVersion = "1.9.1-SNAPSHOT"
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile fileTree(include: ['*.jar'], dir: 'src/main/libs')
     compile project(':framework')
+    compile "org.joml:joml-android:${jomlVersion}"
 }
 
 assembleDebug {}.doLast {
