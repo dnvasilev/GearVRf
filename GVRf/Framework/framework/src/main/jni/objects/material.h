@@ -156,7 +156,7 @@ public:
                 if(type.compare("float4") == 0 || type.compare("int4") == 0 || type.compare("mat4") == 0)
                     modified_type = type;
                 else
-                    modified_type = getType(type);
+                    modified_type = type;//getType(type);
 
                 uniform_desc_ = uniform_desc_ + modified_type + " ";
                 while (std::isspace(*p))

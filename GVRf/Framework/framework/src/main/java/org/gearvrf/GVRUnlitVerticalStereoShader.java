@@ -59,10 +59,16 @@ public class GVRUnlitVerticalStereoShader extends GVRShader
 
     public GVRUnlitVerticalStereoShader(GVRContext gvrContext)
     {
-        super("float3 u_color float u_opacity int u_right", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
+        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context,R.raw.unlit_vertical_frag));
         setSegment("VertexTemplate",TextFile.readTextFile(context,R.raw.unlit_vertical_vert));
+    }
+
+    protected void setMaterialDefaults(GVRShaderData material)
+    {
+        material.setVec3("u_color", 0.5f, 0.5f, 0.5f);
+        material.setFloat("u_opacity", 1.0f);
     }
 }
 

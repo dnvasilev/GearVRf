@@ -55,7 +55,7 @@ protected:
 public:
     UniformBlock();
     UniformBlock(const std::string& descriptor);
-
+    int getRequiredBlock(std::string type) const;
     /**
      * Determine if a named uniform exists in this block.
      * @param name name of uniform to look for
@@ -360,6 +360,7 @@ protected:
      * Calculate the byte size of the given type.
      */
     int calcSize(std::string type) const;
+
     /**
      * Constructs the data block containing the values
      * for all the uniform variables in the descriptor.
@@ -401,7 +402,7 @@ protected:
     bool        ownData;        // true if this uniform owns its data block
     std::string BlockName;      // uniform block name in shadere
     std::string Descriptor;     // descriptor with name, type and size of uniforms
-    void*       UniformData;    // -> data block with uniform values
+public : void*       UniformData;    // -> data block with uniform values
     GLint       TotalSize;      // number of bytes in data block
 
 
