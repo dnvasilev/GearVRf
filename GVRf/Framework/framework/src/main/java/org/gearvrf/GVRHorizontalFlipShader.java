@@ -14,6 +14,10 @@
  */
 package org.gearvrf;
 
+import android.content.Context;
+
+import org.gearvrf.utility.TextFile;
+
 /**
  * Shader which horizontally flips a texture and blends it with a color.
  * This shader assumes the vertex position is in eye coordinates - it
@@ -30,33 +34,12 @@ package org.gearvrf;
  */
 public class GVRHorizontalFlipShader extends GVRShaderTemplate
 {
-    private String vertexShader =
-            "attribute vec3 a_position;\n" +
-            "attribute vec2 a_texcoord;\n" +
-            "varying vec2 diffuse_coord;\n" +
-            "void main() {\n" +
-            "  diffuse_coord = vec2(a_texcoord.x, 1.0 - a_texcoord.y);\n" +
-            "  gl_Position = vec3(a_position, 1.0);\n" +
-            "}\n";
-
-    private String fragmentShader  =
-            "precision highp float;\n" +
-            "uniform sampler2D u_texture;\n" +
-            "uniform vec3 u_color;\n" +
-            "uniform float u_factor;\n" +
-            "varying vec2 diffuse_coord;\n" +
-            "void main() {\n" +
-            "  vec4 tex = texture2D(u_texture, diffuse_coord);\n"  +
-            "  vec3 color = tex.rgb * (1.0 - u_factor) + u_color * u_factor;\n" +
-            "  float alpha = tex.a;\n" +
-            "  gl_FragColor = vec4(color, alpha);\n" +
-            "}\n";
-
     public GVRHorizontalFlipShader(GVRContext ctx)
     {
-        super("float3 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
-        setSegment("FragmentTemplate", fragmentShader);
-        setSegment("VertexTemplate", vertexShader);
+        super("float3 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
+        Context context = ctx.getContext();
+        setSegment("VertexTemplate", TextFile.readTextFile(context, R.raw.horz_flip_tex));
+        setSegment("FragmentTemplate", TextFile.readTextFile(context, R.raw.color_blend_frag));
     }
 
     protected void setMaterialDefaults(GVRShaderData material)

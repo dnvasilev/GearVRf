@@ -49,6 +49,10 @@ package org.gearvrf;
 // (http://www.nvidia.com/object/cube_map_ogl_tutorial.html)
 // (http://stackoverflow.com/questions/11685608/convention-of-faces-in-opengl-cubemapping)
 
+import android.content.Context;
+
+import org.gearvrf.utility.TextFile;
+
 /**
  * Shader which renders a cubemap texture as a reflection map.
  * This shader ignores light sources.
@@ -66,42 +70,11 @@ package org.gearvrf;
  */
 public class GVRCubemapReflectionShader extends GVRShader
 {
-    private String vertexShader =
-        "attribute vec3 a_position;\n" +
-        "attribute vec3 a_normal;\n" +
-        "uniform mat4 u_mv;\n" +
-        "uniform mat4 u_mv_it;\n" +
-        "uniform mat4 u_mvp;\n" +
-        "varying vec3 v_viewspace_position;\n" +
-        "varying vec3 v_viewspace_normal;\n" +
-        "void main() {\n" +
-        "  vec4 v_viewspace_position_vec4 = u_mv * a_position;\n" +
-        "  v_viewspace_position = v_viewspace_position_vec4.xyz / v_viewspace_position_vec4.w;\n" +
-        "  v_viewspace_normal = (u_mv_it * vec4(a_normal, 1.0)).xyz;\n" +
-        "  gl_Position = u_mvp * vec4(a_position, 1.0);\n" +
-        "}\n";
-
-    private String fragmentShader =
-        "precision highp float;\n" +
-        "uniform samplerCube u_texture;\n" +
-        "uniform vec3 u_color;\n" +
-        "uniform float u_opacity;\n" +
-        "uniform mat4 u_view_i;\n" +
-        "varying vec3 v_viewspace_position;\n" +
-        "varying vec3 v_viewspace_normal;\n" +
-        "void main()\n" +
-        "{\n" +
-        "  vec3 v_reflected_position = reflect(v_viewspace_position, normalize(v_viewspace_normal));\n" +
-        "  vec3 v_tex_coord = (u_view_i * vec4(v_reflected_position, 1.0)).xyz;\n" +
-        "  v_tex_coord.z = -v_tex_coord.z;\n" +
-        "  vec4 color = textureCube(u_texture, v_tex_coord.xyz);\n" +
-        "  gl_FragColor = vec4(color.r * u_color.r * u_opacity, color.g * u_color.g * u_opacity, color.b * u_color.b * u_opacity, color.a * u_opacity);\n" +
-        "}\n";
-
-    public GVRCubemapReflectionShader()
+    public GVRCubemapReflectionShader(GVRContext gvrContext)
     {
         super("float3 u_color float u_opacity", "samplerCube u_texture", "float3 a_position float3 a_normal", 300);
-        setSegment("FragmentTemplate", fragmentShader);
-        setSegment("VertexTemplate", vertexShader);
+        Context context = gvrContext.getContext();
+        setSegment("FragmentTemplate", TextFile.readTextFile(context, R.raw.cubemap_reflection_frag));
+        setSegment("VertexTemplate", TextFile.readTextFile(context, R.raw.cubemap_reflection_vert));
     }
 }

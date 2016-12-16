@@ -14,6 +14,8 @@
  */
 package org.gearvrf;
 
+import org.gearvrf.utility.TextFile;
+
 /**
  * Error shader used by GearVRF after a rendering error.
  * It only accesses the "a_position" vertex attribute
@@ -22,20 +24,13 @@ package org.gearvrf;
  */
 public class GVRErrorShader extends GVRShader
 {
-    private String vertexShader =
-            "attribute vec3 a_position;\n" +
-            "uniform mat4 u_mvp;\n" +
-            "void main() {\n" +
-            "  gl_Position = u_mvp * vec4(a_position, 1);\n" +
-            "}\n";
-
     private String fragmentShader =
-                    "void main() { gl_FragColor = vec4(1, 0, 0, 1); }\n";
+            "void main() { gl_FragColor = vec4(1, 0, 0, 1); }\n";
 
-    public GVRErrorShader()
+    public GVRErrorShader(GVRContext ctx)
     {
         super("", "", "float3 a_position");
         setSegment("FragmentTemplate", fragmentShader);
-        setSegment("VertexTemplate", vertexShader);
+        setSegment("VertexTemplate", TextFile.readTextFile(ctx.getContext(), R.raw.pos_ubo));
     }
 }

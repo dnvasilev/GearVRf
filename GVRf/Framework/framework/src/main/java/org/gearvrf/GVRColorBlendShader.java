@@ -31,31 +31,9 @@ import org.gearvrf.utility.TextFile;
  */
 public class GVRColorBlendShader extends GVRShader
 {
-    private String vertexShader =
-        "attribute vec3 a_position;\n" +
-        "attribute vec2 a_texcoord;\n" +
-        "varying vec2 diffuse_coord;\n" +
-        "void main() {\n" +
-        "  diffuse_coord = a_texcoord.xy;\n" +
-        "  gl_Position = vec3(a_position, 1.0);\n" +
-        "}\n";
-
-    private String fragmentShader  =
-        "precision highp float;\n" +
-        "uniform sampler2D u_texture;\n" +
-        "uniform vec3 u_color;\n" +
-        "uniform float u_factor;\n" +
-        "varying vec2 diffuse_coord;\n" +
-        "void main() {\n" +
-        "  vec4 tex = texture2D(u_texture, diffuse_coord);\n"  +
-        "  vec3 color = tex.rgb * (1.0 - u_factor) + u_color * u_factor;\n" +
-        "  float alpha = tex.a;\n" +
-        "  gl_FragColor = vec4(color, alpha);\n" +
-        "}\n";
-
     public GVRColorBlendShader(GVRContext ctx)
     {
-        super("float3 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
+        super("float3 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
         Context context = ctx.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context, R.raw.color_blend_frag));
         setSegment("VertexTemplate", TextFile.readTextFile(context, R.raw.color_blend_vert));

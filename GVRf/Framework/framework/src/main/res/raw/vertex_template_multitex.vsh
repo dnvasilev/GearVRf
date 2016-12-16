@@ -20,7 +20,8 @@ uniform mat4 u_model;
 */
 
 
-layout (std140) uniform Transform_ubo{
+layout (std140) uniform Transform_ubo
+{
  #ifdef HAS_MULTIVIEW
      mat4 u_view_[2];
      mat4 u_mvp_[2];
@@ -36,29 +37,16 @@ layout (std140) uniform Transform_ubo{
      mat4 u_view_i;
      vec4 u_right;
 };
-layout (std140) uniform Bones_ubo{
-    mat4 u_bone_matrix[60];
-};
-
 
 in vec3 a_position;
 in vec2 a_texcoord;
 in vec3 a_normal;
 
 #ifdef HAS_VertexSkinShader
-/*
-#ifdef HAS_SHADOWS
-//
-// shadow mapping uses more uniforms
-// so we dont get as many bones
-//
-uniform mat4 u_bone_matrix[50];
-#else
-uniform mat4 u_bone_matrix[60];
-#endif
-*/
-in vec4 a_bone_weights;
-in ivec4 a_bone_indices;
+layout (std140) uniform Bones_ubo
+{
+    mat4 u_bone_matrix[60];
+};
 #endif
 
 #ifdef HAS_VertexNormalShader

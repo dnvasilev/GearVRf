@@ -14,6 +14,8 @@
  */
 package org.gearvrf;
 
+import org.gearvrf.utility.TextFile;
+
 /**
  * Renders a bounding box for occlusion query.
  * This shader ignores light sources.
@@ -24,20 +26,14 @@ package org.gearvrf;
  */
 public class GVRBoundingBoxShader extends GVRShader
 {
-    private String vertexShader =
-        "precision highp  float;\n" +
-        "attribute vec3 a_position;\n" +
-        "uniform mat4 u_mvp;\n" +
-        "void main() { gl_Position = u_mvp * vec4(a_position, 1.0); }\n";
-
     private String fragmentShader =
         "precision mediump  float;\n" +
         "void main() { gl_FragColor = vec4(0.0, 1.0, 0.0, 0.0); }\n";
 
-    public GVRBoundingBoxShader()
+    public GVRBoundingBoxShader(GVRContext ctx)
     {
         super("", "", "float3 a_position");
         setSegment("FragmentTemplate", fragmentShader);
-        setSegment("VertexTemplate", vertexShader);
+        setSegment("VertexTemplate", TextFile.readTextFile(ctx.getContext(), R.raw.pos_ubo));
     }
 }

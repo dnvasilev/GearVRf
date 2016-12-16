@@ -33,36 +33,12 @@ import org.gearvrf.utility.TextFile;
  */
 public class GVRUnlitVerticalStereoShader extends GVRShader
 {
-    private String vertexShader =
-            "attribute vec3 a_position;\n" +
-            "attribute vec2 a_texcoord;\n" +
-            "uniform mat4 u_mvp;\n" +
-            "varying vec2 diffuse_coord;\n" +
-            "void main() {\n" +
-            "  diffuse_coord = a_texcoord.xy;\n" +
-            "  gl_Position = u_mvp *  vec4(a_position, 1.0);\n" +
-            "}\n";
-
-    private String fragmentShader =
-            "precision highp float;\n" +
-            "uniform sampler2D u_texture;\n" +
-            "uniform vec3 u_color;\n" +
-            "uniform float u_opacity;\n" +
-            "uniform int u_right;\n" +
-            "varying vec2 diffuse_coord;\n" +
-            "void main()\n" +
-            "{\n" +
-            "  vec2 tex_coord = vec2(diffuse_coord.x, 0.5 * (diffuse_coord.y + float(u_right)));\n" +
-            "  vec4 color = texture2D(u_texture, tex_coord);\n" +
-            "  gl_FragColor = vec4(color.r * u_color.r * u_opacity, color.g * u_color.g * u_opacity, color.b * u_color.b * u_opacity, color.a * u_opacity);\n" +
-            "}\n";
-
     public GVRUnlitVerticalStereoShader(GVRContext gvrContext)
     {
-        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord");
+        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context,R.raw.unlit_vertical_frag));
-        setSegment("VertexTemplate",TextFile.readTextFile(context,R.raw.unlit_vertical_vert));
+        setSegment("VertexTemplate",TextFile.readTextFile(context,R.raw.pos_tex_ubo));
     }
 
     protected void setMaterialDefaults(GVRShaderData material)
