@@ -174,7 +174,8 @@ public:
 
    void setUniformDesc(std::string uniform_desc)
    {
-        convertDescriptor(uniform_desc);
+        //convertDescriptor(uniform_desc);
+       uniform_desc_ = uniform_desc;
         LOGE("setting matertial descriptor %s", uniform_desc_.c_str());
         vk_descriptor = new Descriptor(uniform_desc_);
     }

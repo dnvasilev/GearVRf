@@ -3,15 +3,17 @@ uniform sampler2D diffuseTexture;
 #else
 uniform sampler2D u_texture;
 #endif
-/*
-uniform vec3 u_color;
-uniform float u_opacity;
-uniform vec4 ambient_color;
-uniform vec4 diffuse_color;
-uniform vec4 specular_color;
-uniform vec4 emissive_color;
-uniform float specular_exponent;
-*/
+
+layout (std140) uniform Material_ubo
+{
+    vec4 ambient_color;
+    vec4 diffuse_color;
+    vec4 specular_color;
+    vec4 emissive_color;
+    vec3 u_color;
+    float u_opacity;
+    float specular_exponent;
+};
 
 struct Surface
 {
@@ -24,7 +26,7 @@ struct Surface
 
 Surface @ShaderName()
 {
-	vec4 diffuse = vec4(u_color.x,u_color.y,u_color.z, u_opacity);
+	vec4 diffuse = vec4(u_color.x, u_color.y, u_color.z, u_opacity);
 #ifdef HAS_LIGHTSOURCES
     diffuse *= diffuse_color;
 #endif

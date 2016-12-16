@@ -588,10 +588,6 @@ class GVRJassimpAdapter {
         {
             shaderType = GVRMaterial.GVRShaderType.PhongLayered.ID;
         }
-        else if (numtex <= 1)
-        {
-            shaderType = GVRMaterial.GVRShaderType.Texture.ID;
-        }
         return new GVRMaterial(mContext, shaderType);
     }
 

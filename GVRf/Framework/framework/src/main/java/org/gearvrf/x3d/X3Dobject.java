@@ -53,7 +53,6 @@ import org.gearvrf.GVRDirectLight;
 import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRPerspectiveCamera;
-import org.gearvrf.GVRPhongShader;
 import org.gearvrf.GVRPointLight;
 import org.gearvrf.GVRRenderData;
 import org.gearvrf.GVRRenderData.GVRRenderMaskBit;
@@ -894,8 +893,7 @@ public class X3Dobject {
                     gvrRenderData = new GVRRenderData(gvrContext);
                     // gvrRenderData.setCullFace(GVRCullFaceEnum.None);
                     gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
-                    shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.BeingGenerated.ID));
-                    gvrRenderData.setShaderTemplate(GVRPhongShader.class);
+                    shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.Phong.ID));
 
                     // Check if this is part of a Level-of-Detail
                     if (lodManager.isActive()) {
@@ -3083,7 +3081,6 @@ public class X3Dobject {
                             if (meshAttachedSceneObject == null) {
                                 gvrMaterial = shaderSettings.material;
                                 gvrRenderData.setMaterial(gvrMaterial);
-                                gvrRenderData.setShaderTemplate(GVRPhongShader.class);
                             } else {
                                 // This GVRSceneObject came with a GVRRenderData and GVRMaterial
 
@@ -3108,14 +3105,9 @@ public class X3Dobject {
 
                                 }
                                 gvrRenderData = meshAttachedSceneObject.getRenderData();
-                                // reset the DEF item to now point to
+                                // reset the DEF item to now point to the shader
                                 if (definedGRRenderingData != null)
                                     definedGRRenderingData.setGVRRenderData(gvrRenderData);
-                                gvrRenderData.setShaderTemplate(GVRPhongShader.class); // set
-                                // the
-                                // shader
-
-
                                 gvrMaterial = gvrRenderData.getMaterial();
                             }
                             // X3D doesn't have an ambient color so need to do color

@@ -15,12 +15,12 @@
 #include "objects/uniform_block.h"
 #include "glm/gtc/type_ptr.hpp"
 #include <cctype>
+#include <sstream>
 #include "util/gvr_gl.h"
 #include "vulkan/vulkanCore.h"
 namespace gvr {
 
     UniformBlock::UniformBlock(const std::string& descriptor) :
-    //Descriptor(descriptor),
             TotalSize(0),
             UniformData(NULL)
     {
@@ -54,7 +54,6 @@ namespace gvr {
 
     bool UniformBlock::setFloat(std::string name, float val) {
         int size = sizeof(float);
-        LOGE("UniformBlock good here%s", name.c_str());
         char* data = getData(name, size);
         if (data != NULL)
         {
@@ -78,7 +77,8 @@ namespace gvr {
         return false;
     }
 
-    bool UniformBlock::setIntVec(std::string name, const int* val, int n) {
+    bool UniformBlock::setIntVec(std::string name, const int* val, int n)
+    {
         int bytesize = n * sizeof(int);
         char* data = getData(name, bytesize);
         if (data != NULL)
@@ -93,7 +93,7 @@ namespace gvr {
     bool UniformBlock::setVec2(std::string name, const glm::vec2& val)
     {
         int bytesize = 2 * sizeof(float);
-        float* data = (float*)getData(name, bytesize);
+        float* data = (float*) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
@@ -107,7 +107,7 @@ namespace gvr {
     bool UniformBlock::setVec3(std::string name, const glm::vec3& val)
     {
         int bytesize = 3 * sizeof(float);
-        float* data = (float*)getData(name, bytesize);
+        float* data = (float*) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
@@ -122,8 +122,7 @@ namespace gvr {
     bool UniformBlock::setVec4(std::string name, const glm::vec4& val)
     {
         int bytesize = 4 * sizeof(float);
-        float* data = (float*)getData(name, bytesize);
-        LOGE("UniformBlock here%s", name.c_str());
+        float* data = (float*) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
@@ -158,7 +157,8 @@ namespace gvr {
         return NULL;
     }
 
-    const glm::vec3* UniformBlock::getVec3(std::string name) const {
+    const glm::vec3* UniformBlock::getVec3(std::string name) const
+    {
         int size = 3 * sizeof(float);
         const char* data = getData(name, size);
         if (data != NULL)
@@ -166,7 +166,8 @@ namespace gvr {
         return NULL;
     }
 
-    const glm::vec4* UniformBlock::getVec4(std::string name) const {
+    const glm::vec4* UniformBlock::getVec4(std::string name) const
+    {
         int size = 4 * sizeof(float);
         LOGE("UniformBlock get vec4 here %s", name.c_str());
         const char* data = getData(name, size);
@@ -242,10 +243,9 @@ namespace gvr {
         const char* name_start;
         int name_size;
         int offset = 0;
-        const int VEC4_BOUNDARY = (sizeof(float) * 4) - 1;
+        const int VEC4_BOUNDARY = 15;
         TotalSize = 0;
-        int currentBlock = 4;
-        int requiredBlock = 0;
+
         while (*p)
         {
             while (std::isspace(*p) || *p == ';'|| *p == ',')
@@ -270,21 +270,18 @@ namespace gvr {
             name_size = p - name_start;
 
             // check if it is array
-            int array_size = 0;
+            int array_size = 1;
 
-            if( (*p == '[')){
+            if ((*p == '['))
+            {
                 ++p;
-                while(std::isdigit(*p))   {
-                    array_size = array_size * 10 + ((*p) - 48);
+                while(std::isdigit(*p))
+                {
+                    array_size = array_size * 10 + (*p - '0');
                     ++p;
                 }
-
                 ++p;
             }
-            else
-                array_size = 1;
-
-
             if (name_size == 0)
             {
                 LOGE("UniformBlock: SYNTAX ERROR: expecting uniform name\n");
@@ -292,57 +289,19 @@ namespace gvr {
             }
             Uniform uniform;
             std::string name(name_start, name_size);
-            int nvecs;
+            int byteSize = calcSize(type) * array_size;
 
             uniform.Name = name;
             uniform.Type = type;
-
-            requiredBlock = getRequiredBlock(type);
-
-            if(requiredBlock) {
-                if (currentBlock >= requiredBlock) {
-
-                    if (requiredBlock == 2 && currentBlock == 3) {
-                        //TotalSize += sizeof(float);
-                        offset += sizeof(float);
-                        currentBlock--;
-                    }
-                    else if (requiredBlock == 3 && currentBlock != 4) {
-                        //TotalSize += sizeof(float);
-                        offset += 3 * sizeof(float);
-                        currentBlock = 4;
-                    }
-                    else{
-                        currentBlock -= requiredBlock;
-                    }
-                }
-
-                else {
-                    //TotalSize += currentBlock * sizeof(float);
-                    offset += currentBlock * sizeof(float);
-                    currentBlock = 4 - currentBlock;
-                }
-
-                if(currentBlock == 0){
-                    currentBlock = 4;
-                    //TotalSize += currentBlock * sizeof(float);
-                }
-
-            }else{
-                // For mat4
-            }
-
             uniform.Offset = offset;
-            offset += calcSize(type) * array_size;
+            uniform.Size = byteSize;                // get number of bytes
 
-            uniform.Size = calcSize(type) * array_size;                // get number of bytes
-
-            LOGD("UniformBlockNew: %s : %s offset=%d size=%d  : %d\n", name.c_str(), uniform.Type.c_str(), uniform.Offset, uniform.Size, currentBlock);
-
-            if (uniform.Size == 0)
+            if (byteSize == 0)
                 continue;
-            //if (offset & VEC4_BOUNDARY)                   // pad to 4 float boundary?
-            //    uniform.Offset = offset = (offset + VEC4_BOUNDARY) & ~VEC4_BOUNDARY;
+            if ((offset + byteSize - (offset & ~0xF)) > 4 * sizeof(float))
+            {
+                offset = offset + 15 & ~0x0F;
+            }
             std::pair<std::string, Uniform> pair(name, uniform);
             std::pair< std::map<std::string, Uniform>::iterator, bool > ret = UniformMap.insert(pair);
             if (!ret.second)
@@ -351,16 +310,19 @@ namespace gvr {
                 continue;
             }
             LOGD("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset, uniform.Size);
-            //offset += uniform.Size;
+            offset += uniform.Size;
             TotalSize = uniform.Offset + uniform.Size;
         }
         if (TotalSize > 0)
         {
             if (TotalSize & VEC4_BOUNDARY)                 // pad to 4 float boundary?
+            {
                 LOGD("UniformBlock: Before padding allocating uniform block of %d bytes\n", TotalSize);
                 TotalSize = (TotalSize + VEC4_BOUNDARY) & ~VEC4_BOUNDARY;
-            LOGD("UniformBlock: after padding  allocating uniform block of %d bytes\n", TotalSize);
+                LOGD("UniformBlock: after padding  allocating uniform block of %d bytes\n", TotalSize);
+            }
             UniformData = new char[TotalSize];
+            memset(UniformData, 0, TotalSize);
             ownData = true;
         }
         else
@@ -376,28 +338,13 @@ namespace gvr {
         if (type == "float4") return 4 * sizeof(float);
         if (type == "float2") return 2 * sizeof(float);
         if (type == "int") return sizeof(int);
+        if (type == "int2") return 2 * sizeof(int);
         if (type == "int3") return 3 * sizeof(int);
         if (type == "int4") return 4 * sizeof(int);
         if (type == "float2") return 2 * sizeof(int);
         if (type == "mat4") return 16 * sizeof(float);
         if (type == "mat3") return 12 * sizeof(float);
         LOGE("UniformBlock: SYNTAX ERROR: unknown type %s\n", type.c_str());
-        return 0;
-    }
-
-    int UniformBlock::getRequiredBlock(std::string type) const
-    {
-        if (type == "float") return 1;
-        if (type == "float3") return 3;
-        if (type == "float4") return 4;
-        if (type == "float2") return 2;
-        if (type == "int") return 1;
-        if (type == "int3") return 3;
-        if (type == "int4") return 4;
-        if (type == "float2") return 2;
-        // Adding this to ignore mat4
-        if (type == "mat4") return -1;
-        LOGE("UniformBlock: SYNTAX ERROR: unknown required block %s\n", type.c_str());
         return 0;
     }
 
@@ -457,16 +404,36 @@ namespace gvr {
             return NULL;
         char* data = (char*) UniformData;
 
-        //for(int i = 0; i < (u->Offset)/sizeof(float); i++){
-        //temp++;
-        //    break;
-        //}
         data += u->Offset;
-        //float * temp = (float*) data;
-        //LOGE("UniformBlock data %s  %f", name.c_str(), *temp);
         return data;
     }
 
+    std::string UniformBlock::toString()
+    {
+        std::ostringstream os;
+        char* data = (char*) UniformData;
+        for (auto it = UniformMap.begin(); it != UniformMap.end(); ++it)
+        {
+            std::pair<std::string, Uniform> p = (*it);
+            Uniform* u = &(p.second);
+            os << p.first << ":" << u->Offset;
+            for (int i = 0; i < u->Size / sizeof(float); i++)
+            {
+                char* d = data + u->Offset;
+                os << " ";
+                if (p.first[0] == 'i')
+                {
+                    os << *(((int*) d) + i);
+                }
+                else
+                {
+                    os << *(((float*) d) + i);
+                }
+            }
+            os << ';' << std::endl;
+        }
+        return os.str();
+    }
 
     GLUniformBlock::GLUniformBlock(const std::string& descriptor) :
             UniformBlock(descriptor),

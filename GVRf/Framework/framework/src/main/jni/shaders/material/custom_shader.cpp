@@ -80,29 +80,23 @@ namespace gvr {
         GLUniformBlock* ubo = material_->getMatUbo();
         const float* fv;
         const int* iv;
-        float data[4] = { 1.0,1.0,1.0,1.0 };
 
-        switch (tolower(type[0])) {
+        switch (tolower(type[0]))
+        {
             case 'f':
-            fv = material_->getFloatVec(key, size);
-            if ((fv != NULL) && (size <= 4)) {
-                memcpy(data, fv, size * sizeof(float));
-                //ubo->setVec(key, data, 4);
-                ubo->setVec(key, data, size);
-            }
-            break;
-
             case 'm':
             fv = material_->getFloatVec(key, size);
-            if (fv != NULL) {
-                ubo->setVec(key, fv, 16);
+            if (fv != NULL)
+            {
+                ubo->setVec(key, fv, size);
             }
             break;
 
-            // TODO: question - why do we not do the same padding for ints as for floats?
+
             case 'i':
             iv = material_->getIntVec(key, size);
-            if (iv != NULL) {
+            if (iv != NULL)
+            {
                 ubo->setIntVec(key, iv, size);
             }
             break;
@@ -443,14 +437,9 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
 
     if (mat_ubo)
     {
-        float * temp = (float*)mat_ubo->UniformData;
-        LOGE("Material data start");
-        for(int i = 0; i < (mat_ubo->getTotalSize())/sizeof(float); i++){
-            LOGE("Material data %f", *temp);
-            temp++;
-        }
-        LOGE("Material data end");
-
+        std::string s = mat_ubo->toString();
+        LOGD("SHADER: Material UBO");
+        LOGD("SHADER: %s", s.c_str());
         mat_ubo->render(programID);
     }
 

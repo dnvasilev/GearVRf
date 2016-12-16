@@ -1,17 +1,7 @@
 precision highp float;
 
-layout (std140) uniform Material_ubo{
-    float u_opacity;
-    vec3 u_color;
-    vec4 ambient_color;
-    vec4 diffuse_color;
-    vec4 specular_color;
-    vec4 emissive_color;
-    float specular_exponent;
-    float line_width;
-};
-
-layout (std140) uniform Transform_ubo{
+layout (std140) uniform Transform_ubo
+{
  #ifdef HAS_MULTIVIEW
      mat4 u_view_[2];
      mat4 u_mvp_[2];

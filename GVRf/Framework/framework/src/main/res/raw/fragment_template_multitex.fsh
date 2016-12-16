@@ -5,7 +5,8 @@ precision highp float;
 
 out vec4 fragColor;
 
-layout (std140) uniform Transform_ubo{
+layout (std140) uniform Transform_ubo
+{
  #ifdef HAS_MULTIVIEW
      mat4 u_view_[2];
      mat4 u_mvp_[2];
@@ -22,23 +23,13 @@ layout (std140) uniform Transform_ubo{
      vec4 u_right;
 };
 
-layout (std140) uniform Material_ubo{
-        float u_opacity;
-        vec3 u_color;
-        vec4 ambient_color;
-        vec4 diffuse_color;
-        vec4 specular_color;
-        vec4 emissive_color;
-        vec4 specular_exponent;
-};
+
 in vec3 viewspace_position;
 in vec3 viewspace_normal;
 in vec4 local_position;
 in vec4 proj_position;
 in vec3 view_direction;
-
 in vec2 diffuse_coord;
-
 
 #ifdef HAS_SHADOWS
 uniform sampler2DArray u_shadow_maps;

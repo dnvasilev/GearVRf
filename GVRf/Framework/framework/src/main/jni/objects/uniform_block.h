@@ -345,8 +345,8 @@ public:
         }
         UniformData = NULL;
     }
-private:
-    std::map<std::string, Uniform> UniformMap;
+
+    std::string toString();
 
 protected:
 
@@ -399,14 +399,15 @@ protected:
      * Marks the uniform block as dirty for all shaders.
      */
     virtual void setDirty() { }
+
     bool        ownData;        // true if this uniform owns its data block
     std::string BlockName;      // uniform block name in shadere
     std::string Descriptor;     // descriptor with name, type and size of uniforms
-public : void*       UniformData;    // -> data block with uniform values
+    void*       UniformData;    // -> data block with uniform values
     GLint       TotalSize;      // number of bytes in data block
-
-
+    std::map<std::string, Uniform> UniformMap;
 };
+
 class VulkanUniformBlock: public UniformBlock
 {
 public:

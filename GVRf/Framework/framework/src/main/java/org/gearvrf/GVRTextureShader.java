@@ -34,12 +34,10 @@ public class GVRTextureShader extends GVRShaderTemplate
     private static String surfaceShader = null;
     private static String addLight = null;
     private static String vtxShader = null;
-    private static String normalShader = null;
-    private static String skinShader = null;
 
     public GVRTextureShader(GVRContext gvrcontext)
     {
-        super("float u_opacity; float3 u_color; float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent",
+        super("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float3 u_color; float u_opacity; float specular_exponent",
               "sampler2D u_texture; sampler2D diffuseTexture",
               "vec3 a_position; vec2 a_texcoord; vec3 a_normal", 300);
         if (fragTemplate == null) {
