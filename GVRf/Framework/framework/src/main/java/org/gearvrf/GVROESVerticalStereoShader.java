@@ -61,11 +61,17 @@ public class GVROESVerticalStereoShader extends GVRShader
 
     public GVROESVerticalStereoShader(GVRContext gvrContext)
     {
-        super("float3 u_color float u_opacity int u_right",
+        super("float3 u_color float u_opacity ",
               "samplerExternalOES u_texture",
               "float3 a_position float3 a_normal float2 a_texcoord");
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context, R.raw.oes_vertical_frag));
         setSegment("VertexTemplate", TextFile.readTextFile(context, R.raw.oes_vertical_vert));
+    }
+
+    protected void setMaterialDefaults(GVRShaderData material)
+    {
+        material.setVec3("u_color", 1, 1, 1);
+        material.setFloat("u_opacity", 1);
     }
 }
