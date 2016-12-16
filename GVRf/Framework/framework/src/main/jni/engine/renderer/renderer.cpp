@@ -290,7 +290,6 @@ bool Renderer::occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scen
 
     scene->lockColliders();
     scene->clearVisibleColliders();
-    LOGE("in occulusion cull init");
     bool do_culling = scene->get_occlusion_culling();
     if (!do_culling) {
         for (auto it = scene_objects.begin(); it != scene_objects.end(); ++it) {
@@ -302,7 +301,7 @@ bool Renderer::occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scen
         scene->unlockColliders();
         return false;
     }
-    LOGE("in occlusion cull %d", render_data_vector.size());
+    //LOGE("in occlusion cull %d", render_data_vector.size());
     return true;
 }
 

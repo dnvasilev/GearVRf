@@ -70,28 +70,6 @@ uniform sampler2D opacityTexture;
 uniform sampler2D lightmapTexture;
 uniform sampler2D emissiveTexture;
 uniform sampler2D normalTexture;
-
-#ifdef HAS_ambientTexture1_blendop
-uniform int ambientTexture1_blendop;
-#endif
-
-#ifdef HAS_diffuseTexture1_blendop
-uniform int diffuseTexture1_blendop;
-#endif
-
-#ifdef HAS_specularTexture1_blendop
-uniform int specularTexture1_blendop;
-#endif
-
-#ifdef HAS_emissiveTexture1_blendop
-uniform int emissiveTexture1_blendop;
-#endif
-
-#ifdef HAS_lightMapTexture1_blendop
-uniform sampler2D lightMapTexture1;
-uniform int lightMapTexture1_blendop;
-#endif
-
 uniform vec2 u_lightmap_offset;
 uniform vec2 u_lightmap_scale;
 

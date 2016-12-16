@@ -309,18 +309,13 @@ namespace gvr {
                 LOGE("UniformBlock: ERROR: element %s specified twice\n", name.c_str());
                 continue;
             }
-            LOGD("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset, uniform.Size);
+            LOGV("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset, uniform.Size);
             offset += uniform.Size;
             TotalSize = uniform.Offset + uniform.Size;
         }
         if (TotalSize > 0)
         {
-            if (TotalSize & VEC4_BOUNDARY)                 // pad to 4 float boundary?
-            {
-                LOGD("UniformBlock: Before padding allocating uniform block of %d bytes\n", TotalSize);
-                TotalSize = (TotalSize + VEC4_BOUNDARY) & ~VEC4_BOUNDARY;
-                LOGD("UniformBlock: after padding  allocating uniform block of %d bytes\n", TotalSize);
-            }
+            TotalSize = (TotalSize + 15) & ~0x0F;
             UniformData = new char[TotalSize];
             memset(UniformData, 0, TotalSize);
             ownData = true;
@@ -363,9 +358,7 @@ namespace gvr {
             return NULL;
         }
         bytesize = u.Size;
-
-        LOGE("Abhijit: UniformBlock not const element %s offset %d bytes,\n", name.c_str(), u.Offset);
-
+        LOGV("SHADER: UniformBlock not const element %s offset %d bytes,\n", name.c_str(), u.Offset);
         return &u;
     }
 
@@ -474,7 +467,7 @@ namespace gvr {
             glUniformBlockBinding(programId, GLBlockIndex, GLBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
             checkGlError("bindUBO ");
-            LOGD("UniformBlock: %s bound to #%d at index %d buffer = %d\n", BlockName.c_str(), GLBindingPoint, GLBlockIndex, GLBuffer);
+            LOGV("SHADER: UniformBlock: %s bound to #%d at index %d buffer = %d\n", BlockName.c_str(), GLBindingPoint, GLBlockIndex, GLBuffer);
         }
         else {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
@@ -498,7 +491,7 @@ namespace gvr {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
             glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, TotalSize, UniformData);
-            LOGD("Abhijit UniformBlock: offset %d : total Size %d\n", GLOffset, TotalSize);
+            LOGV("SHADER: UniformBlock: offset %d : total Size %d\n", GLOffset, TotalSize);
         }
     }
 
@@ -524,7 +517,7 @@ namespace gvr {
         // get indices of uniform variables in uniform block
         GLint uniformsIndices[numberOfUniformsInBlock];
         glGetActiveUniformBlockiv(programID, blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, uniformsIndices);
-        LOGD("UniformBlock: %s %d bytes\n", blockName, byteSize);
+        LOGV("UniformBlock: %s %d bytes\n", blockName, byteSize);
 
         // get parameters of all uniform variables in uniform block
         for (int uniformMember=0; uniformMember<numberOfUniformsInBlock; uniformMember++)
@@ -564,7 +557,7 @@ namespace gvr {
 
                 // Size of uniform variable in bytes
                 byteSize = uniformSize * sizeFromUniformType(uniformType);
-                LOGD("UniformBlock: %s GL offset = %d, byteSize = %d\n", uniformName, uniformOffset, byteSize);
+                LOGV("UniformBlock: %s GL offset = %d, byteSize = %d\n", uniformName, uniformOffset, byteSize);
             }
         }
     }
@@ -642,7 +635,6 @@ namespace gvr {
         //err = vkCreateBuffer(m_device, &bufferCreateInfo, NULL, &m_modelViewMatrixUniform.buf);
         err = vkCreateBuffer(device, gvr::BufferCreateInfo(TotalSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT), NULL, &m_bufferInfo.buf);
         assert(!err);
-        LOGE("size of the buffer is %d" ,TotalSize);
         // Obtain the requirements on memory for this buffer
         VkMemoryRequirements mem_reqs;
         vkGetBufferMemoryRequirements(device, m_bufferInfo.buf, &mem_reqs);
