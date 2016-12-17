@@ -30,7 +30,7 @@
 #include <sys/time.h>
 #include <shaderc/shaderc.h>
 #include <shaderc/shaderc.hpp>
-
+#include <gl/gl_uniform_block.h>
 
 
 namespace gvr {

@@ -17,17 +17,18 @@
 
 #ifndef UNIFORMBLOCK_H_
 #define UNIFORMBLOCK_H_
+
 #include<unordered_map>
-#include "vulkan/vulkanCore.h"
 #include "glm/glm.hpp"
 #include "util/gvr_log.h"
 #include <map>
 #include <vector>
-#include "vulkan/vulkanInfoWrapper.h"
+
 #define TRANSFORM_UBO_INDEX 0
 #define MATERIAL_UBO_INDEX  1
 #define SAMPLER_UBO_INDEX   2
 #define BONES_UBO_INDEX     3
+
 namespace gvr {
 class SceneObject;
 //struct GVR_Uniform;
@@ -55,7 +56,7 @@ protected:
 public:
     UniformBlock();
     UniformBlock(const std::string& descriptor);
-    int getRequiredBlock(std::string type) const;
+
     /**
      * Determine if a named uniform exists in this block.
      * @param name name of uniform to look for
@@ -408,83 +409,5 @@ protected:
     std::map<std::string, Uniform> UniformMap;
 };
 
-class VulkanUniformBlock: public UniformBlock
-{
-public:
-bool buffer_init_;
-    GVR_Uniform m_bufferInfo;
-    VulkanUniformBlock();
-    VulkanUniformBlock(const std::string& descriptor);
-    void createBuffer(VkDevice &,VulkanCore*);
-    GVR_Uniform& getBuffer(){
-        return m_bufferInfo;
-    }
-    void updateBuffer(VkDevice &device,VulkanCore* vk);
-};
-/**
- * Manages a GLSL Uniform Block containing data parameters to pass to
- * the vertex and fragment shaders.
- */
-class GLUniformBlock : public UniformBlock
-{
-public:
-    GLUniformBlock();
-    GLUniformBlock(const std::string& descriptor);
-
-    virtual void render(GLuint programId);
-    virtual void bindBuffer(GLuint programId);
-
-
-    void setData(char* data, int offset);
-
-    virtual ~GLUniformBlock()
-    {
-        if (GLBuffer > 0)
-            glDeleteBuffers(1, &GLBuffer);
-    }
-
-
-    void setBuffer(GLuint buffer, GLuint bindingPoint)
-    {
-        if (GLBuffer != 0)
-        {
-            LOGE("UniformBlock: ERROR: GL buffer cannot be changed\n");
-            return;
-        }
-        GLBuffer = buffer;
-        GLBindingPoint = bindingPoint;
-    }
-
-    int getGLBindingPoint() const
-    {
-        return GLBindingPoint;
-    }
-
-    void setGLBindingPoint(int bufferNum)
-    {
-        GLBindingPoint = bufferNum;
-    }
-
-
-    /*
-     * Mark the block as needing update for all shaders using it
-     */
-    virtual void setDirty() {
-        for (auto it = Dirty.begin(); it != Dirty.end(); ++it) {
-            it->second = true;
-        }
-    }
-
-    static void dump(GLuint programID, int blockIndex);
-
-protected:
-    static GLint sizeFromUniformType(GLint type);
-
-    GLint       GLBlockIndex;
-    GLint       GLBindingPoint;
-    GLuint      GLBuffer;
-    GLuint      GLOffset;
-    std::map<int, bool> Dirty;
-};
 }
 #endif

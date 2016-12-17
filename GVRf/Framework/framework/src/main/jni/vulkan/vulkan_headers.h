@@ -11,14 +11,21 @@
 #include "glm/glm.hpp"
 #include "objects/uniform_block.h"
 #include "vulkan/vulkanCore.h"
-namespace gvr{
-class Descriptor{
+#include "vulkan_uniform_block.h"
+
+namespace gvr
+{
+class Descriptor
+{
 public:
-    Descriptor(){}
-    ~Descriptor(){
+    Descriptor() { }
+    ~Descriptor()
+    {
         delete ubo;
     }
-    Descriptor(const std::string& ubo_descriptor): ubo(nullptr){
+
+    Descriptor(const std::string& ubo_descriptor): ubo(nullptr)
+    {
         ubo = new VulkanUniformBlock(ubo_descriptor);
     }
     void createDescriptor(VkDevice &,VulkanCore*, int, VkShaderStageFlagBits);

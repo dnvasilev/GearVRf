@@ -24,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <gl/gl_uniform_block.h>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
