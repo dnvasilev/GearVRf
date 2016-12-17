@@ -803,6 +803,7 @@ void Mesh::generateBoneArrayBuffers(GLuint programId) {
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    LOGV("SHADER: create bone array buffers %d", boneVboID);
 }
 
 void Mesh::add_dirty_flag(const std::shared_ptr<bool>& dirty_flag) {

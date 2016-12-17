@@ -332,7 +332,6 @@ int Shader::calcSize(std::string type)
 
 
 Shader::~Shader() {
-    //if (LOG_SHADER) LOGE("SHADER: deleting shader %s %d %p", signature_.c_str(), id_, this);
     delete program_;
 }
 
@@ -353,7 +352,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     {
         LOGE("SHADER: shader could not be generated %s", signature_.c_str());
     }
-    if (LOG_SHADER) LOGD("SHADER: rendering with program %d", programID);
+    if (LOG_SHADER) LOGV("SHADER: rendering with program %d", programID);
     glUseProgram(programID);
 
     /*
@@ -371,33 +370,6 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
             LOGE("textures are not ready for %s", render_data->owner_object()->name().c_str());
             return;
         }
-    }
-    /*
-     * Update the bone matrices
-     */
-    int a_bone_indices = glGetAttribLocation(programID, "a_bone_indices");
-    int a_bone_weights = glGetAttribLocation(programID, "a_bone_weights");
-    int u_bone_matrices = glGetUniformLocation(programID, "u_bone_matrix[0]");
-    if ((a_bone_indices >= 0) ||
-        (a_bone_weights >= 0) ||
-        (u_bone_matrices >= 0)) {
-        glm::mat4 finalTransform;
-        mesh->setBoneLoc(a_bone_indices, a_bone_weights);
-        mesh->generateBoneArrayBuffers(programID);
-        int nBones = mesh->getVertexBoneData().getNumBones();
-        if (nBones > MAX_BONES)
-            nBones = MAX_BONES;
-        for (int i = 0; i < nBones; ++i) {
-            finalTransform = mesh->getVertexBoneData().getFinalBoneTransform(i);
-         //   glUniformMatrix4fv(u_bone_matrices + i, 1, GL_FALSE, glm::value_ptr(finalTransform));
-        }
-        render_data->bindBonesUbo(programID);
-        GLUniformBlock* bones_ubo = render_data->getBonesUbo();
-
-        std::vector<glm::mat4>& bone_matrices = mesh->getVertexBoneData().getBoneMatrices();
-        bones_ubo->setMat4("u_bone_matrix", &bone_matrices[0][0][0]);
-        bones_ubo->render(programID);
-        checkGlError("Shader after bones");
     }
     /*
      * Update values of uniform variables
@@ -420,6 +392,10 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     transform_ubo->setMat4("u_model", glm::value_ptr(rstate->uniforms.u_model));
     transform_ubo->render(programID);
 
+    int vaoID = computeBoneMatrices(programID, render_data);
+
+    if (Shader::LOG_SHADER) LOGV("SHADER: binding vertex arrays to program %d %p", programID, render_data);
+    glBindVertexArray(vaoID);
     /*
      * Update material uniforms
      */
@@ -463,6 +439,34 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     	Light::bindShadowMap(programID, texIndex);
     }
     checkGlError("Shader::render");
+}
+
+/*
+ * Update the bone matrices
+ */
+int Shader::computeBoneMatrices(int programId, RenderData* render_data)
+{
+    Mesh *mesh = render_data->mesh();
+    int vaoID = mesh->getVAOId(programId);
+    int a_bone_indices = glGetAttribLocation(programId, "a_bone_indices");
+    int a_bone_weights = glGetAttribLocation(programId, "a_bone_weights");
+
+    if ((a_bone_indices >= 0) && (a_bone_weights >= 0))
+    {
+        mesh->setBoneLoc(a_bone_indices, a_bone_weights);
+        LOGV("SHADER: mesh has bones");
+        mesh->generateBoneArrayBuffers(programId);
+        render_data->bindBonesUbo(programId);
+
+        GLUniformBlock *bones_ubo = render_data->getBonesUbo();
+        std::vector<glm::mat4> &bone_matrices = mesh->getVertexBoneData().getBoneMatrices();
+        LOGV("SHADER: copy bone matrices %d bytes", MAX_BONES * sizeof(float) * 16);
+        bones_ubo->setVec("u_bone_matrix", &bone_matrices[0][0][0],
+                          MAX_BONES * sizeof(float) * 16);
+        bones_ubo->render(programId);
+        checkGlError("Shader after bones");
+    }
+    return vaoID;
 }
 
     void static fillDelims(std::unordered_map<std::string, int> &delims, std::string &delimsTypes){

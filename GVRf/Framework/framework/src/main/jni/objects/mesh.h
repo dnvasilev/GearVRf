@@ -267,6 +267,7 @@ public:
     //  code for vertex attribute location
 
     void setBoneLoc(GLuint boneIndicesLoc, GLuint boneWeightsLoc) {
+
         boneIndicesLoc_ = boneIndicesLoc;
         boneWeightsLoc_ = boneWeightsLoc;
     }

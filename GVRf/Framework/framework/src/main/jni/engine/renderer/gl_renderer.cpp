@@ -408,21 +408,23 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
     }
 }
 
-void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material, int curr_pass) {
-
-    //Skip the material whose texture is not ready with some exceptions
+void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material, int curr_pass)
+{
     SceneObject *owner = render_data->owner_object();
     ShaderManager *shader_manager = rstate.shader_manager;
-
     Shader* shader = shader_manager->getShader(render_data->get_shader(curr_pass));
-    if (shader == NULL) {
+
+    if (shader == NULL)
+    {
         LOGE("SHADER: shader not ready %s %p", owner->name().c_str(), render_data);
         return;
     }
-    if (rstate.material_override != nullptr) {
+    if (rstate.material_override != nullptr)
+    {
         curr_material = rstate.material_override;
     }
-    if (!curr_material->areTexturesReady()) {
+    if (!curr_material->areTexturesReady())
+    {
         LOGE("SHADER: textures not ready %s", owner->name().c_str());
         return;
     }
@@ -437,8 +439,8 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
     rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
 
-
-    if(use_multiview && !rstate.shadow_map){
+    if (use_multiview && !rstate.shadow_map)
+    {
         rstate.uniforms.u_view_[0] = rstate.scene->main_camera_rig()->left_camera()->getViewMatrix();
         rstate.uniforms.u_view_[1] = rstate.scene->main_camera_rig()->right_camera()->getViewMatrix();
         rstate.uniforms.u_mv_[0] = rstate.uniforms.u_view_[0] * rstate.uniforms.u_model;
@@ -449,36 +451,35 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         rstate.uniforms.u_mvp_[1] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[1];
     }
 
-    try {
+    try
+    {
         if ((render_data->draw_mode() == GL_LINE_STRIP) ||
             (render_data->draw_mode() == GL_LINES) ||
-            (render_data->draw_mode() == GL_LINE_LOOP)) {
+            (render_data->draw_mode() == GL_LINE_LOOP))
+        {
             float lineWidth;
-            if (curr_material->getFloat("line_width", lineWidth)) {
+            if (curr_material->getFloat("line_width", lineWidth))
+            {
                 glLineWidth(lineWidth);
             }
-            else {
+            else
+            {
                 glLineWidth(1.0f);
             }
         }
         shader->render(&rstate, render_data, curr_material);
     }
-    catch (const std::string &error) {
+    catch (const std::string &error)
+    {
         LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
              render_data->owner_object()->name().c_str(), error.c_str());
         shader = shader_manager->findShader(std::string("GVRErrorShader"));
         shader->render(&rstate, render_data, curr_material);
     }
-
-    GLuint programId = shader->getProgramId();
-    Mesh *mesh = render_data->mesh();
-
-    if (Shader::LOG_SHADER) LOGE("SHADER: binding vertex arrays to program %d %p", programId, render_data);
-    glBindVertexArray(mesh->getVAOId(programId));
+    Mesh* mesh = render_data->mesh();
     if (mesh->indices().size() > 0)
     {
         glDrawElements(render_data->draw_mode(), mesh->indices().size(), GL_UNSIGNED_SHORT, 0);
-
     }
     else
     {

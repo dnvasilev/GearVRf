@@ -164,4 +164,48 @@ bool compareRenderDataByOrderShaderDistance(RenderData *i, RenderData *j) {
     return i->rendering_order() < j->rendering_order();
 }
 
+std::string RenderData::getHashCode()
+{
+    if (hash_code_dirty_)
+    {
+        std::string render_data_string;
+        render_data_string.append(to_string(use_light_));
+        render_data_string.append(to_string(light_));
+        render_data_string.append(to_string(getComponentType()));
+        render_data_string.append(to_string(use_lightmap_));
+        render_data_string.append(to_string(render_mask_));
+        render_data_string.append(to_string(offset_));
+        render_data_string.append(to_string(offset_factor_));
+        render_data_string.append(to_string(offset_units_));
+        render_data_string.append(to_string(depth_test_));
+        render_data_string.append(to_string(alpha_blend_));
+        render_data_string.append(to_string(alpha_to_coverage_));
+        render_data_string.append(to_string(sample_coverage_));
+        render_data_string.append(to_string(invert_coverage_mask_));
+        render_data_string.append(to_string(draw_mode_));
+
+        hash_code = render_data_string;
+        hash_code_dirty_ = false;
+
+    }
+    return hash_code;
+}
+
+void RenderData::bindBonesUbo(int program_id)
+{
+    if (bones_ubo_ == nullptr)
+        bones_ubo_ = bindUbo(program_id, BONES_UBO_INDEX, "Bones_ubo", "mat4 u_bone_matrix[60];");
+    else
+        bones_ubo_->bindBuffer(program_id);
+}
+
+GLUniformBlock* RenderData::bindUbo(int program_id, int index, const char* name, const char* desc)
+{
+    LOGV("SHADER: bind buffer %s at index %d to program %d", name, index, program_id);
+    GLUniformBlock* gl_ubo_ = new GLUniformBlock(desc);
+    gl_ubo_->setGLBindingPoint(index);
+    gl_ubo_->setBlockName(name);
+    gl_ubo_->bindBuffer(program_id);
+    return gl_ubo_;
+}
 }

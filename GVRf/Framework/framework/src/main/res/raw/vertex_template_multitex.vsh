@@ -43,10 +43,15 @@ in vec2 a_texcoord;
 in vec3 a_normal;
 
 #ifdef HAS_VertexSkinShader
+#ifdef HAS_a_bone_weights
+in vec4 a_bone_weights;
+in ivec4 a_bone_indices;
+
 layout (std140) uniform Bones_ubo
 {
     mat4 u_bone_matrix[60];
 };
+#endif
 #endif
 
 #ifdef HAS_VertexNormalShader

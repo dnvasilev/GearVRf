@@ -357,89 +357,48 @@ public:
         return draw_mode_;
     }
 
-    float camera_distance() {
-        if (nullptr != cameraDistanceLambda_) {
+    float camera_distance()
+    {
+        if (nullptr != cameraDistanceLambda_)
+        {
             camera_distance_ = cameraDistanceLambda_();
             cameraDistanceLambda_ = nullptr;
         }
         return camera_distance_;
     }
 
-    void set_draw_mode(GLenum draw_mode) {
+    void set_draw_mode(GLenum draw_mode)
+    {
         draw_mode_ = draw_mode;
         hash_code_dirty_ = true;
     }
 
-    bool isHashCodeDirty()  {
-        return hash_code_dirty_;
-    }
+    bool isHashCodeDirty()  { return hash_code_dirty_; }
+    void set_texture_capturer(TextureCapturer *capturer) { texture_capturer = capturer; }
 
-    void set_texture_capturer(TextureCapturer *capturer) {
-        texture_capturer = capturer;
-    }
     // TODO: need to consider texture_capturer in hash_code ?
-    TextureCapturer *get_texture_capturer() {
-        return texture_capturer;
-    }
+    TextureCapturer *get_texture_capturer() { return texture_capturer; }
 
-    void set_shader(int pass, int shaderid) {
+    void set_shader(int pass, int shaderid)
+    {
         LOGD("SHADER: RenderData:set_shader %d %p", shaderid, this);
         render_pass_list_[pass]->set_shader(shaderid);
     }
 
-    int get_shader(int pass =0) const { return render_pass_list_[pass]->get_shader(); }
-
-    std::string getHashCode() {
-        if (hash_code_dirty_) {
-            std::string render_data_string;
-            render_data_string.append(to_string(use_light_));
-            render_data_string.append(to_string(light_));
-            render_data_string.append(to_string(getComponentType()));
-            render_data_string.append(to_string(use_lightmap_));
-            render_data_string.append(to_string(render_mask_));
-            render_data_string.append(to_string(offset_));
-            render_data_string.append(to_string(offset_factor_));
-            render_data_string.append(to_string(offset_units_));
-            render_data_string.append(to_string(depth_test_));
-            render_data_string.append(to_string(alpha_blend_));
-            render_data_string.append(to_string(alpha_to_coverage_));
-            render_data_string.append(to_string(sample_coverage_));
-            render_data_string.append(to_string(invert_coverage_mask_));
-            render_data_string.append(to_string(draw_mode_));
-
-            hash_code = render_data_string;
-            hash_code_dirty_ = false;
-
-        }
-        return hash_code;
-    }
-
-    void setCameraDistanceLambda(std::function<float()> func);
-
-    bool uniform_dirty;
-    VulkanData& getVkData(){
-        return vkData;
-    }
-    void createVkTransformUbo(VkDevice &device,VulkanCore* vk){
+    void createVkTransformUbo(VkDevice &device,VulkanCore* vk)
+    {
         vkData.createTransformDescriptor(device,vk);
     }
-        GLUniformBlock* bindUbo(int program_id, int index, const char* name, const char* desc){
-                   GLUniformBlock* gl_ubo_ = new GLUniformBlock(desc);
-                   gl_ubo_->setGLBindingPoint(index);
-                   gl_ubo_->setBlockName(name);
-                   gl_ubo_->bindBuffer(program_id);
-                   return gl_ubo_;
-         }
-         void bindBonesUbo(int program_id){
-             if(bones_ubo_ == nullptr)
-                 bones_ubo_ = bindUbo(program_id, BONES_UBO_INDEX, "Bones_ubo", "mat4 u_bone_matrix[60];");
-             else
-                 bones_ubo_->bindBuffer(program_id);
 
-         }
-     GLUniformBlock* getBonesUbo(){
-        return bones_ubo_;
-     }
+    int             get_shader(int pass =0) const { return render_pass_list_[pass]->get_shader(); }
+    std::string     getHashCode();
+    void            setCameraDistanceLambda(std::function<float()> func);
+    VulkanData&     getVkData() { return vkData; }
+    GLUniformBlock* getBonesUbo() { return bones_ubo_; }
+    GLUniformBlock* bindUbo(int program_id, int index, const char* name, const char* desc);
+    void            bindBonesUbo(int program_id);
+    bool            uniform_dirty;
+
 private:
     //  RenderData(const RenderData& render_data);
     RenderData(RenderData&& render_data);
@@ -476,7 +435,6 @@ private:
     GLenum draw_mode_;
     float camera_distance_;
     TextureCapturer *texture_capturer;
-
     std::function<float()> cameraDistanceLambda_ = nullptr;
 };
 
