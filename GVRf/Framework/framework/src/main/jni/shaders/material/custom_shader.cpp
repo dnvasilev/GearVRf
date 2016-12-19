@@ -462,7 +462,7 @@ int Shader::computeBoneMatrices(int programId, RenderData* render_data)
         std::vector<glm::mat4> &bone_matrices = mesh->getVertexBoneData().getBoneMatrices();
         LOGV("SHADER: copy bone matrices %d bytes", MAX_BONES * sizeof(float) * 16);
         bones_ubo->setVec("u_bone_matrix", &bone_matrices[0][0][0],
-                          MAX_BONES * sizeof(float) * 16);
+                          MAX_BONES * 16);
         bones_ubo->render(programId);
         checkGlError("Shader after bones");
     }

@@ -124,7 +124,7 @@ public:
                 rendering_order_(DEFAULT_RENDERING_ORDER), hash_code_dirty_(true),
                 offset_(false), offset_factor_(0.0f), offset_units_(0.0f),
                 depth_test_(true), alpha_blend_(true), alpha_to_coverage_(false),
-                sample_coverage_(1.0f), invert_coverage_mask_(GL_FALSE),
+                sample_coverage_(1.0f), invert_coverage_mask_(GL_FALSE),bones_ubo_(nullptr),
                 draw_mode_(GL_TRIANGLES), texture_capturer(0), cast_shadows_(true),
                 uniform_dirty(true),dirty_flag_(std::make_shared<bool>(true))
     {
