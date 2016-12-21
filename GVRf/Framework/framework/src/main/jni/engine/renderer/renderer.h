@@ -22,16 +22,13 @@
 
 #include <vector>
 #include <memory>
-
-#include "gl/gl_headers.h"
+#include <unordered_map>
 
 #include "glm/glm.hpp"
 #include "batch.h"
 #include "objects/eye_type.h"
 #include "objects/mesh.h"
 #include "objects/bounding_volume.h"
-#include "gl/gl_program.h"
-#include <unordered_map>
 #include "batch_manager.h"
 
 typedef unsigned long Long;
@@ -76,7 +73,7 @@ struct RenderState {
     int                     viewportHeight;
     bool                    invalidateShaders;
     Scene*                  scene;
-    Material*               material_override;
+    ShaderData*             material_override;
     ShaderUniformsPerObject uniforms;
     ShaderManager*          shader_manager;
     bool shadow_map;
@@ -111,6 +108,9 @@ public:
      static void resetInstance(){
         delete instance;
      }
+     virtual ShaderData* createMaterial(const std::string& desc) = 0;
+     virtual RenderData* createRenderData() = 0;
+     virtual UniformBlock* createUniformBlock(const std::string& desc) = 0;
      virtual void initializeStats();
      virtual void set_face_culling(int cull_face) = 0;
      virtual void renderRenderDataVector(RenderState &rstate);
@@ -172,7 +172,7 @@ protected:
         delete batch_manager;
     }
     virtual void renderMesh(RenderState& rstate, RenderData* render_data) = 0;
-    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *material, int) = 0;
+    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, int) = 0;
     virtual void occlusion_cull(RenderState& rstate, std::vector<SceneObject*>& scene_objects) = 0;
     void addRenderData(RenderData *render_data, Scene* scene);
     virtual bool occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scene_objects);

@@ -13,21 +13,24 @@
  * limitations under the License.
  */
 
-package org.gearvrf;
+#include "objects/scene.h"
+#include "gl/gl_render_data.h"
+#include "gl/gl_material.h"
 
-/**
- * Opaque type that specifies a custom post-effect shader.
- * 
- * You get these from
- * {@link GVRPostEffectShaderManager#addShader(String, String)} ; you can pass
- * these to
- * {@link GVRPostEffect#GVRPostEffect(GVRContext, GVRPostEffectShaderId)},
- * {@link GVRPostEffect#setShaderType(GVRPostEffectShaderId)}, and
- * {@link GVRPostEffectShaderManager#getShaderMap(GVRCustomPostEffectShaderId)}.
- */
-public class GVRCustomPostEffectShaderId extends GVRPostEffectShaderId {
+namespace gvr {
 
-    GVRCustomPostEffectShaderId(int id) {
-        super(id);
+void GLRenderData::renderBones(int programId)
+{
+    GLUniformBlock* bones_ubo = reinterpret_cast<GLUniformBlock*>(bones_ubo_);
+    if (bones_ubo != nullptr)
+    {
+        if (bones_ubo->getGLBindingPoint() != BONES_UBO_INDEX)
+        {
+            bones_ubo->setGLBindingPoint(BONES_UBO_INDEX);
+            bones_ubo->setBlockName("Bones_ubo");
+        }
+        bones_ubo->bindBuffer(programId);
+        bones_ubo->render(programId);
     }
+}
 }

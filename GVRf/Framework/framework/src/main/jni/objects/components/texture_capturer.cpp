@@ -9,7 +9,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "objects/components/render_data.h"
 #include "objects/components/texture_capturer.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "objects/mesh.h"
 #include "util/gvr_log.h"
 #include "util/gvr_time.h"
@@ -35,7 +35,8 @@ TextureCapturer::TextureCapturer(ShaderManager *shaderManager)
         , mJNIEnv(0)
         , mCapturerObject(0)
 {
-    mMaterial = new Material();
+    Renderer* renderer = Renderer::getInstance();
+    mMaterial = renderer->createMaterial("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent");
     mMaterial->setTexture("diffuseTexture", mRenderTexture);
 
     // OpenGL default
@@ -144,7 +145,7 @@ void TextureCapturer::endCapture() {
 
 void TextureCapturer::render(RenderState* rstate, RenderData* render_data) {
 
-    Material* material = render_data->pass(0)->material();
+    ShaderData* material = render_data->pass(0)->material();
     float opacity = 1.0f;
 
     if (material == NULL) {

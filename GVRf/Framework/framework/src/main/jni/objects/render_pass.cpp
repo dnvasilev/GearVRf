@@ -14,11 +14,11 @@
  */
 
 #include "objects/render_pass.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 
 namespace gvr {
 
-void RenderPass::set_material(Material* material) {
+void RenderPass::set_material(ShaderData* material) {
     material_ = material;
     material->add_dirty_flags(dirty_flags_);
     dirty();

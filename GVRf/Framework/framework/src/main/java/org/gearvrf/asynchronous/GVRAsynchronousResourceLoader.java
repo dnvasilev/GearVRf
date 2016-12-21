@@ -17,7 +17,6 @@ package org.gearvrf.asynchronous;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +40,8 @@ import org.gearvrf.GVRCubemapTexture;
 import org.gearvrf.GVRHybridObject;
 import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRRenderData;
-import org.gearvrf.GVRShaderData;
 import org.gearvrf.GVRTexture;
 import org.gearvrf.GVRTextureParameters;
-import org.gearvrf.IErrorEvents;
 import org.gearvrf.utility.Log;
 import org.gearvrf.utility.ResourceCache;
 import org.gearvrf.utility.Threads;

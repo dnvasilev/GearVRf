@@ -57,7 +57,7 @@ private:
 private:
     ShaderManager *mShaderManager;
     RenderTexture *mRenderTexture;
-    Material *mMaterial;
+    ShaderData *mMaterial;
     bool mPendingCapture;
     bool mHasNewCapture;
     long long mCaptureIntervalNS;

@@ -30,7 +30,7 @@
 #include "../objects/scene_object.h"
 #include "components/component.h"
 #include "util/gvr_jni.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "../engine/renderer/renderer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -146,7 +146,7 @@ public:
      * bindShadowMaps will bind the resulting framebuffer as a
      * texture on the light.
      */
-    void castShadow(Material* material) {
+    void castShadow(ShaderData* material) {
         shadowMaterial_ = material;
         setDirty();
     }
@@ -241,7 +241,7 @@ private:
     int shadowMapIndex_;
     GLFrameBuffer* shadowFB_;
     std::string lightID_;
-    Material* shadowMaterial_;
+    ShaderData* shadowMaterial_;
     std::map<int, bool> dirty_;
     std::map<std::string, float> floats_;
     std::map<std::string, glm::vec3> vec3s_;

@@ -13,27 +13,33 @@
  * limitations under the License.
  */
 
-
 /***************************************************************************
- * JNI
+ * Renders a scene, a screen.
  ***************************************************************************/
 
-#include "vulkan_headers.h"
+#include "renderer.h"
+#include "gl_renderer.h"
+#include "vulkan_renderer.h"
 
 namespace gvr {
-extern "C" {
-    JNIEXPORT jlong JNICALL
-        Java_org_gearvrf_NativeVulkanCore_getInstance(JNIEnv* env, jobject obj, jobject surface);
-};
+Renderer* Renderer::instance = nullptr;
+bool Renderer::isVulkan_ = false;
 
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeVulkanCore_getInstance(JNIEnv * env, jobject obj, jobject surface){
-    ANativeWindow * newNativeWindow = nullptr;//ANativeWindow_fromSurface(env, surface);
-    VulkanCore * vulkanCore = VulkanCore::getInstance(newNativeWindow);
-    //if(vulkanCore == nullptr)
-    //    return (reinterpret_cast<jlong>(nullptr));
-    //else
-	    return (reinterpret_cast<jlong>(vulkanCore));
+/***
+    Till we have Vulkan implementation, lets create GLRenderer by-default
+***/
+Renderer* Renderer::getInstance(std::string type){
+    if(nullptr == instance){
+     if(0){
+            instance = new VulkanRenderer();
+            isVulkan_ = true;
+        }
+        else {
+            instance = new GLRenderer();
+        }
+        std::atexit(resetInstance);      // Destruction of instance registered at runtime exit
+    }
+    return instance;
 }
 
 }

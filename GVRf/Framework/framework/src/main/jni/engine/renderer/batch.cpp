@@ -41,6 +41,21 @@ Batch::~Batch() {
     renderdata_ = nullptr;
 }
 
+void Batch::removeRenderData(RenderData* renderdata){
+    renderdata->set_batching(false);
+    render_data_set_.erase(renderdata);
+    batch_dirty_ = true;
+    if(0 == render_data_set_.size())
+        resetBatch();
+}
+
+ShaderData* Batch::material(int passIndex)
+{
+    if(passIndex ==0)
+        return material_;
+    return renderdata_->pass(passIndex)->material();
+}
+
 bool Batch::updateMesh(Mesh* render_mesh){
     const std::vector<unsigned short>& indices = render_mesh->indices();
     const std::vector<glm::vec3>& vertices = render_mesh->vertices();
@@ -104,7 +119,7 @@ bool Batch::add(RenderData *render_data) {
     // if it is not texture shader, dont add into batch, render in normal way
     for(int i=0; i<render_data->pass_count();i++)
     {
-        Material* mat = render_data->pass(i)->material();
+        ShaderData* mat = render_data->pass(i)->material();
 //        if (mat->shader_type() != Material::ShaderType::TEXTURE_SHADER ) {
             render_data_set_.insert(render_data);
             return true;

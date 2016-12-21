@@ -39,6 +39,15 @@ public class GVRShaderId {
         mShaderTemplate = template;
     }
 
+    String getUniformDescriptor(GVRContext ctx)
+    {
+        if (mShaderTemplate == null)
+        {
+            mShaderTemplate = makeTemplate(ID, ctx);
+        }
+        return mShaderTemplate.getUniformDescriptor();
+    }
+
     GVRShader getTemplate(GVRContext ctx)
     {
         if (mShaderTemplate == null)

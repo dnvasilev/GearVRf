@@ -18,56 +18,23 @@
  ***************************************************************************/
 
 #include "renderer.h"
-#include "gl/gl_program.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
-#include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
-#include "objects/material.h"
-#include "objects/shader_data.h"
 #include "objects/scene.h"
-#include "objects/scene_object.h"
-#include "objects/components/camera.h"
-#include "objects/components/render_data.h"
 #include "objects/textures/render_texture.h"
 #include "shaders/shader_manager.h"
 #include "shaders/post_effect_shader_manager.h"
-#include "util/gvr_gl.h"
-#include "util/gvr_log.h"
-#include "batch_manager.h"
 
-#include <unordered_map>
-#include <unordered_set>
 
-#include "gl_renderer.h"
-#include "vulkan_renderer.h"
 #define MAX_INDICES 500
 #define BATCH_SIZE 60
 bool do_batching = false;
 namespace gvr {
 Renderer* gRenderer = nullptr;
 bool use_multiview= false;
-Renderer* Renderer::instance = nullptr;
-bool Renderer::isVulkan_ = false;
 void Renderer::initializeStats() {
     // TODO: this function will be filled in once we add draw time stats
 }
-/***
-    Till we have Vulkan implementation, lets create GLRenderer by-default
-***/
-Renderer* Renderer::getInstance(std::string type){
-    if(nullptr == instance){
-     if(0){
-            instance = new VulkanRenderer();
-            isVulkan_ = true;
-        }
-        else {
-            instance = new GLRenderer();
-        }
-        std::atexit(resetInstance);      // Destruction of instance registered at runtime exit
-    }
-    return instance;
-}
-
 Renderer::Renderer() : numberDrawCalls(0),
                        numberTriangles(0),
                        numLights(0),

@@ -20,7 +20,7 @@
 #include "util/gvr_jni.h"
 #include "util/gvr_log.h"
 #include "render_pass.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 
 namespace gvr {
 
@@ -57,7 +57,7 @@ Java_org_gearvrf_NativeRenderPass_setMaterial(JNIEnv* env,
         jobject obj, jlong jrender_pass, jlong jmaterial)
 {
     RenderPass* pass = reinterpret_cast<RenderPass*>(jrender_pass);
-    Material* material = reinterpret_cast<Material*>(jmaterial);
+    ShaderData* material = reinterpret_cast<ShaderData*>(jmaterial);
     pass->set_material(material);
 }
 

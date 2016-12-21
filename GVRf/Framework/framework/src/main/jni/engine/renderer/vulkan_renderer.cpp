@@ -18,33 +18,44 @@
  ***************************************************************************/
 
 #include "renderer.h"
-#include "gl/gl_program.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
-#include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
-#include "objects/material.h"
-#include "objects/shader_data.h"
 #include "objects/scene.h"
-#include "objects/scene_object.h"
-#include "objects/components/camera.h"
-#include "objects/components/render_data.h"
 #include "objects/textures/render_texture.h"
-#include "objects/mesh.h"
 #include "shaders/shader_manager.h"
 #include "shaders/post_effect_shader_manager.h"
-#include "util/gvr_gl.h"
 #include "util/gvr_log.h"
-#include "batch_manager.h"
-#include "renderer.h"
 #include "vulkan_renderer.h"
-#include <unordered_map>
-#include <unordered_set>
-#include "objects/uniform_block.h"
+#include "vulkan/vulkan_material.h"
+#include "vulkan/vulkan_render_data.h"
 
-#include <shaderc/shaderc.h>
-#include "objects/uniform_block.h"
 
 namespace gvr {
+    ShaderData* VulkanRenderer::createMaterial(const std::string& desc)
+    {
+        return new VulkanMaterial(desc);
+    }
+
+    RenderData* VulkanRenderer::createRenderData()
+    {
+        return new VulkanRenderData();
+    }
+
+    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc)
+    {
+        return new VulkanUniformBlock(desc);
+    }
+
+    void VulkanRenderer::updateTransforms(VulkanUniformBlock* transform_ubo, Transform* modelTrans, Camera* camera)
+    {
+        glm::mat4 model = modelTrans->getModelMatrix();
+        glm::mat4 view = camera->getViewMatrix();
+        glm::mat4 proj = camera->getProjectionMatrix();
+        glm::mat4 modelViewProjection = proj * view * model;
+
+        transform_ubo->setMat4("u_mvp", modelViewProjection);
+    }
+
     void VulkanRenderer::renderCamera(Scene *scene, Camera *camera,
                                       ShaderManager *shader_manager,
                                       PostEffectShaderManager *post_effect_shader_manager,
@@ -63,31 +74,32 @@ namespace gvr {
         int swapChainIndex = vulkanCore_->AcquireNextImage();
 
         for (auto &rdata : render_data_vector) {
+            VulkanRenderData* vkRdata = reinterpret_cast<VulkanRenderData*>(rdata);
 
             // Creating and initializing Uniform Buffer for Each Render Data
-            if (rdata->uniform_dirty) {
+            if (vkRdata->uniform_dirty) {
+                VulkanUniformBlock& matUBO = reinterpret_cast<VulkanMaterial*>(vkRdata->material(0))->getVulkanUniforms();
+                vkRdata->createVkTransformUbo(vulkanCore_->getDevice(), vulkanCore_);
+                matUBO.createVkMaterialDescriptor(vulkanCore_->getDevice(), vulkanCore_);
 
-                rdata->createVkTransformUbo(vulkanCore_->getDevice(), vulkanCore_);
-                rdata->material(0)->createVkMaterialDescriptor(vulkanCore_->getDevice(),
-                                                               vulkanCore_);
+                vulkanCore_->InitLayoutRenderData(vkRdata);
+                Shader *shader = shader_manager->getShader(vkRdata->get_shader());
 
-                vulkanCore_->InitLayoutRenderData(rdata);
-                Shader *shader = shader_manager->getShader(rdata->get_shader());
+                vkRdata->mesh()->generateVKBuffers(shader->signature(), vulkanCore_->getDevice(), vulkanCore_);
 
-                rdata->mesh()->generateVKBuffers(shader->signature(), vulkanCore_->getDevice(), vulkanCore_);
+                GVR_VK_Vertices &vert = vkRdata->mesh()->getVkVertices();
 
-                GVR_VK_Vertices &vert = rdata->mesh()->getVkVertices();
+                vulkanCore_->InitDescriptorSetForRenderData(vkRdata);
+                vulkanCore_->InitPipelineForRenderData(vert, vkRdata, shader->getVkVertexShader(), shader->getVkFragmentShader());
+                vulkanCore_->updateMaterialUniform(scene, camera, vkRdata, shader->getUniformNames());
 
-                vulkanCore_->InitDescriptorSetForRenderData(rdata);
-                vulkanCore_->InitPipelineForRenderData(vert, rdata, shader->getVkVertexShader(), shader->getVkFragmentShader());
-                vulkanCore_->updateMaterialUniform(scene, camera, rdata, shader->getUniformNames());
-
-                rdata->uniform_dirty = false;
+                vkRdata->uniform_dirty = false;
             }
 
-            allDescriptors.push_back(rdata->getVkData().m_descriptorSet);
-            vulkanCore_->UpdateUniforms(scene, camera, rdata);
-
+            allDescriptors.push_back(vkRdata->getVkData().m_descriptorSet);
+            VulkanUniformBlock* transformUBO = reinterpret_cast<VulkanUniformBlock*>(scene->getTransformUbo());
+            updateTransforms(transformUBO, vkRdata->owner_object()->transform(), camera);
+            vulkanCore_->UpdateUniforms(transformUBO);
         }
         vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, render_data_vector,camera);
 

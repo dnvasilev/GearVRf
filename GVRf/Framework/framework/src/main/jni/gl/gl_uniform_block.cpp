@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gl/gl_uniform_block.h"
+#include "gl/gl_material.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "util/gvr_gl.h"
 
@@ -20,44 +20,34 @@
 namespace gvr {
     GLUniformBlock::GLUniformBlock(const std::string& descriptor) :
             UniformBlock(descriptor),
+            BlockName("Material_ubo"),
             GLBlockIndex(-1),
-            GLBindingPoint(-1),
+            GLBindingPoint(MATERIAL_UBO_INDEX),
             GLOffset(0),
             GLBuffer(0)
     {
     }
 
-    GLUniformBlock::GLUniformBlock() :
-            UniformBlock(),
-            GLBlockIndex(-1),
-            GLOffset(0),
-            GLBuffer(0),
-            GLBindingPoint(-1)
-    {
-
-    }
-
     void GLUniformBlock::bindBuffer(GLuint programId)
     {
-
         if (GLBindingPoint < 0)
             return;
         if (GLBlockIndex < 0)
         {
-            GLBlockIndex = glGetUniformBlockIndex(programId, BlockName.c_str());
+            GLBlockIndex = glGetUniformBlockIndex(programId, getBlockName().c_str());
             if (GLBlockIndex < 0)
             {
-                LOGE("UniformBlock: ERROR: cannot find block named %s\n", BlockName.c_str());
+                LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName().c_str());
                 return;
             }
 
             glGenBuffers(1, &GLBuffer);
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-            glBufferData(GL_UNIFORM_BUFFER, TotalSize, NULL, GL_DYNAMIC_DRAW);
+            glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
             glUniformBlockBinding(programId, GLBlockIndex, GLBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
             checkGlError("bindUBO ");
-            LOGV("SHADER: UniformBlock: %s bound to #%d at index %d buffer = %d\n", BlockName.c_str(), GLBindingPoint, GLBlockIndex, GLBuffer);
+            LOGV("SHADER: UniformBlock: %s bound to #%d at index %d buffer = %d\n", getBlockName().c_str(), GLBindingPoint, GLBlockIndex, GLBuffer);
         }
         else {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
@@ -67,21 +57,14 @@ namespace gvr {
 
     void GLUniformBlock::render(GLuint programId)
     {
-        auto it = Dirty.find(programId);
-
-        if (it != Dirty.end() && !it->second)
-            return;
-
-        //  LOGE("it should not come hrere");
-        Dirty[programId] = false;
-        if (GLBuffer == 0 )
+        if (GLBuffer == 0)
             bindBuffer(programId);
         if (GLBuffer >= 0)
         {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
-            glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, TotalSize, UniformData);
-            LOGV("SHADER: UniformBlock: offset %d : total Size %d\n", GLOffset, TotalSize);
+            glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
+            LOGV("SHADER: UniformBlock: offset %d : total Size %d\n", GLOffset, getTotalSize());
         }
     }
 
@@ -144,51 +127,8 @@ namespace gvr {
                 // offset between two vectors in matrix
                 glGetActiveUniformsiv(programID, 1, &tUniformIndex,
                                       GL_UNIFORM_MATRIX_STRIDE, &matrixStride);
-
-                // Size of uniform variable in bytes
-                byteSize = uniformSize * sizeFromUniformType(uniformType);
-                LOGV("UniformBlock: %s GL offset = %d, byteSize = %d\n", uniformName, uniformOffset, byteSize);
-            }
+           }
         }
-    }
-
-    GLint GLUniformBlock::sizeFromUniformType(GLint type)
-    {
-        GLint s;
-
-#define UNI_CASE(type, numElementsInType, elementType) \
-       case type : s = numElementsInType * sizeof(elementType); break;
-
-        switch (type)
-        {
-            UNI_CASE(GL_FLOAT, 1, GLfloat);
-            UNI_CASE(GL_FLOAT_VEC2, 2, GLfloat);
-            UNI_CASE(GL_FLOAT_VEC3, 3, GLfloat);
-            UNI_CASE(GL_FLOAT_VEC4, 4, GLfloat);
-            UNI_CASE(GL_INT, 1, GLint);
-            UNI_CASE(GL_INT_VEC2, 2, GLint);
-            UNI_CASE(GL_INT_VEC3, 3, GLint);
-            UNI_CASE(GL_INT_VEC4, 4, GLint);
-            UNI_CASE(GL_UNSIGNED_INT, 1, GLuint);
-            UNI_CASE(GL_UNSIGNED_INT_VEC2, 2, GLuint);
-            UNI_CASE(GL_UNSIGNED_INT_VEC3, 3, GLuint);
-            UNI_CASE(GL_UNSIGNED_INT_VEC4, 4, GLuint);
-            UNI_CASE(GL_BOOL, 1, GLboolean);
-            UNI_CASE(GL_BOOL_VEC2, 2, GLboolean);
-            UNI_CASE(GL_BOOL_VEC3, 3, GLboolean);
-            UNI_CASE(GL_BOOL_VEC4, 4, GLboolean);
-            UNI_CASE(GL_FLOAT_MAT2, 4, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT3, 9, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT4, 16, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT2x3, 6, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT2x4, 8, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT3x2, 6, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT3x4, 12, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT4x2, 8, GLfloat);
-            UNI_CASE(GL_FLOAT_MAT4x3, 12, GLfloat);
-            default : s = 0; break;
-        }
-        return s;
     }
 
 }

@@ -18,9 +18,9 @@
 #include <sstream>
 #include "util/gvr_gl.h"
 
-namespace gvr {
-
-    UniformBlock::UniformBlock(const std::string& descriptor) :
+namespace gvr
+{
+    UniformBlock::UniformBlock(const std::string &descriptor) :
             TotalSize(0),
             UniformData(NULL)
     {
@@ -39,196 +39,193 @@ namespace gvr {
         ownData = false;
     }
 
-    bool UniformBlock::setInt(std::string name, int val)
+    bool UniformBlock::setInt(const std::string &name, int val)
     {
         int size = sizeof(int);
-        char* data = getData(name, size);
+        char *data = getData(name, size);
         if (data != NULL)
         {
-            *((int*) data) = val;
-            setDirty();
+            *((int *) data) = val;
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setFloat(std::string name, float val) {
+    bool UniformBlock::setFloat(const std::string &name, float val)
+    {
         int size = sizeof(float);
-        char* data = getData(name, size);
+        char *data = getData(name, size);
         if (data != NULL)
         {
-            *((float*) data) = val;
-            setDirty();
+            *((float *) data) = val;
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setVec(std::string name, const float* val, int n)
+    bool UniformBlock::setFloatVec(const std::string &name, const float *val, int n)
     {
         int bytesize = n * sizeof(float);
-        char* data = getData(name, bytesize);
+        char *data = getData(name, bytesize);
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            setDirty();
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setIntVec(std::string name, const int* val, int n)
+    bool UniformBlock::setIntVec(const std::string &name, const int *val, int n)
     {
         int bytesize = n * sizeof(int);
-        char* data = getData(name, bytesize);
+        char *data = getData(name, bytesize);
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            setDirty();
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setVec2(std::string name, const glm::vec2& val)
+    bool UniformBlock::setVec2(const std::string &name, const glm::vec2 &val)
     {
         int bytesize = 2 * sizeof(float);
-        float* data = (float*) getData(name, bytesize);
+        float *data = (float *) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
             data[1] = val.y;
-            setDirty();
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setVec3(std::string name, const glm::vec3& val)
+    bool UniformBlock::setVec3(const std::string &name, const glm::vec3 &val)
     {
         int bytesize = 3 * sizeof(float);
-        float* data = (float*) getData(name, bytesize);
+        float *data = (float *) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
             data[1] = val.y;
             data[2] = val.z;
-            setDirty();
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setVec4(std::string name, const glm::vec4& val)
+    bool UniformBlock::setVec4(const std::string &name, const glm::vec4 &val)
     {
         int bytesize = 4 * sizeof(float);
-        float* data = (float*) getData(name, bytesize);
+        float *data = (float *) getData(name, bytesize);
         if (data != NULL)
         {
             data[0] = val.x;
             data[1] = val.y;
             data[2] = val.z;
             data[3] = val.w;
-            setDirty();
             return true;
         }
         return false;
     }
 
-    bool UniformBlock::setMat4(std::string name, const float* val)
+    bool UniformBlock::setMat4(const std::string &name, const glm::mat4 &val)
     {
+        const float *mtxdata = glm::value_ptr(val);
         int bytesize = 16 * sizeof(float);
-        char* data = getData(name, bytesize);
+        char *data = getData(name, bytesize);
         if (data != NULL)
         {
-            memcpy(data, (val), bytesize);
-            setDirty();
+            memcpy(data, mtxdata, bytesize);
             return true;
         }
         return false;
     }
 
-    const glm::vec2* UniformBlock::getVec2(std::string name) const
+    const glm::vec2 *UniformBlock::getVec2(const std::string &name) const
     {
         int size = 2 * sizeof(float);
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
-            return (reinterpret_cast<const glm::vec2*>(data));
+            return (reinterpret_cast<const glm::vec2 *>(data));
         return NULL;
     }
 
-    const glm::vec3* UniformBlock::getVec3(std::string name) const
+    const glm::vec3 *UniformBlock::getVec3(const std::string &name) const
     {
         int size = 3 * sizeof(float);
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
-            return (reinterpret_cast<const glm::vec3*> (data));
+            return (reinterpret_cast<const glm::vec3 *> (data));
         return NULL;
     }
 
-    const glm::vec4* UniformBlock::getVec4(std::string name) const
+    const glm::vec4 *UniformBlock::getVec4(const std::string &name) const
     {
         int size = 4 * sizeof(float);
-        LOGE("UniformBlock get vec4 here %s", name.c_str());
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
-            return (reinterpret_cast<const glm::vec4*> (data));
+            return (reinterpret_cast<const glm::vec4 *> (data));
         return NULL;
     }
 
-    int UniformBlock::getInt(std::string name) const
+    bool UniformBlock::getInt(const std::string &name, int &v) const
     {
         int size = sizeof(int);
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
-            return *(reinterpret_cast<const int*> (data));
-        return 0;
+        {
+            v = *(reinterpret_cast<const int *> (data));
+            return true;
+        }
+        return false;
     }
 
-    float UniformBlock::getFloat(std::string name) const
+    bool UniformBlock::getFloat(const std::string &name, float &v) const
     {
-        LOGE("UniformBlock good heregood%s", name.c_str());
         int size = sizeof(float);
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
-            return *(reinterpret_cast<const float*> (data));
-        return 0.0f;
+        {
+            v = *(reinterpret_cast<const float *> (data));
+            return true;
+        }
+        return false;
     }
 
-    bool UniformBlock::getIntVec(std::string name, int* val, int n) const
+    bool UniformBlock::getIntVec(const std::string &name, int *val, int n) const
     {
         int size = n * sizeof(int);
-        const char* data = getData(name, size);
+        const char *data = getData(name, size);
         if (data != NULL)
         {
-            memcpy((char*) val, data,size);
+            memcpy((char *) val, data, size);
             return true;
         }
         LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
         return false;
     }
 
-    bool UniformBlock::getVec(std::string name, float* val, int n) const
+    bool UniformBlock::getFloatVec(const std::string &name, float *val, int n) const
     {
-        LOGE("UniformBlock bad here%s", name.c_str());
-        int size =  n * sizeof(float);
-        const char* data = getData(name, size);
+        int size = n * sizeof(float);
+        const char *data = getData(name, size);
         if (data != NULL)
         {
-            memcpy((char*) val, data, n * sizeof(float));
+            memcpy((char *) val, data, n * sizeof(float));
             return true;
         }
         LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
         return false;
     }
 
-    bool UniformBlock::getMat4(std::string name, glm::mat4& val) const
+    bool UniformBlock::getMat4(const std::string &name, glm::mat4 &val) const
     {
         int bytesize = 16 * sizeof(float);
-        const char* data = getData(name, bytesize);
+        const char *data = getData(name, bytesize);
         if (data != NULL)
         {
-            val = glm::make_mat4((const float*) data);
+            val = glm::make_mat4((const float *) data);
             return true;
         }
         return false;
@@ -237,18 +234,18 @@ namespace gvr {
     void  UniformBlock::parseDescriptor()
     {
         LOGD("UniformBlockNew: %s", Descriptor.c_str());
-        const char* p = Descriptor.c_str();
-        const char* type_start;
+        const char *p = Descriptor.c_str();
+        const char *type_start;
         int type_size;
-        const char* name_start;
+        const char *name_start;
         int name_size;
-        int offset = 0;
+        short offset = 0;
         const int VEC4_BOUNDARY = 15;
         TotalSize = 0;
 
         while (*p)
         {
-            while (std::isspace(*p) || *p == ';'|| *p == ',')
+            while (std::isspace(*p) || *p == ';' || *p == ',')
                 ++p;
             type_start = p;
             if (*p == 0)
@@ -275,7 +272,7 @@ namespace gvr {
             if ((*p == '['))
             {
                 ++p;
-                while(std::isdigit(*p))
+                while (std::isdigit(*p))
                 {
                     array_size = array_size * 10 + (*p - '0');
                     ++p;
@@ -289,12 +286,13 @@ namespace gvr {
             }
             Uniform uniform;
             std::string name(name_start, name_size);
-            int byteSize = calcSize(type) * array_size;
+            short byteSize = calcSize(type) * array_size;
 
+            uniform.IsSet = false;
             uniform.Name = name;
             uniform.Type = type;
             uniform.Offset = offset;
-            uniform.Size = byteSize;                // get number of bytes
+            uniform.Size = byteSize;
 
             if (byteSize == 0)
                 continue;
@@ -303,13 +301,14 @@ namespace gvr {
                 offset = offset + 15 & ~0x0F;
             }
             std::pair<std::string, Uniform> pair(name, uniform);
-            std::pair< std::map<std::string, Uniform>::iterator, bool > ret = UniformMap.insert(pair);
+            std::pair<std::map<std::string, Uniform>::iterator, bool> ret = UniformMap.insert(pair);
             if (!ret.second)
             {
                 LOGE("UniformBlock: ERROR: element %s specified twice\n", name.c_str());
                 continue;
             }
-            LOGV("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset, uniform.Size);
+            LOGV("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset,
+                 uniform.Size);
             offset += uniform.Size;
             TotalSize = uniform.Offset + uniform.Size;
         }
@@ -326,7 +325,7 @@ namespace gvr {
         }
     }
 
-    int UniformBlock::calcSize(std::string type) const
+    short UniformBlock::calcSize(const std::string &type) const
     {
         if (type == "float") return sizeof(float);
         if (type == "float3") return 3 * sizeof(float);
@@ -343,7 +342,7 @@ namespace gvr {
         return 0;
     }
 
-    UniformBlock::Uniform* UniformBlock::getUniform(std::string name, int& bytesize)
+    UniformBlock::Uniform *UniformBlock::getUniform(const std::string &name, int &bytesize)
     {
         auto it = UniformMap.find(name);
         if (it == UniformMap.end())
@@ -351,18 +350,32 @@ namespace gvr {
             LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
             return NULL;
         }
-        Uniform& u = it->second;
+        Uniform &u = it->second;
         if (u.Size < bytesize)
         {
-            LOGE("ERROR: UniformBlock not const element %s is %d bytes, should be %d bytes\n", name.c_str(), bytesize, u.Size);
+            LOGE("ERROR: UniformBlock not const element %s is %d bytes, should be %d bytes\n",
+                 name.c_str(), bytesize, u.Size);
             return NULL;
         }
         bytesize = u.Size;
-        LOGV("SHADER: UniformBlock not const element %s offset %d bytes,\n", name.c_str(), u.Offset);
+        LOGV("SHADER: UniformBlock not const element %s offset %d bytes,\n", name.c_str(),
+             u.Offset);
         return &u;
     }
 
-    const UniformBlock::Uniform* UniformBlock::getUniform(std::string name, int& bytesize) const
+    int UniformBlock::getByteSize(const std::string &name) const
+    {
+        auto it = UniformMap.find(name);
+        if (it == UniformMap.end())
+        {
+            return 0;
+        }
+        const Uniform &u = it->second;
+        return u.Size;
+    }
+
+    const UniformBlock::Uniform *UniformBlock::getUniform(const std::string &name,
+                                                          int &bytesize) const
     {
         auto it = UniformMap.find(name);
         if (it == UniformMap.end())
@@ -370,62 +383,63 @@ namespace gvr {
             LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
             return NULL;
         }
-        const Uniform& u = it->second;
+        const Uniform &u = it->second;
         if (u.Size < bytesize)
         {
-            LOGE("ERROR: UniformBlock const element %s is %d bytes, should be %d bytes\n", name.c_str(), bytesize, u.Size);
+            LOGE("ERROR: UniformBlock const element %s is %d bytes, should be %d bytes\n",
+                 name.c_str(), bytesize, u.Size);
             return NULL;
         }
         bytesize = u.Size;
         return &u;
     }
 
-    const char* UniformBlock::getData(std::string name, int& bytesize) const
+    const char *UniformBlock::getData(const std::string &name, int &bytesize) const
     {
-        const Uniform* u = getUniform(name, bytesize);
+        const Uniform *u = getUniform(name, bytesize);
         if (u == NULL)
             return NULL;
-        char* data = (char*) UniformData;
+        char *data = (char *) UniformData;
         data += u->Offset;
         return data;
     }
 
-    char* UniformBlock::getData(std::string name, int& bytesize)
+    char *UniformBlock::getData(const std::string &name, int &bytesize)
     {
-        Uniform* u = getUniform(name, bytesize);
+        Uniform *u = getUniform(name, bytesize);
         if (u == NULL)
             return NULL;
-        char* data = (char*) UniformData;
+        char *data = (char *) UniformData;
 
         data += u->Offset;
+        u->IsSet = true;
         return data;
     }
 
     std::string UniformBlock::toString()
     {
         std::ostringstream os;
-        char* data = (char*) UniformData;
+        char *data = (char *) UniformData;
         for (auto it = UniformMap.begin(); it != UniformMap.end(); ++it)
         {
             std::pair<std::string, Uniform> p = (*it);
-            Uniform* u = &(p.second);
+            Uniform *u = &(p.second);
             os << p.first << ":" << u->Offset;
             for (int i = 0; i < u->Size / sizeof(float); i++)
             {
-                char* d = data + u->Offset;
+                char *d = data + u->Offset;
                 os << " ";
                 if (p.first[0] == 'i')
                 {
-                    os << *(((int*) d) + i);
+                    os << *(((int *) d) + i);
                 }
                 else
                 {
-                    os << *(((float*) d) + i);
+                    os << *(((float *) d) + i);
                 }
             }
             os << ';' << std::endl;
         }
         return os.str();
     }
-
 }

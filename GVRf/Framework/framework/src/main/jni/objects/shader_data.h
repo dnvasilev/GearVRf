@@ -24,10 +24,10 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <gl/gl_uniform_block.h>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "helpers.h"
 
 #include "objects/hybrid_object.h"
 #include "objects/textures/texture.h"
@@ -37,197 +37,119 @@ namespace gvr {
 
 class Texture;
 
-class ShaderData: public HybridObject {
+class ShaderData : public HybridObject
+{
 public:
-    ShaderData() :
-            native_shader_(0), textures_(), floats_(), ints_(), vec2s_(), vec3s_(), vec4s_(), mat4s_() { }
+    ShaderData(const std::string& descriptor) :
+            native_shader_(0), textures_() { }
 
-    ~ShaderData() {
-    }
+    virtual ~ShaderData() { }
 
-    int get_shader() {
+    int get_shader()
+    {
         return native_shader_;
     }
 
-    void set_shader(int shader) {
+    void set_shader(int shader)
+    {
         native_shader_ = shader;
     }
 
-    Texture* getTexture(const std::string& key) const {
+    Texture* getTexture(const std::string& key) const
+    {
         auto it = textures_.find(key);
-        if (it != textures_.end()) {
+        if (it != textures_.end())
+        {
             return it->second;
-        } else {
-            std::string error = "Material::getTexture() : " + key
-                    + " not found";
-            LOGE("%s", error.c_str());
-            throw error;
         }
+        return NULL;
     }
 
-    //A new api to return a texture even it is NULL without throwing a error,
-    //otherwise it will be captured abruptly by the error handler
-    Texture* getTextureNoError(const std::string& key) const {
-        auto it = textures_.find(key);
-        if (it != textures_.end()) {
-            return it->second;
-        } else {
-            return NULL;
-        }
-    }
-
-    virtual void setTexture(const std::string& key, Texture* texture) {
+    void setTexture(const std::string& key, Texture* texture)
+    {
         textures_[key] = texture;
         //By the time the texture is being set to its attaching material, it is ready
         //This is guaranteed by upper java layer scheduling
-        if (texture != NULL) {
+        if (texture != NULL)
+        {
             LOGE("SHADER: texture %s is ready", key.c_str());
             texture->setReady(true);
+            dirty();
         }
     }
 
-    bool getFloat(const std::string& key, float& v) {
-        auto it = floats_.find(key);
-        if (it != floats_.end()) {
-            v = it->second;
-            return true;
-        } else {
-            LOGE("Material::getFloat() : %s not found", key.c_str());
-            return false;
-        }
-    }
-
-    virtual void setFloat(const std::string& key, float value) {
-        floats_[key] = value;
-    }
-
-    bool getInt(const std::string& key, int& v) {
-        auto it = ints_.find(key);
-        if (it != ints_.end()) {
-            v = it->second;
-            return true;
-        } else {
-            LOGE("Material::getInt() : %s not found", key.c_str());
-            return false;
-        }
-    }
-
-    virtual void setInt(const std::string& key, int value) {
-        ints_[key] = value;
-    }
-
-    bool getVec2(const std::string& key, glm::vec2& v) {
-        auto it = vec2s_.find(key);
-        if (it != vec2s_.end()) {
-            v = it->second;
-            return true;
-        } else {
-            LOGE("Material::getVec2() : %s not found", key.c_str());
-            return false;
-        }
-    }
-
-    virtual void setVec2(const std::string& key, glm::vec2 vector) {
-        vec2s_[key] = vector;
-    }
-    virtual GLUniformBlock* getMatUbo(){}
-
-    virtual const float* getFloatVec(const std::string& key, int numfloats) const
+    int getByteSize(const std::string& name) const
     {
-        std::map<std::string, float>::const_iterator it1;
-        std::map<std::string, glm::vec2>::const_iterator it2;
-        std::map<std::string, glm::vec3>::const_iterator it3;
-        std::map<std::string, glm::vec4>::const_iterator it4;
-        std::map<std::string, glm::mat4>::const_iterator it5;
-        std::map<std::string, int>::const_iterator it6;
-
-        switch (numfloats)
-        {
-            case 1:
-            it1 = floats_.find(key);
-            if (it1 != floats_.end())
-                return &(it1->second);
-            break;
-
-            case 2:
-            it2 = vec2s_.find(key);
-            if (it2 != vec2s_.end())
-                return glm::value_ptr(it2->second);
-            break;
-
-            case 3:
-            it3 = vec3s_.find(key);
-            if (it3 != vec3s_.end())
-                return glm::value_ptr(it3->second);
-            break;
-
-            case 4:
-            it4 = vec4s_.find(key);
-            if (it4 != vec4s_.end())
-                return glm::value_ptr(it4->second);
-            break;
-
-            case 16:
-            it5 = mat4s_.find(key);
-            if (it5 != mat4s_.end())
-                return glm::value_ptr(it5->second);
-            break;
-        }
-        LOGE("SHADER: key %s not found in material %d ", key.c_str(), numfloats);
-        return NULL;
+        return uniforms().getByteSize(name);
     }
 
-    virtual const int* getIntVec(const std::string& key, int numints) const
+    const std::string& getDescriptor() const
     {
-        if (numints == 1)
-        {
-            std::map<std::string, int>::const_iterator it1 = ints_.find(key);
-            if (it1 != ints_.end())
-                return &(it1->second);
-        }
-        LOGE("SHADER: key %s not found in material %d ", key.c_str(), numints);
-        return NULL;
+        return uniforms().getDescriptor();
     }
 
-    bool getVec3(const std::string& key, glm::vec3& v) {
-        auto it = vec3s_.find(key);
-        if (it != vec3s_.end()) {
-            v = it->second;
-            return true;
-        } else {
-            LOGE("Material::getVec3() : %s not found", key.c_str());
-            return false;
-        }
+    bool getFloat(const std::string& name, float& v) const
+    {
+        return uniforms().getFloat(name, v);
     }
 
-    virtual void setVec3(const std::string& key, glm::vec3 vector) {
-        vec3s_[key] = vector;
+    bool   getInt(const std::string& name, int& v) const
+    {
+        return uniforms().getInt(name, v);
     }
 
-    bool getVec4(const std::string& key, glm::vec4& v) {
-        auto it = vec4s_.find(key);
-        if (it != vec4s_.end()) {
-            v = it->second;
-            return true;
-        } else {
-            LOGE("Material::getVec4() : %s not found", key.c_str());
-            return false;
-        }
+    bool  setInt(const std::string& name, int val)
+    {
+        dirty();
+        return uniforms().setInt(name, val);
     }
 
-    virtual void setVec4(const std::string& key, glm::vec4 vector) {
-        vec4s_[key] = vector;
+    bool  setFloat(const std::string& name, float val)
+    {
+        dirty();
+        return uniforms().setFloat(name, val);
     }
 
-    bool getMat4(const std::string& key, glm::mat4 mtx) {
-        auto it = mat4s_.find(key);
-        if (it != mat4s_.end()) {
-            mtx = it->second;
-            return true;
-        } else {
-            LOGE( "Material::getMat4() : %s not found", key.c_str());
-            return false;
-        }
+    bool  setIntVec(const std::string& name, const int* val, int n)
+    {
+        dirty();
+        return uniforms().setIntVec(name, val, n);
+    }
+
+    bool  setFloatVec(const std::string& name, const float* val, int n)
+    {
+        dirty();
+        return uniforms().setFloatVec(name, val, n);
+    }
+
+    bool  getFloatVec(const std::string& name, float* val, int n)
+    {
+        return uniforms().getFloatVec(name, val, n);
+    }
+
+    bool  getIntVec(const std::string& name, int* val, int n)
+    {
+        return uniforms().getIntVec(name, val, n);
+    }
+
+    bool  setVec2(const std::string& name, const glm::vec2& v)
+    {
+        return uniforms().setVec2(name, v);
+    }
+
+    bool  setVec3(const std::string& name, const glm::vec3& v)
+    {
+        return uniforms().setVec3(name, v);
+    }
+
+    bool  setVec4(const std::string& name, const glm::vec4& v)
+    {
+        return uniforms().setVec4(name, v);
+    }
+
+    bool  setMat4(const std::string& name, const glm::mat4& m)
+    {
+        return uniforms().setMat4(name, m);
     }
 
     const std::map<std::string, Texture*>& getAllTextures()
@@ -235,40 +157,36 @@ public:
         return textures_;
     }
 
-    virtual bool hasTexture(const std::string& key) const {
+    void add_dirty_flag(const std::shared_ptr<bool>& dirty_flag)
+    {
+        dirty_flags_.insert(dirty_flag);
+    }
+
+    void add_dirty_flags(const std::unordered_set<std::shared_ptr<bool>>& dirty_flags)
+    {
+        dirty_flags_.insert(dirty_flags.begin(), dirty_flags.end());
+    }
+
+    void dirty()
+    {
+        dirtyImpl(dirty_flags_);
+    }
+
+    bool hasTexture(const std::string& key) const
+    {
         auto it = textures_.find(key);
         return (it != textures_.end());
     }
 
-    bool hasUniform(const std::string& key) const {
-        if (vec3s_.find(key) != vec3s_.end()) {
-            return true;
-        }
-        if (vec2s_.find(key) != vec2s_.end()) {
-            return true;
-        }
-        if (vec4s_.find(key) != vec4s_.end()) {
-            return true;
-        }
-        if (mat4s_.find(key) != mat4s_.end()) {
-            return true;
-        }
-        if (floats_.find(key) != floats_.end()) {
-            return true;
-        }
-        if (ints_.find(key) != ints_.end()) {
-            return true;
-        }
-        return false;
+    bool hasUniform(const std::string& key) const
+    {
+        return uniforms().hasUniform(key);
     }
 
-    virtual void setMat4(const std::string& key, glm::mat4 matrix) {
-        //LOGE( "Material::setting Mat4() : %s ", key.c_str());
-        mat4s_[key] = matrix;
-    }
-
-    bool areTexturesReady() {
-        for (auto it = textures_.begin(); it != textures_.end(); ++it) {
+    bool areTexturesReady()
+    {
+        for (auto it = textures_.begin(); it != textures_.end(); ++it)
+        {
             Texture* tex = it->second;
             if ((tex == NULL) || !tex->isReady())
             {
@@ -278,21 +196,19 @@ public:
         return true;
     }
 
+    virtual UniformBlock&   uniforms() = 0;
+    virtual const UniformBlock& uniforms() const = 0;
+
 private:
-    ShaderData(const ShaderData& post_effect_data);
-    ShaderData(ShaderData&& post_effect_data);
-    ShaderData& operator=(const ShaderData& post_effect_data);
-    ShaderData& operator=(ShaderData&& post_effect_data);
+    ShaderData(const ShaderData&);
+    ShaderData(ShaderData&&);
+    ShaderData& operator=(const ShaderData&);
+    ShaderData& operator=(ShaderData&&);
 
 protected:
     int native_shader_;
     std::map<std::string, Texture*> textures_;
-    std::map<std::string, float> floats_;
-    std::map<std::string, int> ints_;
-    std::map<std::string, glm::vec2> vec2s_;
-    std::map<std::string, glm::vec3> vec3s_;
-    std::map<std::string, glm::vec4> vec4s_;
-    std::map<std::string, glm::mat4> mat4s_;
+    std::unordered_set<std::shared_ptr<bool>> dirty_flags_;
 };
 
 }

@@ -22,8 +22,8 @@
 #include "glm/gtc/matrix_inverse.hpp"
 
 #include "eglextension/tiledrendering/tiled_rendering_enhancer.h"
-#include "objects/material.h"
-#include "objects/shader_data.h"
+#include "gl/gl_material.h"
+#include "gl/gl_render_data.h"
 #include "objects/scene.h"
 #include "objects/scene_object.h"
 #include "objects/components/camera.h"
@@ -39,6 +39,21 @@
 #include <gvr_image_capture.h>
 
 namespace gvr {
+ShaderData* GLRenderer::createMaterial(const std::string& desc)
+{
+    return new GLMaterial(desc);
+}
+
+RenderData* GLRenderer::createRenderData()
+{
+    return new GLRenderData();
+}
+
+UniformBlock* GLRenderer::createUniformBlock(const std::string& desc)
+{
+    return new GLUniformBlock(desc);
+}
+
 void GLRenderer::renderCamera(Scene* scene, Camera* camera, int framebufferId,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight,
         ShaderManager* shader_manager,
@@ -303,7 +318,7 @@ void GLRenderer::set_face_culling(int cull_face) {
         break;
     }
 }
-bool GLRenderer::checkTextureReady(Material* material) {
+bool GLRenderer::checkTextureReady(ShaderData* material) {
     return material->areTexturesReady();
  }
 
@@ -335,7 +350,7 @@ void GLRenderer::occlusion_cull(RenderState& rstate,
             //Setup basic bounding box and material
             RenderData* bounding_box_render_data(new RenderData());
             Mesh* bounding_box_mesh = render_data->mesh()->createBoundingBox();
-            Material *bbox_material = new Material();
+            ShaderData *bbox_material = new GLMaterial("");
             RenderPass *pass = new RenderPass();
             Shader* bboxShader = rstate.shader_manager->findShader(std::string("GVRBoundingBoxShader"));
             pass->set_shader(bboxShader->getProgramId());
@@ -397,7 +412,7 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
         numberDrawCalls++;
 
         set_face_culling(render_data->pass(curr_pass)->cull_face());
-        Material* curr_material = rstate.material_override;
+        ShaderData* curr_material = rstate.material_override;
 
         if (curr_material == nullptr)
             curr_material = render_data->pass(curr_pass)->material();
@@ -408,7 +423,7 @@ void GLRenderer::renderMesh(RenderState& rstate, RenderData* render_data) {
     }
 }
 
-void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *curr_material, int curr_pass)
+void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *curr_material, int curr_pass)
 {
     SceneObject *owner = render_data->owner_object();
     ShaderManager *shader_manager = rstate.shader_manager;
@@ -451,6 +466,14 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         rstate.uniforms.u_mvp_[1] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[1];
     }
 
+    updateTransforms(rstate);
+    Mesh* mesh = render_data->mesh();
+    if (mesh->hasBones())
+    {
+        const std::vector<glm::mat4> &bone_matrices = mesh->getVertexBoneData().getBoneMatrices();
+        render_data->updateBones(&bone_matrices[0][0][0], MAX_BONES * 16);
+        LOGV("SHADER: copy bone matrices %d bytes", MAX_BONES * sizeof(float) * 16);
+    }
     try
     {
         if ((render_data->draw_mode() == GL_LINE_STRIP) ||
@@ -476,7 +499,6 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
         shader = shader_manager->findShader(std::string("GVRErrorShader"));
         shader->render(&rstate, render_data, curr_material);
     }
-    Mesh* mesh = render_data->mesh();
     if (mesh->indices().size() > 0)
     {
         glDrawElements(render_data->draw_mode(), mesh->indices().size(), GL_UNSIGNED_SHORT, 0);
@@ -487,6 +509,32 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
     }
     glBindVertexArray(0);
     checkGlError("renderMesh::renderMaterialShader");
+}
+
+void GLRenderer::updateTransforms(RenderState& rstate)
+{
+    GLUniformBlock* transform_ubo =  reinterpret_cast<GLUniformBlock*>(rstate.scene->getTransformUbo());
+
+    if (transform_ubo->getGLBindingPoint() != TRANSFORM_UBO_INDEX)
+    {
+        transform_ubo->setGLBindingPoint(TRANSFORM_UBO_INDEX);
+        transform_ubo->setBlockName("Transform_ubo");
+    }
+    if (use_multiview)
+    {
+        transform_ubo->setMat4("u_view_", rstate.uniforms.u_view_[0]);
+        transform_ubo->setMat4("u_mvp_", rstate.uniforms.u_mvp_[0]);
+        transform_ubo->setMat4("u_mv_", rstate.uniforms.u_mv_[0]);
+        transform_ubo->setMat4("u_mv_it_", rstate.uniforms.u_mv_it_[0]);
+    }
+    else
+    {
+        transform_ubo->setMat4("u_view", rstate.uniforms.u_view);
+        transform_ubo->setMat4("u_mvp", rstate.uniforms.u_mvp);
+        transform_ubo->setMat4("u_mv", rstate.uniforms.u_mv);
+        transform_ubo->setMat4("u_mv_it", rstate.uniforms.u_mv_it);
+    }
+    transform_ubo->setMat4("u_model", rstate.uniforms.u_model);
 }
 }
 

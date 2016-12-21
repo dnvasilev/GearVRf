@@ -27,17 +27,19 @@
 #include "glm/glm.hpp"
 #include "objects/mesh.h"
 #include "java_component.h"
+#include "objects/shader_data.h"
 #include "objects/render_pass.h"
-#include "objects/material.h"
+
 #include<sstream>
-#include "objects/uniform_block.h"
-#include "vulkan/vulkanCore.h"
-#include "vulkan/vulkan_headers.h"
+#include <engine/renderer/renderer.h>
+#include "engine/renderer/renderer.h"
+
+
 typedef unsigned long Long;
 namespace gvr {
 
 class Mesh;
-class Material;
+class ShaderData;
 class Light;
 class Batch;
 class TextureCapturer;
@@ -55,53 +57,6 @@ std::string to_string(T value) {
     //convert the string stream into a string and return
     return os.str();
 }
-
-class VulkanData {
-
-public:
-    VulkanData():vk_descriptor("mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; mat4 u_right;"){}
-
-    void createTransformDescriptor(VkDevice &device,VulkanCore* vk){
-        vk_descriptor.createDescriptor(device, vk, TRANSFORM_UBO_INDEX, VK_SHADER_STAGE_VERTEX_BIT );
-    }
-
-    VkPipeline& getVKPipeline(){
-        return m_pipeline;
-    }
-    VulkanUniformBlock& getTransformUBO(){
-        return transform_UBO;
-    }
-    Descriptor& getDescriptor(){
-        return vk_descriptor;
-    }
-    VkPipelineLayout& getPipelineLayout(){
-        return m_pipelineLayout;
-    }
-    VkDescriptorSetLayout& getDescriptorLayout(){
-        return m_descriptorLayout;
-    }
-    VkDescriptorPool& getDescriptorPool(){
-        return m_descriptorPool;
-    }
-    VkDescriptorSet& getDescriptorSet(){
-        return m_descriptorSet;
-    }
-
-    VkPipelineLayout  m_pipelineLayout;
-    // Vulkan
-    VulkanUniformBlock transform_UBO;
-    GVR_Uniform m_modelViewMatrixUniform;
-
-    VkPipeline m_pipeline;
-    VkDescriptorSet m_descriptorSet;
-
-private:
-
-    VkDescriptorPool m_descriptorPool;
-    VkDescriptorSetLayout m_descriptorLayout;
-    Descriptor vk_descriptor;
-
-};
 
 class RenderData: public JavaComponent {
 public:
@@ -124,9 +79,9 @@ public:
                 rendering_order_(DEFAULT_RENDERING_ORDER), hash_code_dirty_(true),
                 offset_(false), offset_factor_(0.0f), offset_units_(0.0f),
                 depth_test_(true), alpha_blend_(true), alpha_to_coverage_(false),
-                sample_coverage_(1.0f), invert_coverage_mask_(GL_FALSE),bones_ubo_(nullptr),
+                sample_coverage_(1.0f), invert_coverage_mask_(GL_FALSE),
                 draw_mode_(GL_TRIANGLES), texture_capturer(0), cast_shadows_(true),
-                uniform_dirty(true),dirty_flag_(std::make_shared<bool>(true))
+                bones_ubo_(nullptr),dirty_flag_(std::make_shared<bool>(true))
     {
     }
 
@@ -141,6 +96,7 @@ public:
         use_lightmap_ = rdata.use_lightmap_;
         batching_ = rdata.batching_;
         render_mask_ = rdata.render_mask_;
+        bones_ubo_ = rdata.bones_ubo_;
         cast_shadows_ = rdata.cast_shadows_;
         batch_ = rdata.batch_;
         for(int i=0;i<rdata.render_pass_list_.size();i++) {
@@ -184,16 +140,14 @@ public:
         return render_pass_list_.size();
     }
 
-    Material* material(int pass) const ;
+    ShaderData* material(int pass) const ;
 
-    void set_material(Material* material, int pass);
-
+    void updateBones(const float* boneData, int numFloats);
     /**
      * Select or generate a shader for this render data.
      * This function executes a Java task on the Framework thread.
      */
     void bindShader(Scene* scene);
-    void set_renderdata_dirty(bool dirty_);
     void setDirty(bool dirty);
 
     bool isDirty(){
@@ -385,19 +339,9 @@ public:
         render_pass_list_[pass]->set_shader(shaderid);
     }
 
-    void createVkTransformUbo(VkDevice &device,VulkanCore* vk)
-    {
-        vkData.createTransformDescriptor(device,vk);
-    }
-
     int             get_shader(int pass =0) const { return render_pass_list_[pass]->get_shader(); }
     std::string     getHashCode();
     void            setCameraDistanceLambda(std::function<float()> func);
-    VulkanData&     getVkData() { return vkData; }
-    GLUniformBlock* getBonesUbo() { return bones_ubo_; }
-    GLUniformBlock* bindUbo(int program_id, int index, const char* name, const char* desc);
-    void            bindBonesUbo(int program_id);
-    bool            uniform_dirty;
 
 private:
     //  RenderData(const RenderData& render_data);
@@ -405,13 +349,12 @@ private:
     RenderData& operator=(const RenderData& render_data);
     RenderData& operator=(RenderData&& render_data);
 
-private:
-    VulkanData vkData;
-    GLUniformBlock *bones_ubo_;
+protected:
     static const int DEFAULT_RENDER_MASK = Left | Right;
     static const int DEFAULT_RENDERING_ORDER = Geometry;
     jmethodID bindShaderMethod_;
     Mesh* mesh_;
+    UniformBlock* bones_ubo_;
     Batch* batch_;
     bool hash_code_dirty_;
     std::string hash_code;

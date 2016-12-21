@@ -29,7 +29,7 @@
 #define BATCH_POOL_SIZE 150
 namespace gvr{
 class RenderData;
-class Material;
+class ShaderData;
 class Mesh;
 class Batch;
 struct RenderState;

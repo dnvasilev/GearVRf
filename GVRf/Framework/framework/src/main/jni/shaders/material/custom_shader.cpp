@@ -20,7 +20,6 @@
 #include "custom_shader.h"
 #include "engine/renderer/renderer.h"
 #include "gl/gl_program.h"
-#include "objects/shader_data.h"
 #include "objects/scene.h"
 #include "objects/mesh.h"
 #include "objects/textures/texture.h"
@@ -30,7 +29,8 @@
 #include <sys/time.h>
 #include <shaderc/shaderc.h>
 #include <shaderc/shaderc.hpp>
-#include <gl/gl_uniform_block.h>
+#include <gl/gl_material.h>
+#include <gl/gl_render_data.h>
 
 
 namespace gvr {
@@ -41,16 +41,6 @@ namespace gvr {
 
     public:
         TextureLocation(Shader* shader) : ShaderVisitor(shader), material_(NULL) { }
-        void visit(const std::string& key, const std::string& type, int size);
-    };
-
-    class UniformUpdate : public Shader::ShaderVisitor
-    {
-    private:
-        ShaderData* material_;
-
-    public:
-        UniformUpdate(Shader* shader, ShaderData* material) : ShaderVisitor(shader), material_(material) { }
         void visit(const std::string& key, const std::string& type, int size);
     };
 
@@ -74,34 +64,6 @@ namespace gvr {
         AttributeLocation(Shader* shader, Mesh* mesh) : ShaderVisitor(shader), mesh_(mesh) { }
         void visit(const std::string& key, const std::string& type, int size);
     };
-
-    void UniformUpdate::visit(const std::string& key, const std::string& type, int size)
-    {
-        GLUniformBlock* ubo = material_->getMatUbo();
-        const float* fv;
-        const int* iv;
-
-        switch (tolower(type[0]))
-        {
-            case 'f':
-            case 'm':
-            fv = material_->getFloatVec(key, size);
-            if (fv != NULL)
-            {
-                ubo->setVec(key, fv, size);
-            }
-            break;
-
-
-            case 'i':
-            iv = material_->getIntVec(key, size);
-            if (iv != NULL)
-            {
-                ubo->setIntVec(key, iv, size);
-            }
-            break;
-        }
-    }
 
     void TextureLocation::visit(const std::string& key, const std::string& type, int size)
     {
@@ -134,7 +96,7 @@ namespace gvr {
             }
             shader_->setLocation(key, loc);
         }
-        Texture* texture = material_->getTextureNoError(key);
+        Texture* texture = material_->getTexture(key);
         if (texture != NULL)
         {
             LOGE("texture is not null");
@@ -374,22 +336,8 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     /*
      * Update values of uniform variables
      */
-     rstate->scene->bindTransformUbo(programID);
-     GLUniformBlock* transform_ubo =  rstate->scene->getTransformUbo();
+    GLUniformBlock* transform_ubo =  reinterpret_cast<GLUniformBlock*>(rstate->scene->getTransformUbo());
 
-     if(use_multiview){
-        transform_ubo->setMat4("u_view_", glm::value_ptr(rstate->uniforms.u_view_[0]));
-        transform_ubo->setMat4("u_mvp_", glm::value_ptr(rstate->uniforms.u_mvp_[0]));
-        transform_ubo->setMat4("u_mv_", glm::value_ptr(rstate->uniforms.u_mv_[0]));
-        transform_ubo->setMat4("u_mv_it_", glm::value_ptr(rstate->uniforms.u_mv_it_[0]));
-    }
-    else {
-        transform_ubo->setMat4("u_view", glm::value_ptr(rstate->uniforms.u_view));
-        transform_ubo->setMat4("u_mvp", glm::value_ptr(rstate->uniforms.u_mvp));
-        transform_ubo->setMat4("u_mv", glm::value_ptr(rstate->uniforms.u_mv));
-        transform_ubo->setMat4("u_mv_it", glm::value_ptr(rstate->uniforms.u_mv_it));
-    }
-    transform_ubo->setMat4("u_model", glm::value_ptr(rstate->uniforms.u_model));
     transform_ubo->render(programID);
 
     int vaoID = computeBoneMatrices(programID, render_data);
@@ -399,24 +347,14 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     /*
      * Update material uniforms
      */
-    Material *mat = static_cast<Material *>(material);
     if (!uniformDescriptor_.empty())
-        mat->bindMaterialUbo(programID);
-    if (render_data->isDirty())
     {
-        std::lock_guard<std::mutex> lock(uniformVariablesLock_);
-        UniformUpdate uvisit(this, material);
-        forEach(uniformDescriptor_, uvisit);
-        render_data->setDirty(false);
-    }
-    GLUniformBlock *mat_ubo = mat->getMatUbo();
-
-    if (mat_ubo)
-    {
-        std::string s = mat_ubo->toString();
+        GLUniformBlock& glUniforms = reinterpret_cast<GLMaterial*>(material)->getGLUniforms();
+        glUniforms.bindBuffer(programID);
+        std::string s = glUniforms.toString();
         LOGD("SHADER: Material UBO");
         LOGD("SHADER: %s", s.c_str());
-        mat_ubo->render(programID);
+        glUniforms.render(programID);
     }
 
     /*
@@ -447,6 +385,7 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
 int Shader::computeBoneMatrices(int programId, RenderData* render_data)
 {
     Mesh *mesh = render_data->mesh();
+    GLRenderData* glrdata = reinterpret_cast<GLRenderData*>(render_data);
     int vaoID = mesh->getVAOId(programId);
     int a_bone_indices = glGetAttribLocation(programId, "a_bone_indices");
     int a_bone_weights = glGetAttribLocation(programId, "a_bone_weights");
@@ -456,14 +395,7 @@ int Shader::computeBoneMatrices(int programId, RenderData* render_data)
         mesh->setBoneLoc(a_bone_indices, a_bone_weights);
         LOGV("SHADER: mesh has bones");
         mesh->generateBoneArrayBuffers(programId);
-        render_data->bindBonesUbo(programId);
-
-        GLUniformBlock *bones_ubo = render_data->getBonesUbo();
-        std::vector<glm::mat4> &bone_matrices = mesh->getVertexBoneData().getBoneMatrices();
-        LOGV("SHADER: copy bone matrices %d bytes", MAX_BONES * sizeof(float) * 16);
-        bones_ubo->setVec("u_bone_matrix", &bone_matrices[0][0][0],
-                          MAX_BONES * 16);
-        bones_ubo->render(programId);
+        glrdata->renderBones(programId);
         checkGlError("Shader after bones");
     }
     return vaoID;

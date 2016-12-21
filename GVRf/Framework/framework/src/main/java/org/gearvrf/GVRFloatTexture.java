@@ -57,7 +57,7 @@ public class GVRFloatTexture extends GVRTexture {
      * and some GL hardware handshaking. Reusing the texture reduces this
      * overhead (primarily by delaying garbage collection). Do be aware that
      * updating a texture will affect any and all {@linkplain GVRMaterial
-     * materials} (and/or {@link GVRPostEffect post effects)} that use the
+     * materials} (and/or post effects that use the
      * texture!
      * 
      * @param width

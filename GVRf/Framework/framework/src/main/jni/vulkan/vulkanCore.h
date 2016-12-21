@@ -17,18 +17,11 @@
 #ifndef FRAMEWORK_VULKANCORE_H
 #define FRAMEWORK_VULKANCORE_H
 
-#define VK_USE_PLATFORM_ANDROID_KHR
 
 #include <android/native_window_jni.h>	// for native window JNI
-#include "vulkan/vulkan_wrapper.h"
-#include "vulkanInfoWrapper.h"
-#include <vector>
 #include <string>
-
-#include <objects/components/camera.h>
-#include "glm/glm.hpp"
 #include <unordered_map>
-#include "glm/glm.hpp"
+#include "objects/components/camera.h"
 //#include "vulkanThreadPool.h"
 
 #define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
@@ -38,6 +31,8 @@
 #define SWAP_CHAIN_COUNT 6
 
 namespace gvr {
+    class VulkanUniformBlock;
+
     struct uniformDefination{
         std::string type;
         int size;
@@ -65,7 +60,7 @@ namespace gvr {
     class Scene;
 
     class RenderData;
-
+    class VulkanRenderData;
     class Camera;
 
     extern uint8_t *oculusTexData;
@@ -82,15 +77,15 @@ namespace gvr {
                 return theInstance;
             return NULL;
         }
-        void InitLayoutRenderData(RenderData *rdata);
+        void InitLayoutRenderData(VulkanRenderData *rdata);
 
         void updateMaterialUniform(Scene *scene, Camera *camera, RenderData *render_data,std::unordered_map<std::string,uniformDefination>& nameTypeMap );
 
-        void UpdateUniforms(Scene *scene, Camera *camera, RenderData *render_data);
+        void UpdateUniforms(VulkanUniformBlock* block);
 
         void InitUniformBuffersForRenderData(GVR_Uniform &m_modelViewMatrixUniform);
 
-        void InitDescriptorSetForRenderData(RenderData *rdata);
+        void InitDescriptorSetForRenderData(VulkanRenderData *rdata);
 
         void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors,
                                          int &swapChainIndex,
@@ -100,7 +95,7 @@ namespace gvr {
 
         int AcquireNextImage();
 
-        void InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, RenderData *rdata, std::vector<uint32_t> &vs, std::vector<uint32_t> &fs);
+        void InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, std::vector<uint32_t> &vs, std::vector<uint32_t> &fs);
 
         VkShaderModule CreateShaderModuleAscii(const uint32_t *code, uint32_t size);
 
@@ -228,8 +223,5 @@ namespace gvr {
         //ThreadPool m_threadPool;
         TextureObject * textureObject;
     };
-
-
-    extern VulkanCore gvrVulkanCore;
 }
 #endif //FRAMEWORK_VULKANCORE_H

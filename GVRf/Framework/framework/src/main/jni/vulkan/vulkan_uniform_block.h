@@ -13,28 +13,63 @@
  * limitations under the License.
  */
 
-#ifndef FRAMEWORK_VULKAN_UNIFORM_BLOCK_H
-#define FRAMEWORK_VULKAN_UNIFORM_BLOCK_H
+#ifndef VULKAN_UNIFORMBLOCK_H_
+#define VULKAN_UNIFORMBLOCK_H_
 
-#include "../objects/uniform_block.h"
-#include "vulkan/vulkanCore.h"
-#include "util/gvr_log.h"
-#include "vulkan/vulkanInfoWrapper.h"
-
+#include "objects/uniform_block.h"
 
 namespace gvr {
+    class VulkanUniformBlock;
 
-    class VulkanUniformBlock: public UniformBlock
+    class VulkanDescriptor
     {
     public:
-        GVR_Uniform m_bufferInfo;
-        VulkanUniformBlock();
-        VulkanUniformBlock(const std::string& descriptor);
-        void createBuffer(VkDevice &,VulkanCore*);
-        GVR_Uniform& getBuffer() { return m_bufferInfo; }
-        void updateBuffer(VkDevice &device,VulkanCore* vk);
+        VulkanDescriptor();
+        VulkanDescriptor(const std::string& ubo_descriptor);
+        VulkanDescriptor(const std::string& ubo_descriptor, VulkanUniformBlock* ubo);
+        ~VulkanDescriptor();
+        void createDescriptor(VkDevice &, VulkanCore*, int, VkShaderStageFlagBits);
+        void createBuffer(VkDevice &device, VulkanCore* vk);
+        void createLayoutBinding(int binding_index,int stageFlags, bool sampler=false);
+        void createDescriptorWriteInfo(int binding_index,int stageFlags, VkDescriptorSet& descriptor, bool sampler=false);
+        VulkanUniformBlock* getUBO();
+        VkDescriptorSetLayoutBinding& getLayoutBinding();
+        VkWriteDescriptorSet& getDescriptorSet();
+
+    private:
+        VulkanUniformBlock* ubo;
+        VkDescriptorSetLayoutBinding layout_binding;
+        VkWriteDescriptorSet writeDescriptorSet;
     };
 
-}
+    /**
+     * Manages a Uniform Block containing data parameters to pass to
+     * Vulkan vertex and fragment shaders.
+     *
+     * The UniformBlock may be updated by the application. If it has changed,
+     * GearVRf resends the entire data block to Vulkan.
+     */
+    class VulkanUniformBlock : public UniformBlock
+    {
+    public:
+        VulkanUniformBlock(const std::string& descriptor);
+        void createBuffer(VkDevice &, VulkanCore*);
+        void updateBuffer(VkDevice &device, VulkanCore* vk);
+        void createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk);
+        VulkanDescriptor* getDescriptor();
+        GVR_Uniform& getBuffer() { return m_bufferInfo; }
 
-#endif //FRAMEWORK_VULKAN_UNIFORM_BLOCK_H
+        GVR_Uniform m_bufferInfo;
+
+    protected:
+        VulkanDescriptor* vk_descriptor;
+    };
+
+    inline VulkanDescriptor::VulkanDescriptor() : ubo(nullptr) { }
+    inline VulkanDescriptor::VulkanDescriptor(const std::string& ubo_descriptor) : ubo(nullptr) { }
+    inline VulkanDescriptor::VulkanDescriptor(const std::string& ubo_descriptor, VulkanUniformBlock* ubo): ubo(ubo) { }
+    inline VulkanDescriptor::~VulkanDescriptor() { }
+
+    inline VulkanDescriptor* VulkanUniformBlock::getDescriptor() { return vk_descriptor; }
+}
+#endif

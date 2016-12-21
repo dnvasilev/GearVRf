@@ -31,7 +31,7 @@
 
 namespace gvr {
 class SceneObject;
-//struct GVR_Uniform;
+
 /**
  * Manages a Uniform Block containing data parameters to pass to
  * the vertex and fragment shaders.
@@ -41,16 +41,26 @@ class SceneObject;
  * named entries that refer to floating point or integer vectors.
  * Each entry can be independently accessed by name. All of the entries are
  * packed into a single data block.
+ *
+ * A uniform block is a renderer-dependent class which is implemented
+ * differently depending on which underlying renderer GearVRf is using.
+ *
+ * @see GLUniformBlock
+ * @see VulkanUniformBlock
  */
 class UniformBlock
 {
 protected:
+    /*
+     * Information kept for each uniform in the block.
+     */
     struct Uniform
     {
-        int Offset;
-        int Size;
-        std::string Type;
-        std::string Name;
+        short Offset;       // offset in bytes from the top of the uniform block
+        short Size;         // byte size of uniform entry
+        char IsSet;         // true if the entry has been set, else false
+        std::string Type;   // type of the entry "int", "float" or "mat"
+        std::string Name;   // name of the entry
     };
 
 public:
@@ -59,12 +69,20 @@ public:
 
     /**
      * Determine if a named uniform exists in this block.
+     * This function will return false for names which are
+     * in the descriptor but have not been given a value yet.
+     *
      * @param name name of uniform to look for
      * @returns true if uniform is in this block, false if not
      */
-    bool hasUniform(std::string name)
+    bool hasUniform(std::string name) const
     {
-        return UniformMap.find(name) != UniformMap.end();
+        auto it = UniformMap.find(name);
+        if (it == UniformMap.end())
+        {
+            return false;
+        }
+        return (it->second).IsSet;
     }
 
     /*
@@ -77,22 +95,15 @@ public:
     }
 
     /**
-     * Get the name of this uniform block.
-     * This name is used to identify the block in the shader.
-     * @return string with block name.
-     * @see setBlockName
-     */
-    const std::string& getBlockName() const
-    {
-        return BlockName;
-    }
-
-    /**
      * Get the uniform descriptor.
      * The uniform descriptor defines the name, type and size
      * of each uniform in the block. This descriptor
      * should match the layout used by the shader this
      * block is intended to work with.
+     * {@code
+     *  "float3 color, float opacity"
+     *  "float factor float power int2 offset"
+     * }
      * @return uniform descriptor string
      * @see setDescriptor
      */
@@ -102,45 +113,29 @@ public:
     }
 
     /**
-     * Set the name of this uniform block.
-     * This name is used to identify the block in the shader.
-     * @param name string with name of uniform block
-     * @see getBlockName
-     */
-    void setBlockName(const std::string& blockName)
-    {
-        if (!BlockName.empty())
-        {
-            LOGE("UniformBlock: ERROR: blocks cannot be renamed\n");
-            return;
-        }
-        BlockName = blockName;
-    }
-
-
-    /**
      * Set the uniform descriptor.
      * The uniform descriptor defines the name, type and size
      * of each uniform in the block. Each entry has a type,
      * size and name. Entries are separated by spaces but
      * other delimiters (commas, semicolons) are permitted.
-     * Sample strings:
+     * {@code Sample strings:
      *  "float4 diffuseColor, float specularExponent"
      *  "int2 offset mat4 texMatrix"
-     *
+     *  }
      * This descriptor should match the layout used by the shader this
-     * block is intended to work with.
+     * block is intended to work with. The unforms must have the
+     * same names, types and be in the same order as in the shader.
+     *
      * @param descriptor string with uniform descriptor.
      * @see getDescriptor
      */
-    void setDescriptor(const std::string& descriptor)
+    virtual void setDescriptor(const std::string& descriptor)
     {
         if (!Descriptor.empty())
         {
             LOGE("UniformBlock: ERROR: descriptor cannot be changed once it is set\n");
             return;
         }
-
         Descriptor = descriptor;
         parseDescriptor();
     }
@@ -154,7 +149,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getInt
      */
-    bool setInt(std::string name, int val);
+    virtual bool setInt(const std::string&, int val);
 
     /**
      * Set the value of a floating point uniform.
@@ -165,7 +160,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getFloat
      */
-    bool setFloat(std::string name, float val);
+    virtual bool setFloat(const std::string&, float val);
 
     /**
      * Set the value of an integer vector uniform.
@@ -177,7 +172,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getIntVec
      */
-    bool setIntVec(std::string name, const int* val, int n);
+    virtual bool setIntVec(const std::string& name, const int* val, int n);
 
     /**
      * Set the value of a floating point vector uniform.
@@ -189,7 +184,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getVec
      */
-    bool setVec(std::string name, const float* val, int n);
+    virtual bool setFloatVec(const std::string& name, const float* val, int n);
 
     /**
      * Set the value of a 2D vector uniform.
@@ -202,7 +197,7 @@ public:
      * @see getVec
      * @see getVec2
      */
-    bool setVec2(std::string name, const glm::vec2& val);
+    virtual bool setVec2(const std::string& name, const glm::vec2& val);
 
     /**
      * Set the value of a 3D vector uniform.
@@ -215,7 +210,7 @@ public:
      * @see getVec
      * @see getVec3
      */
-    bool setVec3(std::string name, const glm::vec3& val);
+    virtual bool setVec3(const std::string& name, const glm::vec3& val);
 
     /**
      * Set the value of a 4D vector uniform.
@@ -228,7 +223,7 @@ public:
      * @see setVec
      * @see getVec4
      */
-    bool setVec4(std::string name, const glm::vec4& val);
+    virtual bool setVec4(const std::string& name, const glm::vec4& val);
 
     /**
      * Set the value of a 4x4 matrix uniform.
@@ -240,7 +235,7 @@ public:
      * @see setVec
      * @see getVec
      */
-    bool setMat4(std::string name,  const float* val);
+    virtual bool setMat4(const std::string& name,  const glm::mat4& val);
 
     /**
      * Get the value of a 2D vector uniform.
@@ -252,7 +247,7 @@ public:
      * @see setVec
      * @see getVec
      */
-    const glm::vec2* getVec2(std::string name) const;
+    virtual const glm::vec2* getVec2(const std::string& name) const;
 
     /**
      * Get the value of a 3D vector uniform.
@@ -264,7 +259,7 @@ public:
      * @see setVec3
      * @see setVec
      */
-    const glm::vec3* getVec3(std::string name) const;
+    virtual const glm::vec3* getVec3(const std::string& name) const;
 
     /**
      * Get the value of a 4D vector uniform.
@@ -276,7 +271,7 @@ public:
      * @see setVec4
      * @see setVec
      */
-    const glm::vec4* getVec4(std::string name) const;
+    virtual const glm::vec4* getVec4(const std::string& name) const;
 
     /**
      * Get the value of a 4x4 matrix uniform.
@@ -288,31 +283,33 @@ public:
      * @see setMat4
      * @see setVec
      */
-    bool getMat4(std::string name, glm::mat4& val) const;
+    virtual bool getMat4(const std::string&, glm::mat4& val) const;
 
     /**
      * Get the value of a floating po2int uniform.
      * If the named uniform is not a "float" in the descriptor
      * this function returns 0 and logs an error.
      * @param name name of uniform to get.
-     * @returns floating value, 0 if not found.
+     * @param v where to store float value.
+     * @returns true if value found, else false.
      * @see setVec
      * @see getVec
      * @see setFloat
      */
-    float getFloat(std::string name) const;
+    virtual bool getFloat(const std::string& name, float& v) const;
 
     /**
      * Get the value of an integer uniform.
      * If the named uniform is not "inat" in the descriptor
      * this function returns 0 and logs an error.
      * @param name name of uniform to get.
-     * @returns integer value, 0 if not found.
+     * @param v where to store integer value.
+     * @returns true if value found, else false.
      * @see setVec
      * @see getVec
      * @see setInt
      */
-    int getInt(std::string name) const;
+    virtual bool getInt(const std::string& name, int& v) const;
 
     /**
      * Get the value of a float vector uniform.
@@ -324,7 +321,7 @@ public:
      * @return true if vector retrieved, false if not found or size is wrong.
      * @see setVec
      */
-    bool getVec(std::string name, float* val, int n) const;
+    virtual bool getFloatVec(const std::string& name, float* val, int n) const;
 
     /**
      * Get the value of an integer vector uniform.
@@ -336,7 +333,13 @@ public:
      * @return true if vector retrieved, false if not found or size is wrong.
      * @see setVec
      */
-    bool getIntVec(std::string name, int* val, int n) const;
+    virtual bool getIntVec(const std::string& name, int* val, int n) const;
+
+    /*
+     * Get the number of bytes occupied by the named uniform.
+     * @param name string name of uniform whose size you want
+     */
+    int getByteSize(const std::string& name) const;
 
     virtual ~UniformBlock()
     {
@@ -347,7 +350,18 @@ public:
         UniformData = NULL;
     }
 
+    /**
+     * Returns a string with the names and offsets
+     * of all the uniforms in the block.
+     * @return string describing the uniform block.
+     */
     std::string toString();
+
+    /**
+     * Get a pointer to the entire uniform data area.
+     * @returns -> uniform block data if it exists, else NULL
+     */
+    const void* getData() { return UniformData; }
 
 protected:
 
@@ -360,7 +374,7 @@ protected:
     /**
      * Calculate the byte size of the given type.
      */
-    int calcSize(std::string type) const;
+    short calcSize(const std::string& type) const;
 
     /**
      * Constructs the data block containing the values
@@ -383,8 +397,8 @@ protected:
      * @param bytesize byte size of uniform.
      * @return pointer to Uniform structure describing the uniform or NULL on failure
      */
-    Uniform* getUniform(std::string name, int& bytesize);
-    const Uniform* getUniform(std::string name, int& bytesize) const;
+    Uniform* getUniform(const std::string& name, int& bytesize);
+    const Uniform* getUniform(const std::string& name, int& bytesize) const;
 
 
     /**
@@ -393,16 +407,10 @@ protected:
      * @param bytesize number of bytes uniform occupies
      * @return pointer to start of uniform value or NULL if not found.
      */
-    char* getData(std::string name, int& bytesize);
-    const char* getData(std::string name, int& bytesize) const;
-
-    /*
-     * Marks the uniform block as dirty for all shaders.
-     */
-    virtual void setDirty() { }
+    char* getData(const std::string& name, int& bytesize);
+    const char* getData(const std::string& name, int& bytesize) const;
 
     bool        ownData;        // true if this uniform owns its data block
-    std::string BlockName;      // uniform block name in shadere
     std::string Descriptor;     // descriptor with name, type and size of uniforms
     void*       UniformData;    // -> data block with uniform values
     GLint       TotalSize;      // number of bytes in data block

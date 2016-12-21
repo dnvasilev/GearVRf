@@ -12,9 +12,6 @@
 package org.gearvrf.accessibility;
 
 import org.gearvrf.GVRContext;
-import org.gearvrf.GVRCustomPostEffectShaderId;
-import org.gearvrf.GVRPostEffectMap;
-import org.gearvrf.GVRPostEffectShaderManager;
 import org.gearvrf.GVRShaderTemplate;
 import org.gearvrf.R;
 import org.gearvrf.utility.TextFile;

@@ -17,10 +17,12 @@
  * Holds scene objects. Can be used by engines.
  ***************************************************************************/
 
+#include <gl/gl_render_data.h>
 #include "scene.h"
 
 #include "engine/exporter/exporter.h"
 #include "objects/scene_object.h"
+#include "gl/gl_material.h"
 
 namespace gvr {
 
@@ -41,7 +43,7 @@ Scene::Scene() :
         uniform_desc_ = " mat4 u_view_[2]; mat4 u_mvp_[2]; mat4 u_mv_[2]; mat4 u_mv_it_[2]; mat4 u_model; mat4 u_view_i; mat4 u_right; ";
     else
         uniform_desc_ = " mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; mat4 u_right;";
-
+    transform_ubo_ = Renderer::getInstance()->createUniformBlock(uniform_desc_);
 }
 
 Scene::~Scene() {

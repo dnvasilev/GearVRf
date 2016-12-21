@@ -5,7 +5,7 @@
 #include "external_renderer_shader.h"
 
 #include "glm/gtc/matrix_transform.hpp"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "objects/mesh.h"
 #include "objects/components/render_data.h"
 #include "objects/components/texture_capturer.h"
@@ -29,7 +29,7 @@ void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data
         return;
     }
 
-    Material* material = render_data->pass(0)->material();
+    ShaderData* material = render_data->pass(0)->material();
     if (material == NULL) {
         LOGE("No material");
         return;

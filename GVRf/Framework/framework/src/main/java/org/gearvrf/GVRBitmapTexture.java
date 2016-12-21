@@ -173,7 +173,7 @@ public class GVRBitmapTexture extends GVRTexture {
      * some GL hardware handshaking. Reusing the texture reduces this overhead
      * (primarily by delaying garbage collection). Do be aware that updating a
      * texture will affect any and all {@linkplain GVRMaterial materials}
-     * (and/or {@link GVRPostEffect post effects)} that use the texture!
+     * (and/or post effects that use the texture!
      * 
      * @param width
      *            Texture width, in pixels
@@ -248,7 +248,7 @@ public class GVRBitmapTexture extends GVRTexture {
      * some GL hardware handshaking. Reusing the texture reduces this overhead
      * (primarily by delaying garbage collection). Do be aware that updating a
      * texture will affect any and all {@linkplain GVRMaterial materials}
-     * (and/or {@link GVRPostEffect post effects)} that use the texture!
+     * (and/or post effects that use the texture!
      * 
      * @param bitmap
      *            A standard Android {@link Bitmap}
@@ -279,7 +279,7 @@ public class GVRBitmapTexture extends GVRTexture {
      * some GL hardware handshaking. Reusing the texture reduces this overhead
      * (primarily by delaying garbage collection). Do be aware that updating a
      * texture will affect any and all {@linkplain GVRMaterial materials}
-     * (and/or {@link GVRPostEffect post effects)} that use the texture!
+     * (and/or post effects that use the texture!
      * 
      * @param bitmap
      *            A standard Android {@link Bitmap} gvrContext Current GVR

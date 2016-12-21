@@ -24,16 +24,12 @@ import org.gearvrf.GVRBitmapTexture;
 import org.gearvrf.GVRCamera;
 import org.gearvrf.GVRCameraRig;
 import org.gearvrf.GVRContext;
-import org.gearvrf.GVRCustomPostEffectShaderId;
-import org.gearvrf.GVRPostEffect;
-import org.gearvrf.GVRPostEffectMap;
-import org.gearvrf.GVRPostEffectShaderId;
 import org.gearvrf.GVRPostEffectShaderManager;
 import org.gearvrf.GVRScene;
 import org.gearvrf.GVRScript;
 import org.gearvrf.GVRShader;
+import org.gearvrf.GVRShaderData;
 import org.gearvrf.GVRShaderId;
-import org.gearvrf.GVRShaderTemplate;
 import org.gearvrf.utility.TextFile;
 
 import android.graphics.Bitmap;
@@ -64,7 +60,8 @@ import org.gearvrf.R;
  * <li>Does not support Java escape characters like \n or \t.
  * </ul>
  */
-public class GVRConsole extends GVRPostEffect {
+public class GVRConsole extends GVRShaderData
+{
 
     public static class ConsoleShader extends GVRShader
     {

@@ -26,7 +26,7 @@
 #include "objects/helpers.h"
 namespace gvr {
 
-class Material;
+class ShaderData;
 
 class RenderPass : public HybridObject {
 public:
@@ -39,11 +39,11 @@ public:
             material_(0), shaderID_(0), cull_face_(DEFAULT_CULL_FACE)
     { }
 
-    Material* material() const {
+    ShaderData* material() const {
         return material_;
     }
 
-    void set_material(Material* material);
+    void set_material(ShaderData* material);
 
     int cull_face() const {
         return cull_face_;
@@ -69,7 +69,7 @@ public:
 
 private:
     static const int DEFAULT_CULL_FACE = CullBack;
-    Material* material_;
+    ShaderData* material_;
     int shaderID_;
     int cull_face_;
     std::unordered_set<std::shared_ptr<bool>> dirty_flags_;

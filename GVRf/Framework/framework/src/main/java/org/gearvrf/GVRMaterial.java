@@ -63,12 +63,14 @@ import android.graphics.Color;
  * any lighting or reflection effects.
  * 
  * <pre>
+ * {@code}
  * // for example
  * GVRMaterial material = new GVRMaterial(gvrContext);
  * material.setMainTexture(texture);
+ * }
  * </pre>
  */
-public class GVRMaterial extends  GVRPostEffect
+public class GVRMaterial extends  GVRShaderData
 {
 
     private static final String TAG = Log.tag(GVRMaterial.class);
@@ -145,14 +147,7 @@ public class GVRMaterial extends  GVRPostEffect
      *            {@linkplain GVRMaterialShaderManager custom} shader.
      */
     public GVRMaterial(GVRContext gvrContext, GVRShaderId shaderId) {
-        super(gvrContext, shaderId, NativeMaterial.ctor());
-        mShaderId = getGVRContext().getMaterialShaderManager().getShaderType(shaderId.ID);
-        GVRShader shader = mShaderId.getTemplate(gvrContext);
-        mUniformDescriptor = shader.getUniformDescriptor();
-        mTextureDescriptor = shader.getTextureDescriptor();
-        NativeMaterial.setUniformDescriptor(getNative(),mUniformDescriptor);
-        shader.setMaterialDefaults(this);
-        this.mShaderFeatureSet = 0;
+        super(gvrContext, shaderId);
     }
 
     /**
@@ -629,36 +624,6 @@ public class GVRMaterial extends  GVRPostEffect
     public void setLineWidth(float lineWidth) {
         setFloat("line_width", lineWidth);
     }
-    
-    /**
-     * Set the feature set for pre-built shader's. Pre-built shader could be
-     * written to support all the properties of a material system with
-     * preprocessor macro to On/Off features. feature set would determine which
-     * properties are available for current model. Currently only Assimp shader
-     * has support for feature set.
-     * 
-     * @param featureSet
-     *            Feature set for this material.
-     */
-    public void setShaderFeatureSet(int featureSet) {
-        this.mShaderFeatureSet = featureSet;
-        NativeMaterial.setShaderFeatureSet(getNative(), featureSet);
-    }
-    
-    /**
-     * Get the feature set associated with this material.
-     * 
-     * @return An integer representing the feature set.
-     * 
-     */
-    public int getShaderFeatureSet() {
-        return mShaderFeatureSet;
-    }
 
 }
 
-class NativeMaterial {
-    static native long ctor();
-    static native void setUniformDescriptor (long material, String mUniformDescriptor);
-    static native void setShaderFeatureSet(long material, int featureSet);
-}

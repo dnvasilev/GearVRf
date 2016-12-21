@@ -13,23 +13,13 @@
  * limitations under the License.
  */
 
-#include "vulkanCore.h"
-
-#include "util/gvr_log.h"
-#include <assert.h>
-#include <iostream>
-#include <vector>
-#include "objects/components/camera.h"
-#include "objects/components/render_data.h"
-#include "objects/scene.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_inverse.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include <math.h>
-#include "vulkan/vulkan_headers.h"
 #include <thread>
+#include <iostream>
 #include <shaderc/shaderc.hpp>
+#include "objects/scene.h"
 #include "gvr_time.h"
+#include "vulkan_render_data.h"
+#include "vulkan_material.h"
 
 #define UINT64_MAX 99999
 
@@ -80,11 +70,11 @@ namespace gvr {
     uint8_t *oculusTexData;
     uint8_t *oculus_data[SWAP_CHAIN_COUNT];
 
-    void Descriptor::createBuffer(VkDevice &device, VulkanCore *vk) {
+    void VulkanDescriptor::createBuffer(VkDevice &device, VulkanCore *vk) {
         ubo->createBuffer(device, vk);
     }
 
-    void Descriptor::createDescriptor(VkDevice &device, VulkanCore *vk, int index,
+    void VulkanDescriptor::createDescriptor(VkDevice &device, VulkanCore *vk, int index,
                                       VkShaderStageFlagBits shaderStageFlagBits) {
         createBuffer(device, vk);
         createLayoutBinding(index, shaderStageFlagBits);
@@ -93,7 +83,7 @@ namespace gvr {
 
     }
 
-    void Descriptor::createLayoutBinding(int binding_index, int stageFlags, bool sampler) {
+    void VulkanDescriptor::createLayoutBinding(int binding_index, int stageFlags, bool sampler) {
         VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                                                    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
 
@@ -102,7 +92,7 @@ namespace gvr {
         layout_binding = *layout;
     }
 
-    void Descriptor::createDescriptorWriteInfo(int binding_index, int stageFlags,
+    void VulkanDescriptor::createDescriptorWriteInfo(int binding_index, int stageFlags,
                                                VkDescriptorSet &descriptor, bool sampler) {
 
         VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
@@ -115,15 +105,15 @@ namespace gvr {
 
     }
 
-    VulkanUniformBlock *Descriptor::getUBO() {
+    VulkanUniformBlock* VulkanDescriptor::getUBO() {
         return ubo;
     }
 
-    VkDescriptorSetLayoutBinding &Descriptor::getLayoutBinding() {
+    VkDescriptorSetLayoutBinding& VulkanDescriptor::getLayoutBinding() {
         return layout_binding;
     }
 
-    VkWriteDescriptorSet &Descriptor::getDescriptorSet() {
+    VkWriteDescriptorSet& VulkanDescriptor::getDescriptorSet() {
         return writeDescriptorSet;
     }
 
@@ -616,12 +606,12 @@ namespace gvr {
     }
 
 
-    void VulkanCore::InitLayoutRenderData(RenderData *rdata) {
+    void VulkanCore::InitLayoutRenderData(VulkanRenderData *rdata) {
         VkResult ret = VK_SUCCESS;
-        Descriptor &transform = rdata->getVkData().getDescriptor();
+        VulkanDescriptor &transform = rdata->getVkData().getDescriptor();
         VkDescriptorSetLayoutBinding &transform_uniformBinding = transform.getLayoutBinding();
-
-        VkDescriptorSetLayoutBinding uniformAndSamplerBinding[2] = {};
+        VulkanMaterial* vkMtl = reinterpret_cast<VulkanMaterial*>(rdata->material(0));
+        VkDescriptorSetLayoutBinding uniformAndSamplerBinding[3] = {};
         // Our MVP matrix
         uniformAndSamplerBinding[0].binding = 0;
         uniformAndSamplerBinding[0].descriptorCount = 1;
@@ -629,7 +619,7 @@ namespace gvr {
         uniformAndSamplerBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uniformAndSamplerBinding[0].pImmutableSamplers = nullptr;
         uniformAndSamplerBinding[0] = transform_uniformBinding;
-        Descriptor *material_descriptor = rdata->material(0)->getDescriptor();
+        VulkanDescriptor *material_descriptor = vkMtl->getVulkanUniforms().getDescriptor();
         VkDescriptorSetLayoutBinding &material_uniformBinding = material_descriptor->getLayoutBinding();
 
         uniformAndSamplerBinding[1] = material_uniformBinding;
@@ -952,7 +942,7 @@ namespace gvr {
     }
 
 
-    void VulkanCore::InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, RenderData *rdata,
+    void VulkanCore::InitPipelineForRenderData(GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata,
                                                std::vector<uint32_t> &vs,
                                                std::vector<uint32_t> &fs) {
         VkResult err;
@@ -1196,26 +1186,26 @@ namespace gvr {
         vkCmdBeginRenderPass(cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
         for (int j = 0; j < allDescriptors.size(); j++) {
-
+            VulkanRenderData* rdata = reinterpret_cast<VulkanRenderData*>(render_data_vector[j]);
             // Set our pipeline. This holds all major state
             // the pipeline defines, for example, that the vertex buffer is a triangle list.
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              render_data_vector[j]->getVkData().m_pipeline);
+                              rdata->getVkData().m_pipeline);
 
             //bind out descriptor set, which handles our uniforms and samplers
             vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    render_data_vector[j]->getVkData().m_pipelineLayout, 0, 1,
+                                    rdata->getVkData().m_pipelineLayout, 0, 1,
                                     &allDescriptors[j], 0, NULL);
 
             // Bind our vertex buffer, with a 0 offset.
             VkDeviceSize offsets[1] = {0};
-            GVR_VK_Vertices &vert = render_data_vector[j]->mesh()->getVkVertices();
+            GVR_VK_Vertices &vert = rdata->mesh()->getVkVertices();
             vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
 
             // Bind triangle index buffer
-            vkCmdBindIndexBuffer(cmdBuffer, (render_data_vector[j]->mesh()->getVkIndices()).buffer,
+            vkCmdBindIndexBuffer(cmdBuffer, (rdata->mesh()->getVkIndices()).buffer,
                                  0, VK_INDEX_TYPE_UINT16);
-            vkCmdDrawIndexed(cmdBuffer, (render_data_vector[j]->mesh()->getVkIndices()).count, 1, 0,
+            vkCmdDrawIndexed(cmdBuffer, (rdata->mesh()->getVkIndices()).count, 1, 0,
                              0, 1);
         }
 
@@ -1339,74 +1329,18 @@ namespace gvr {
         GVR_VK_CHECK(!err);
     }
 
-    void updateUniform(const std::string &key, uniformDefination uniformInfo,
-                       VulkanUniformBlock *material_ubo, Material *material) {
-        const float *fv;
-        const int *iv;
-        glm::vec4 data(1.0, 1.0, 1.0, 1.0);
-        std::string type = uniformInfo.type;
-        int size = uniformInfo.size;
-        switch (tolower(type[0])) {
-            case 'f':
-            case 'm':
-                fv = material->getFloatVec(key, size);
-                if (fv != NULL)
-                {
-                    material_ubo->setVec(key, fv, size);
-                }
-                break;
-
-
-            case 'i':
-                iv = material->getIntVec(key, size);
-                if (iv != NULL)
-                {
-                    material_ubo->setIntVec(key, iv, size);
-                }
-                break;
-
-        }
-    }
-
     void VulkanCore::updateMaterialUniform(Scene *scene, Camera *camera, RenderData *render_data,
                                            std::unordered_map<std::string, uniformDefination> &nameTypeMap) {
-        Material *mat = render_data->material(0);
-        Descriptor *desc = mat->getDescriptor();
-        VulkanUniformBlock *material_ubo = desc->getUBO();
-
-        for (auto &it: nameTypeMap) {
-            updateUniform(it.first, it.second, material_ubo, mat);
-        }
-
-        material_ubo->updateBuffer(m_device, this);
-
+        VulkanMaterial *mat = (VulkanMaterial*) render_data->material(0);
+        mat->getVulkanUniforms().updateBuffer(m_device, this);
     }
 
-    void VulkanCore::UpdateUniforms(Scene *scene, Camera *camera, RenderData *render_data) {
-
-
-        VkResult ret = VK_SUCCESS;
-        uint8_t *pData;
-        Transform *const t = render_data->owner_object()->transform();
-
-        if (t == nullptr)
-            return;
-
-        glm::mat4 model = t->getModelMatrix();
-        glm::mat4 view = camera->getViewMatrix();
-        glm::mat4 proj = camera->getProjectionMatrix();
-        glm::mat4 modelViewProjection = proj * view * model;
-
-        Descriptor &desc = render_data->getVkData().getDescriptor();
-        VulkanUniformBlock *transform_ubo = desc.getUBO();
-        transform_ubo->setMat4("u_mvp", glm::value_ptr(modelViewProjection));
-        transform_ubo->updateBuffer(m_device, this);
-
+    void VulkanCore::UpdateUniforms(VulkanUniformBlock* block) {
+        block->updateBuffer(m_device, this);
     }
-
 
     void VulkanCore::InitDescriptorSetForRenderData(
-            RenderData *rdata) { //VkDescriptorSet &m_descriptorSet) {
+            VulkanRenderData *rdata) { //VkDescriptorSet &m_descriptorSet) {
         //Create a pool with the amount of descriptors we require
         VkDescriptorPoolSize poolSize[2] = {};
         poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1442,10 +1376,11 @@ namespace gvr {
         err = vkAllocateDescriptorSets(m_device, &descriptorSetAllocateInfo, &descriptorSet);
         GVR_VK_CHECK(!err);
 
-        Descriptor &transform_desc = rdata->getVkData().getDescriptor();
+        VulkanDescriptor &transform_desc = rdata->getVkData().getDescriptor();
         VkWriteDescriptorSet &write = transform_desc.getDescriptorSet();
+        VulkanMaterial* vkMtl = reinterpret_cast<VulkanMaterial*>(rdata->material(0));
         write.dstSet = descriptorSet;
-        Descriptor *mat_desc = rdata->material(0)->getDescriptor();
+        VulkanDescriptor* mat_desc = vkMtl->getVulkanUniforms().getDescriptor();
         VkWriteDescriptorSet &write1 = mat_desc->getDescriptorSet();
         write1.dstSet = descriptorSet;
         VkWriteDescriptorSet writes[3] = {};

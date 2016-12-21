@@ -35,7 +35,7 @@
 #include "objects/hybrid_object.h"
 #include "objects/scene_object.h"
 #include "assimp/Importer.hpp"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "assimp/material.h"
 #include "objects/scene.h"
 #include "assimp/scene.h"

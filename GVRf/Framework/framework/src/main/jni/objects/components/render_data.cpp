@@ -17,6 +17,7 @@
 #include "objects/hybrid_object.h"
 #include "objects/scene.h"
 #include "objects/components/render_data.h"
+#include "gl/gl_material.h"
 
 namespace gvr {
 
@@ -51,7 +52,7 @@ bool RenderData::cull_face(int pass) const {
     }
 }
 
-Material* RenderData::material(int pass) const {
+ShaderData* RenderData::material(int pass) const {
     if (pass >= 0 && pass < render_pass_list_.size()) {
         return render_pass_list_[pass]->material();
     }
@@ -191,21 +192,12 @@ std::string RenderData::getHashCode()
     return hash_code;
 }
 
-void RenderData::bindBonesUbo(int program_id)
+void RenderData::updateBones(const float* boneData, int numFloats)
 {
-    if (bones_ubo_ == nullptr)
-        bones_ubo_ = bindUbo(program_id, BONES_UBO_INDEX, "Bones_ubo", "mat4 u_bone_matrix[60];");
-    else
-        bones_ubo_->bindBuffer(program_id);
-}
-
-GLUniformBlock* RenderData::bindUbo(int program_id, int index, const char* name, const char* desc)
-{
-    LOGV("SHADER: bind buffer %s at index %d to program %d", name, index, program_id);
-    GLUniformBlock* gl_ubo_ = new GLUniformBlock(desc);
-    gl_ubo_->setGLBindingPoint(index);
-    gl_ubo_->setBlockName(name);
-    gl_ubo_->bindBuffer(program_id);
-    return gl_ubo_;
+    if (bones_ubo_ == NULL)
+    {
+        bones_ubo_ = Renderer::getInstance()->createUniformBlock("mat4 u_bone_matrix[60];");
+    }
+    bones_ubo_->setFloatVec("u_bone_matrix", boneData, numFloats);
 }
 }

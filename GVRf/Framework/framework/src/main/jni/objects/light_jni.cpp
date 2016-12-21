@@ -226,7 +226,7 @@ JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeLight_setCastShadow(JNIEnv * env, jobject obj, jlong jlight, jlong jmaterial)
 {
     Light* light = reinterpret_cast<Light*>(jlight);
-    Material* material = reinterpret_cast<Material*>(jmaterial);
+    ShaderData* material = reinterpret_cast<ShaderData*>(jmaterial);
     light->castShadow(material);
 }
 

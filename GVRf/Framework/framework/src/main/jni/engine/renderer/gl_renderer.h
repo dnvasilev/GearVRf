@@ -94,13 +94,18 @@ public:
 
      void set_face_culling(int cull_face);
 
+    virtual ShaderData* createMaterial(const std::string& desc);
+    virtual RenderData* createRenderData();
+    virtual UniformBlock* createUniformBlock(const std::string& desc);
+    void updateTransforms(RenderState& rstate);
+
 private:
     // this is specific to GL
-    bool checkTextureReady(Material* material);
+    bool checkTextureReady(ShaderData* material);
 
     // Pure Virtual
     virtual void renderMesh(RenderState& rstate, RenderData* render_data);
-    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *material, int curr_pass) ;
+    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, int curr_pass) ;
     void occlusion_cull(RenderState& rstate,
                     std::vector<SceneObject*>& scene_objects);
 

@@ -18,11 +18,7 @@
  ***************************************************************************/
 
 #include "render_data.h"
-
-#include "util/gvr_jni.h"
-
-#include "objects/mesh.h"
-#include "objects/material.h"
+#include "engine/renderer/renderer.h"
 #include "objects/components/texture_capturer.h"
 
 namespace gvr {
@@ -161,7 +157,8 @@ Java_org_gearvrf_NativeRenderData_setTextureCapturer(JNIEnv * env, jobject obj,
 JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeRenderData_ctor(JNIEnv * env, jobject obj)
 {
-    return reinterpret_cast<jlong>(new RenderData());
+    Renderer* renderer = Renderer::getInstance();
+    return reinterpret_cast<jlong>(renderer->createRenderData());
 }
 
 JNIEXPORT jlong JNICALL

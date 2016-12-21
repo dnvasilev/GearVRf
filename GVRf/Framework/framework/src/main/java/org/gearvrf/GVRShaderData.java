@@ -15,195 +15,453 @@
 
 package org.gearvrf;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import org.gearvrf.asynchronous.GVRAsynchronousResourceLoader;
+import org.gearvrf.utility.Exceptions;
+import org.gearvrf.utility.Log;
+import org.gearvrf.utility.Threads;
+
+import static org.gearvrf.utility.Assert.checkFloatNotNaNOrInfinity;
+import static org.gearvrf.utility.Assert.checkStringNotNullOrEmpty;
+
 /**
- * Provides access to the uniform data used with a shader.
+ * GVRShaderData encapculates data to be sent to a vertex or fragment shader.
+ * It contains a list of key / value pairs which can specify arbitrary length
+ * float or int vectors. It also has key / value pairs for the texture
+ * samplers to be used with the shader.
  *
- * This interface defines how the Java API accesses the
- * shader uniforms which are kept in the native layer.
- * @see GVRMaterial GVRPostEffect
+ * GVRShaderData can be used for a "post-effect" to update the
+ * framebuffer after main rendering but before lens distortion.
+ * A post effect shader can, for example, apply the same shader to each
+ * eye, using different parameters for each eye.
+ * @see GVRMaterial
  */
-public interface GVRShaderData {
+public class GVRShaderData extends GVRHybridObject
+{
+    private static final String TAG = Log.tag(GVRShaderData.class);
 
-    public GVRShaderId getShaderType();
+    protected GVRShaderId mShaderId;
+    protected String mUniformDescriptor = null;
+    protected String mTextureDescriptor = null;
 
-    /**
-     * Return the names of all the textures used by this material.
-     * @return list of texture names
-     */
-    public Set<String> getTextureNames();
+    private static class TextureInfo
+    {
+        public GVRTexture Texture;
+        public String TexCoordAttr;
+        public String ShaderVar;
+    }
 
-    /**
-     * Get the {@link GVRTexture texture} currently bound to the shader uniform
-     * {@code key}.
-     * 
-     * @param key
-     *            A texture name
-     * @return The current {@link GVRTexture texture}.
-     */
-    public GVRTexture getTexture(String key);
+    ;
+    final private Map<String, TextureInfo> textures = new HashMap();
 
     /**
-     * Bind a {@link GVRTexture texture} to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform to bind the texture to.
-     * @param texture
-     *            The {@link GVRTexture texture} to bind.
+     * Initialize a post effect, with a shader id.
+     *
+     * @param gvrContext Current {@link GVRContext}
+     * @param shaderId   Shader ID from {@link org.gearvrf.GVRMaterial.GVRShaderType} or
+     *                   {@link GVRContext#getMaterialShaderManager()}.
      */
-    public void setTexture(String key, GVRTexture texture);
+    public GVRShaderData(GVRContext gvrContext, GVRShaderId shaderId)
+    {
+        super(gvrContext, NativeShaderData.ctor(shaderId.getUniformDescriptor(gvrContext)));
+        GVRShader shader = shaderId.getTemplate(gvrContext);
+        GVRPostEffectShaderManager shaderManager = gvrContext.getPostEffectShaderManager();
+        mShaderId = shaderManager.getShaderType(shaderId.ID);
+        mUniformDescriptor = shader.getUniformDescriptor();
+        mTextureDescriptor = shader.getTextureDescriptor();
+        shader.setMaterialDefaults(this);
+        NativeShaderData.setNativeShader(getNative(),
+                                         mShaderId.getNativeShader(gvrContext, shaderManager));
+    }
+
+    protected GVRShaderData(GVRContext gvrContext, GVRShaderId shaderId, long constructor)
+    {
+        super(gvrContext, constructor);
+        GVRShader shader = shaderId.getTemplate(gvrContext);
+        GVRPostEffectShaderManager shaderManager = gvrContext.getPostEffectShaderManager();
+        mShaderId = shaderManager.getShaderType(shaderId.ID);
+        mUniformDescriptor = shader.getUniformDescriptor();
+        mTextureDescriptor = shader.getTextureDescriptor();
+        shader.setMaterialDefaults(this);
+        NativeShaderData.setNativeShader(getNative(),
+                                         mShaderId.getNativeShader(gvrContext, shaderManager));
+    }
+
+    public GVRShaderId getShaderType()
+    {
+        return mShaderId;
+    }
 
     /**
-     * Asynchronously bind a {@link GVRTexture texture} to the shader uniform
-     * {@code key}.
-     * 
-     * Uses a background thread from the thread pool to wait for the
-     * {@code Future.get()} method; unless you are loading dozens of textures
-     * asynchronously, the extra overhead should be modest compared to the cost
-     * of loading a texture.
-     * 
-     * @param key
-     *            Name of the shader uniform to bind the texture to.
-     * @param texture
-     *            The {@link GVRTexture texture} to bind.
-     * 
-     * @since 1.6.7
+     * Determine whether a named uniform is defined
+     * by this material.
+     *
+     * @param name of uniform in shader and material
+     * @return true if uniform defined, else false
      */
-    public void setTexture(String key, Future<GVRTexture> texture);
-
-    /**
-     * Determine whether a named uniform has been set.
-     * This function does not handle textures.
-     * @param name of uniform
-     * @return true if uniform has been set, else false
-     * @see getTexture
-     */
-    public boolean hasUniform(String name);
+    public boolean hasUniform(String name)
+    {
+        return NativeShaderData.hasUniform(getNative(), name);
+    }
 
     /**
      * Determine whether a named texture has been set.
      * This function will return true if the texture
      * has been set even if it is NULL.
+     *
      * @param name of texture
      * @return true if texture has been set, else false
-     * @see getTexture hasUniform
+     * @see #getTexture
+     * @see #hasUniform
      */
-    public boolean hasTexture(String name);
+    public boolean hasTexture(String name)
+    {
+        return textures.containsKey(name);
+    }
+
+    /**
+     * Return the names of all the textures used by this post effect.
+     *
+     * @return list of texture names
+     */
+    public Set<String> getTextureNames()
+    {
+        Set<String> texNames = textures.keySet();
+        return texNames;
+    }
+
+    /**
+     * Get the {@link GVRTexture texture} currently bound to the shader uniform {@code key}.
+     *
+     * @param key   name of texture to find
+     * @return The current {@link GVRTexture texture}.
+     */
+    public GVRTexture getTexture(String key)
+    {
+        TextureInfo tinfo = textures.get(key);
+        if (tinfo != null)
+        {
+            return tinfo.Texture;
+        }
+        return null;
+    }
+
+    /**
+     * Bind a {@link GVRTexture texture} to the shader uniform {@code key}.
+     *
+     * @param key       Name of the shader uniform to bind the texture to.
+     * @param texture   The {@link GVRTexture texture} to bind.
+     */
+    public void setTexture(String key, GVRTexture texture)
+    {
+        checkStringNotNullOrEmpty("key", key);
+        TextureInfo tinfo = textures.get(key);
+        if (tinfo == null)
+        {
+            tinfo = new TextureInfo();
+            tinfo.Texture = texture;
+            textures.put(key, tinfo);
+        }
+        else
+        {
+            tinfo.Texture = texture;
+        }
+        if (texture != null)
+            NativeShaderData.setTexture(getNative(), key, texture.getNative());
+    }
+
+    public void setTexture(final String key, final Future<GVRTexture> texture)
+    {
+        if (texture.isDone())
+        {
+            try
+            {
+                setTexture(key, texture.get());
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+        else
+        {
+            if (texture instanceof GVRAsynchronousResourceLoader.FutureResource<?>)
+            {
+                setTexture(key, (GVRTexture) null);
+                GVRAndroidResource.TextureCallback callback =
+                        new GVRAndroidResource.TextureCallback()
+                        {
+                            @Override
+                            public void loaded(GVRTexture texture,
+                                               GVRAndroidResource ignored)
+                            {
+                                setTexture(key, texture);
+                                Log.d(TAG, "Finish loading and setting texture %s",
+                                      texture);
+                            }
+
+                            @Override
+                            public void failed(Throwable t,
+                                               GVRAndroidResource androidResource)
+                            {
+                                Log.e(TAG, "Error loading texture %s; exception: %s",
+                                      texture, t.getMessage());
+                            }
+
+                            @Override
+                            public boolean stillWanted(GVRAndroidResource androidResource)
+                            {
+                                return true;
+                            }
+                        };
+
+                getGVRContext().getAssetLoader().loadTexture(
+                        ((GVRAsynchronousResourceLoader.FutureResource<GVRTexture>) texture).getResource(),
+                        callback);
+            }
+            else
+            {
+                Threads.spawn(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            setTexture(key, texture.get());
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        }
+    }
 
     /**
      * Get the {@code float} bound to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform
-     * @return The bound {@code float} value.
+     *
+     * @param key Name of the shader uniform
+     * @return The bound {@code float} value, returns 0.0 if key does not exist.
      */
-    public float getFloat(String key);
+    public float getFloat(String key)
+    {
+        return NativeShaderData.getFloat(getNative(), key);
+    }
 
     /**
      * Bind a {@code float} to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform
-     * @param value
-     *            New data
-     */
-    public void setFloat(String key, float value);
-
-    /**
-     * Get the {@code float[2]} vector bound to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform
-     * @return The {@code vec2} as a Java {@code float[2]}
-     */
-    public float[] getVec2(String key);
-
-    /**
-     * Bind a {@code vec2} to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform
-     * @param x
-     *            First component of the vector.
-     * @param y
-     *            Second component of the vector.
-     */
-    public void setVec2(String key, float x, float y);
-
-    /**
-     * Get the {@code float[3]} vector bound to the shader uniform {@code key}.
-     * 
-     * @param key
-     *            Name of the shader uniform
-     * @return The {@code vec3} as a Java {@code float[3]}
-     */
-    public float[] getVec3(String key);
-
-    /**
-     * Bind a {@code vec3} to the shader uniform {@code key}.
+     * Throws an exception of the key is not found.
      *
-     * @param key
-     *            Name of the shader uniform to bind the data to.
-     * @param x
-     *            First component of the vector.
-     * @param y
-     *            Second component of the vector.
-     * @param z
-     *            Third component of the vector.
+     * @param key       Name of the shader uniform
+     * @param value     New data
      */
-    public void setVec3(String key, float x, float y, float z);
+    public void setFloat(String key, float value)
+    {
+        checkKeyIsUniform(key);
+        checkFloatNotNaNOrInfinity("value", value);
+        NativeShaderData.setFloat(getNative(), key, value);
+    }
 
     /**
-     * Get the {@code float[4]} vector bound to the shader uniform {@code key}.
+     * Get the {@code int} bound to the shader uniform {@code key}.
      *
-     * @param key
-     *            Name of the shader uniform
-     * @return The {@code vec4} as a Java {@code float[3]}
+     * @param key   Name of the shader uniform
+     * @return The bound {@code int} value, 0 if key does not exist.
      */
-    public float[] getVec4(String key);
+    public int getInt(String key)
+    {
+        return NativeShaderData.getInt(getNative(), key);
+    }
 
     /**
-     * Bind a {@code vec4} to the shader uniform {@code key}.
-     *
-     * @param key
-     *            Name of the shader uniform to bind the data to.
-     * @param x
-     *            First component of the vector.
-     * @param y
-     *            Second component of the vector.
-     * @param z
-     *            Third component of the vector.
-     * @param w
-     *            Fourth component of the vector.
+     * Bind an {@code int} to the shader uniform {@code key}.
+     * Throws an exception of the key does not exist.
+     * @param key       Name of the shader uniform
+     * @param value     New data
      */
-    public void setVec4(String key, float x, float y, float z, float w);
+    public void setInt(String key, int value)
+    {
+        checkKeyIsUniform(key);
+        NativeShaderData.setInt(getNative(), key, value);
+    }
 
-    /**
-     * Bind a {@code mat4} to the shader uniform {@code key}.
-     *
-     * @param key
-     *            Name of the shader uniform to bind the data to.
-     */
+    public float[] getFloatVec(String key)
+    {
+        float[] vec = NativeShaderData.getFloatVec(getNative(), key);
+        if (vec == null)
+            throw new IllegalArgumentException("key " + key + " not found in material");
+        return vec;
+    }
+
+    public int[] getIntVec(String key)
+    {
+        int[] vec = NativeShaderData.getIntVec(getNative(), key);
+        if (vec == null)
+            throw new IllegalArgumentException("key " + key + " not found in material");
+        return vec;
+    }
+
+    public float[] getVec2(String key)
+    {
+        return getFloatVec(key);
+    }
+
+    public void setVec2(String key, float x, float y)
+    {
+        checkKeyIsUniform(key);
+        NativeShaderData.setVec2(getNative(), key, x, y);
+    }
+
+    public float[] getVec3(String key)
+    {
+        return getFloatVec(key);
+    }
+
+    public void setVec3(String key, float x, float y, float z)
+    {
+        checkKeyIsUniform(key);
+        NativeShaderData.setVec3(getNative(), key, x, y, z);
+    }
+
+    public float[] getVec4(String key)
+    {
+        return getFloatVec(key);
+    }
+
+    public void setVec4(String key, float x, float y, float z, float w)
+    {
+        checkKeyIsUniform(key);
+        NativeShaderData.setVec4(getNative(), key, x, y, z, w);
+    }
+
     public void setMat4(String key, float x1, float y1, float z1, float w1,
-            float x2, float y2, float z2, float w2, float x3, float y3,
-            float z3, float w3, float x4, float y4, float z4, float w4);
+                        float x2, float y2, float z2, float w2, float x3, float y3,
+                        float z3, float w3, float x4, float y4, float z4, float w4)
+    {
+        checkKeyIsUniform(key);
+        NativeShaderData.setMat4(getNative(), key, x1, y1, z1, w1, x2, y2,
+                                 z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
+    }
+
+    private void checkKeyIsTexture(String key)
+    {
+        checkStringNotNullOrEmpty("key", key);
+        if (!mTextureDescriptor.contains(key))
+        {
+            throw Exceptions.IllegalArgument("key " + key + " not in material");
+        }
+    }
+
+    private void checkKeyIsUniform(String key)
+    {
+        checkStringNotNullOrEmpty("key", key);
+        if (!mUniformDescriptor.contains(key))
+        {
+            throw Exceptions.IllegalArgument("key " + key + " not in material");
+        }
+    }
+
+    /**
+     * Designate the vertex attribute and shader variable for the texture coordinates
+     * associated with the named texture.
+     *
+     * @param texName       name of texture
+     * @param texCoordAttr  name of vertex attribute with texture coordinates.
+     * @param shaderVarName name of shader variable to get texture coordinates.
+     */
+    public void setTexCoord(String texName, String texCoordAttr, String shaderVarName)
+    {
+        GVRShaderData.TextureInfo tinfo = textures.get(texName);
+        if (tinfo == null)
+        {
+            tinfo = new GVRShaderData.TextureInfo();
+            textures.put(texName, tinfo);
+        }
+        tinfo.TexCoordAttr = texCoordAttr;
+        tinfo.ShaderVar = shaderVarName;
+    }
 
     /**
      * Gets the name of the vertex attribute containing the texture
      * coordinates for the named texture.
+     *
      * @param texName name of texture
      * @return name of texture coordinate vertex attribute
      */
-     public String getTexCoordAttr(String texName);
+    public String getTexCoordAttr(String texName)
+    {
+        GVRShaderData.TextureInfo tinfo = textures.get(texName);
+        if (tinfo != null)
+        {
+            return tinfo.TexCoordAttr;
+        }
+        return null;
+    }
+
 
     /**
      * Gets the name of the shader variable to get the texture
      * coordinates for the named texture.
+     *
      * @param texName name of texture
      * @return name of shader variable
      */
-    public String getTexCoordShaderVar(String texName);
+    public String getTexCoordShaderVar(String texName)
+    {
+        GVRShaderData.TextureInfo tinfo = textures.get(texName);
+        if (tinfo != null)
+        {
+            return tinfo.ShaderVar;
+        }
+        return null;
+    }
+}
 
+class NativeShaderData {
+    static native long ctor(String descriptor);
+
+    static native int getNativeShader(long shaderData);
+
+    static native void setNativeShader(long shaderData, int nativeShader);
+
+    static native boolean hasUniform(long shaderData, String key);
+
+    static native boolean hasTexture(long shaderData, String key);
+
+    static native void setTexture(long shaderData, String key, long texture);
+
+    static native float getFloat(long shaderData, String key);
+
+    static native void setFloat(long shaderData, String key, float value);
+
+    static native int getInt(long shaderData, String key);
+
+    static native void setInt(long shaderData, String key, int value);
+
+    static native float[] getFloatVec(long shaderData, String key);
+
+    static native int[] getIntVec(long shaderData, String key);
+
+    static native void setVec2(long shaderData, String key, float x, float y);
+
+    static native void setVec3(long shaderData, String key, float x,
+            float y, float z);
+
+    static native void setVec4(long shaderData, String key, float x,
+            float y, float z, float w);
+
+    static native float[] getMat4(long shaderData, String key);
+
+    static native void setMat4(long shaderData, String key, float x1,
+            float y1, float z1, float w1, float x2, float y2, float z2,
+            float w2, float x3, float y3, float z3, float w3, float x4,
+            float y4, float z4, float w4);
 }

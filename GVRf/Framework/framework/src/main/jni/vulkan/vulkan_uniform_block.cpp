@@ -12,23 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "vulkan/vulkan_uniform_block.h"
+#include "vulkan_headers.h"
 #include "util/gvr_gl.h"
-#include "vulkan/vulkanCore.h"
-#include "../objects/uniform_block.h"
 
 namespace gvr {
 
     VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor) : UniformBlock(descriptor)
     {
-
-        LOGE("pararameter");
     }
 
-    VulkanUniformBlock::VulkanUniformBlock() : UniformBlock()
-    {
-        LOGE("default");
-    }
     void VulkanUniformBlock::updateBuffer(VkDevice &device,VulkanCore* vk){
 
         //  if(!buffer_init_)
@@ -80,6 +72,10 @@ namespace gvr {
         m_bufferInfo.bufferInfo.buffer = m_bufferInfo.buf;
         m_bufferInfo.bufferInfo.offset = 0;
         m_bufferInfo.bufferInfo.range = TotalSize;
+    }
 
+    void VulkanUniformBlock::createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk)
+    {
+        vk_descriptor->createDescriptor(device,vk,MATERIAL_UBO_INDEX,VK_SHADER_STAGE_FRAGMENT_BIT);
     }
 }

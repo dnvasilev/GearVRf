@@ -35,10 +35,10 @@
 
 #include "objects/components/bone.h"
 #include "objects/hybrid_object.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "objects/bounding_volume.h"
 #include "objects/vertex_bone_data.h"
-#include "vulkan/vulkanCore.h"
+#include "vulkan/vulkan_headers.h"
 #include "engine/memory/gl_delete.h"
 
 namespace gvr {
