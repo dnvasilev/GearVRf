@@ -46,7 +46,7 @@ Java_org_gearvrf_NativeTexture_updateTextureParameters(JNIEnv * env, jobject obj
     Texture* texture = reinterpret_cast<Texture*>(jtexture);
 
     jint* texture_parameters = env->GetIntArrayElements(jtexture_parameters, 0);
-    texture->updateTextureParameters(texture_parameters);
+    texture->updateTextureParameters(texture_parameters, env->GetArrayLength(jtexture_parameters));
     env->ReleaseIntArrayElements(jtexture_parameters, texture_parameters, 0);
 
 }

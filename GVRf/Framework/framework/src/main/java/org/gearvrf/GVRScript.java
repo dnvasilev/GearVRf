@@ -252,7 +252,10 @@ public abstract class GVRScript implements IScriptEvents, IScriptable, IEventRec
         Bitmap bitmap = BitmapFactory.decodeResource( //
                 gvrContext.getContext().getResources(), //
                 R.drawable.__default_splash_screen__);
-        return new GVRBitmapTexture(gvrContext, bitmap);
+        GVRTexture bmapTex = new GVRTexture(gvrContext);
+        GVRBitmapTexture bmapImage = new GVRBitmapTexture(gvrContext, bitmap);
+        bmapTex.setImage(bmapImage);
+        return bmapTex;
     }
 
     /**

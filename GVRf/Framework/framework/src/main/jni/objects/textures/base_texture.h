@@ -34,7 +34,11 @@ class BaseTexture: public Texture {
 public:
 
     explicit BaseTexture(int* texture_parameters) :
-        Texture(new GLTexture(TARGET, texture_parameters)) {
+        Texture(new GLTexture(0, texture_parameters)) {
+    }
+
+    explicit BaseTexture() :
+            Texture(new GLTexture(GL_TEXTURE_2D)) {
     }
 
     void setJavaOwner(JNIEnv& env, jobject javaObject) {
@@ -54,18 +58,6 @@ public:
         if (nullptr != textureObjectWeak_) {
             env->DeleteWeakGlobalRef(textureObjectWeak_);
         }
-    }
-
-    bool update(int width, int height, void* data) {
-        glBindTexture(GL_TEXTURE_2D, gl_texture_->id());
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
-                GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap (GL_TEXTURE_2D);
-        return (glGetError() == 0) ? 1 : 0;
-    }
-
-    GLenum getTarget() const {
-        return TARGET;
     }
 
     virtual void runPendingGL() {
@@ -92,8 +84,6 @@ private:
     BaseTexture& operator=(BaseTexture&& base_texture);
 
 private:
-    static const GLenum TARGET = GL_TEXTURE_2D;
-
     JavaVM* javaVm_ = nullptr;
 
     jweak textureObjectWeak_ = nullptr;

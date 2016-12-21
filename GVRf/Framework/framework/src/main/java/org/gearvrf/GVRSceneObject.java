@@ -198,13 +198,13 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      *            current {@link GVRContext}.
      * @param futureMesh
      *            mesh of the object.
-     * @param futureTexture
+     * @param texture
      *            texture of the object.
      * 
      * @since 1.6.8
      */
     public GVRSceneObject(GVRContext gvrContext, Future<GVRMesh> futureMesh,
-            Future<GVRTexture> futureTexture) {
+            GVRTexture texture) {
         this(gvrContext);
 
         // Create the render data
@@ -215,7 +215,7 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
 
         // Set the texture
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(futureTexture);
+        material.setMainTexture(texture);
         renderData.setMaterial(material);
 
         // Attach the render data
@@ -237,9 +237,9 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      * @since 1.6.7
      */
     public GVRSceneObject(GVRContext gvrContext, GVRAndroidResource mesh,
-            GVRAndroidResource texture) {
+            GVRAndroidResource resource) {
         this(gvrContext, gvrContext.loadFutureMesh(mesh), gvrContext
-                .getAssetLoader().loadFutureTexture(texture));
+                .getAssetLoader().loadTexture(resource));
     }
 
     /**

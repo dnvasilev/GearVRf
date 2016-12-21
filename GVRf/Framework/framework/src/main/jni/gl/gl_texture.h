@@ -51,8 +51,7 @@ public:
     }
     explicit GLTexture(GLenum target, int* texture_parameters) :
             target_(target) {
-        pending_gl_task_ = GL_TASK_INIT_WITH_PARAM;
-        memcpy(texture_parameters_, texture_parameters, sizeof(int) * 5);
+        set_texture_parameters(texture_parameters);
     }
 
     virtual ~GLTexture() {
@@ -62,12 +61,24 @@ public:
     }
 
     GLuint id() {
-        runPendingGL();
+        if (target_) {
+            runPendingGL();
+        }
         return id_;
     }
 
     GLenum target() const {
         return target_;
+    }
+
+    void set_target(GLenum target) {
+        target_ = target;
+    }
+
+    void set_texture_parameters(int* texparams)
+    {
+        pending_gl_task_ = GL_TASK_INIT_WITH_PARAM;
+        memcpy(texture_parameters_, texparams, sizeof(int) * 5);
     }
 
     virtual void runPendingGL() {

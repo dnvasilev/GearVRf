@@ -18,10 +18,6 @@ package org.gearvrf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
-
-import org.gearvrf.GVRAndroidResource.TextureCallback;
-import org.gearvrf.asynchronous.GVRAsynchronousResourceLoader.FutureResource;
 import org.gearvrf.utility.Colors;
 import org.gearvrf.utility.Threads;
 import org.gearvrf.utility.Log;
@@ -75,9 +71,7 @@ public class GVRMaterial extends  GVRShaderData
 
     private static final String TAG = Log.tag(GVRMaterial.class);
 
-    private int mShaderFeatureSet;
     static final String MAIN_TEXTURE = "u_texture";
-
 
     /** Pre-built shader ids. */
     public abstract static class GVRShaderType {
@@ -184,25 +178,6 @@ public class GVRMaterial extends  GVRShaderData
         setTexture(MAIN_TEXTURE, texture);
     }
 
-    /**
-     * Asynchronously bind a different {@link GVRTexture texture} to the
-     * {@code main_texture} shader uniform.
-     *
-     * Uses a background thread from the thread pool to wait for the
-     * {@code Future.get()} method; unless you are loading dozens of textures
-     * asynchronously, the extra overhead should be modest compared to the cost
-     * of loading a texture.
-     *
-     * @param texture
-     *            A future texture, from one of the the
-     *            {@link GVRContext#loadFutureTexture(GVRAndroidResource)}
-     *            methods
-     *
-     * @since 1.6.7
-     */
-    public void setMainTexture(Future<GVRTexture> texture) {
-        setTexture(MAIN_TEXTURE, texture);
-    }
 
     /**
      * Set the baked light map texture
@@ -211,16 +186,6 @@ public class GVRMaterial extends  GVRShaderData
      *            Texture with baked light map
      */
     public void setLightMapTexture(GVRTexture texture) {
-        setTexture("lightmap_texture", texture);
-    }
-
-    /**
-     * Set the baked light map texture
-     *
-     * @param texture
-     *            Texture with baked light map
-     */
-    public void setLightMapTexture(Future<GVRTexture> texture) {
         setTexture("lightmap_texture", texture);
     }
 
@@ -553,55 +518,41 @@ public class GVRMaterial extends  GVRShaderData
     }
 
 
-    public void setTexture(final String key, final Future<GVRTexture> texture) {
-        if (texture.isDone()) {
-            try {
-                setTexture(key, texture.get());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            if (texture instanceof FutureResource<?>) {
-				setTexture(key, (GVRTexture) null);
-                TextureCallback callback = new TextureCallback() {
-                    @Override
-                    public void loaded(GVRTexture texture,
-                            GVRAndroidResource ignored) {
-                        setTexture(key, texture);
-                        Log.d(TAG, "Finish loading and setting texture %s",
-                                texture);
-                    }
-
-                @Override
-                public void failed(Throwable t,
-                        GVRAndroidResource androidResource) {
-                    Log.e(TAG, "Error loading texture %s; exception: %s",
-                            texture, t.getMessage());
-                }
-
-                @Override
-                public boolean stillWanted(GVRAndroidResource androidResource) {
-                    return true;
-                }
-            };
-
-                getGVRContext().getAssetLoader().loadTexture(
-                        ((FutureResource<GVRTexture>) texture).getResource(), callback);
-            } else {
-                Threads.spawn(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            setTexture(key, texture.get());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
+    public void setTexture(String key, GVRTexture texture) {
+        checkStringNotNullOrEmpty("key", key);
+        TextureInfo tinfo = textures.get(key);
+        if (tinfo == null)
+        {
+            tinfo = new TextureInfo();
+            tinfo.Texture = texture;
+            textures.put(key, tinfo);
         }
+        else
+        {
+            tinfo.Texture = texture;
+        }
+        if (texture != null)
+            NativeShaderData.setTexture(getNative(), key, texture.getNative());
     }
 
+    /**
+     *  Designate the vertex attribute and shader variable for the texture coordinates
+     *  associated with the named texture.
+     * @param texName name of texture
+     * @param texCoordAttr name of vertex attribute with texture coordinates.
+     * @param shaderVarName name of shader variable to get texture coordinates.
+     */
+    public void setTexCoord(String texName, String texCoordAttr, String shaderVarName)
+    {
+        TextureInfo tinfo = textures.get(texName);
+        if (tinfo == null)
+        {
+            tinfo = new TextureInfo();
+            textures.put(texName, tinfo);
+        }
+        tinfo.TexCoordAttr = texCoordAttr;
+        tinfo.ShaderVar = shaderVarName;
+    }
 
     /**
      * Gets the line width for line drawing.

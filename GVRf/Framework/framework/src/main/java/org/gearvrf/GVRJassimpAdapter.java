@@ -621,27 +621,29 @@ class GVRJassimpAdapter {
                 GVRTextureParameters texParams = new GVRTextureParameters(mContext);
                 texParams.setWrapSType(wrapModeMap.get(material.getTextureMapModeU(texType,i)));
                 texParams.setWrapTType(wrapModeMap.get(material.getTextureMapModeV(texType,i)));
+                GVRTexture gvrTex = new GVRTexture(mContext, texParams);
+                GVRAssetLoader.TextureRequest texRequest;
+
+                meshMaterial.setTexture(textureKey, gvrTex);
                 if (texFileName.startsWith("*"))
                 {
                     AiTexture tex = null;
                     try
                     {
                         int texIndex = parseInt(texFileName.substring(1));
-
                         tex = mScene.getTextures().get(texIndex);
-                        GVRAssetLoader.TextureRequest texRequest = new GVRAssetLoader.MaterialTextureRequest(assetRequest, mFileName + texFileName, meshMaterial, textureKey, texParams);
-                        assetRequest.loadEmbeddedTexture(texRequest, tex, texParams);
                     }
                     catch (NumberFormatException | IndexOutOfBoundsException ex)
                     {
                         assetRequest.onModelError(mContext, ex.getMessage(), mFileName);
                     }
-                    GVRAssetLoader.TextureRequest texRequest = new GVRAssetLoader.MaterialTextureRequest(assetRequest, mFileName + texFileName, meshMaterial, textureKey, texParams);
-                    assetRequest.loadEmbeddedTexture(texRequest, tex, texParams);
+                    texRequest = new GVRAssetLoader.TextureRequest(assetRequest, gvrTex, mFileName + texFileName);
+                    assetRequest.loadEmbeddedTexture(texRequest, tex);
                 }
                 else
                 {
-                    GVRAssetLoader.TextureRequest texRequest = new GVRAssetLoader.MaterialTextureRequest(assetRequest, texFileName, meshMaterial, textureKey, texParams);
+
+                    texRequest = new GVRAssetLoader.TextureRequest(assetRequest, gvrTex, texFileName);
                     assetRequest.loadTexture(texRequest);
                 }
             }

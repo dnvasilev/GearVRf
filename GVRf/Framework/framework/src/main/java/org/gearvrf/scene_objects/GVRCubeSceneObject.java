@@ -239,11 +239,11 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *            is used here for asynchronously loading the texture.
      */
     public GVRCubeSceneObject(GVRContext gvrContext, boolean facingOut,
-            Future<GVRTexture> futureTexture) {
+            GVRTexture texture) {
         super(gvrContext);
 
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(futureTexture);
+        material.setMainTexture(texture);
         createSimpleCube(gvrContext, facingOut, material, null);
     }
 
@@ -258,7 +258,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *
      * To use different textures on different faces, use a material
      * with the shader type {@code GVRMaterial.GVRShaderType.Cubemap}, and a
-     * cubemap texture loaded by {@code GVRContext.loadFutureCubemapTexture}.
+     * cubemap texture loaded by {@code GVRContext.loadCubemapTexture}.
      * 
      * @param gvrContext
      *            current {@link GVRContext}
@@ -288,7 +288,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *
      * To use different textures on different faces, use a material
      * with the shader type {@code GVRMaterial.GVRShaderType.Cubemap}, and a
-     * cubemap texture loaded by {@code GVRContext.loadFutureCubemapTexture}.
+     * cubemap texture loaded by {@code GVRContext.loadCubemapTexture}.
      * 
      * @param gvrContext
      *            current {@link GVRContext}
@@ -323,23 +323,23 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *            whether the triangles and normals should be facing in or
      *            facing out.
      * 
-     * @param futureTextureList
+     * @param textureList
      *            the list of six textures for six faces.
-     *            {@code Future<GVRTexture>} is used here for asynchronously
+     *            {@code GVRTexture} is used here for asynchronously
      *            loading the texture. The six textures are for front, right,
      *            back, left, top, and bottom faces respectively.
      */
     public GVRCubeSceneObject(GVRContext gvrContext, boolean facingOut,
-            ArrayList<Future<GVRTexture>> futureTextureList) {
+            ArrayList<GVRTexture> textureList) {
         super(gvrContext);
 
         // assert length of futureTextureList is 6
-        if (futureTextureList.size() != 6) {
+        if (textureList.size() != 6) {
             throw new IllegalArgumentException(
-                    "The length of futureTextureList is not 6.");
+                    "The length of textureList is not 6.");
         }
 
-        createSimpleCubeSixMeshes(gvrContext, facingOut, futureTextureList);
+        createSimpleCubeSixMeshes(gvrContext, facingOut, textureList);
     }
 
     /**
@@ -357,8 +357,8 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *            whether the triangles and normals should be facing in or
      *            facing out.
      * 
-     * @param futureTextureList
-     *            the list of six textures for six faces. {@code Future<GVRTexture>} is used here for asynchronously loading
+     * @param textureList
+     *            the list of six textures for six faces. {@code tGVRTexture} is used here for asynchronously loading
      *            the texture. The six textures are for front, right, back,
      *            left, top, and bottom faces respectively.
      *            
@@ -367,16 +367,16 @@ public class GVRCubeSceneObject extends GVRSceneObject {
      *            
      */
     public GVRCubeSceneObject(GVRContext gvrContext, boolean facingOut,
-            ArrayList<Future<GVRTexture>> futureTextureList, int segmentNumber) {
+            ArrayList<GVRTexture> textureList, int segmentNumber) {
         super(gvrContext);
 
-        // assert length of futureTextureList is 6
-        if (futureTextureList.size() != 6) {
+        // assert length of textureList is 6
+        if (textureList.size() != 6) {
             throw new IllegalArgumentException(
-                    "The length of futureTextureList is not 6.");
+                    "The length of textureList is not 6.");
         }
 
-        createComplexCube(gvrContext, facingOut, futureTextureList, segmentNumber);
+        createComplexCube(gvrContext, facingOut, textureList, segmentNumber);
     }
 
     public static GVRMesh createCube(GVRContext gvrContext, String descriptor, boolean facingOut, Vector3f dimensions)
@@ -447,7 +447,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
             21, 22, 23 };
 
     private void createSimpleCubeSixMeshes(GVRContext gvrContext,
-            boolean facingOut, ArrayList<Future<GVRTexture>> futureTextureList) {
+            boolean facingOut, ArrayList<GVRTexture> textureList) {
 
         GVRSceneObject[] children = new GVRSceneObject[6];
         GVRMesh[] meshes = new GVRMesh[6];
@@ -468,7 +468,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 meshes[i].setTexCoords(SIMPLE_OUTWARD_TEXCOORDS);
                 children[i] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(meshes[i]),
-                        futureTextureList.get(i));
+                        textureList.get(i));
                 addChildObject(children[i]);
             }
         } else {
@@ -484,7 +484,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 meshes[i].setTexCoords(SIMPLE_INWARD_TEXCOORDS);
                 children[i] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(meshes[i]),
-                        futureTextureList.get(i));
+                        textureList.get(i));
                 addChildObject(children[i]);
             }
         }
@@ -500,7 +500,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
     private char[] indices;
 
     private void createComplexCube(GVRContext gvrContext,
-            boolean facingOut, ArrayList<Future<GVRTexture>> futureTextureList, int segmentNumber) {
+            boolean facingOut, ArrayList<GVRTexture> textureList, int segmentNumber) {
 
         GVRSceneObject[] children = new GVRSceneObject[6];
         for (int i = 0; i < 6; i++) {
@@ -596,7 +596,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(0));
+                        textureList.get(0));
                 children[0].addChildObject(grandchildren[index]);
             }
         }
@@ -658,7 +658,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(1));
+                        textureList.get(1));
                 children[1].addChildObject(grandchildren[index]);
             }
         }
@@ -720,7 +720,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(2));
+                        textureList.get(2));
                 children[2].addChildObject(grandchildren[index]);
             }
         }
@@ -782,7 +782,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(3));
+                        textureList.get(3));
                 children[3].addChildObject(grandchildren[index]);
             }
         }
@@ -839,7 +839,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(4));
+                        textureList.get(4));
                 children[4].addChildObject(grandchildren[index]);
             }
         }
@@ -896,7 +896,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 subMeshes[index].setTriangles(indices);
                 grandchildren[index] = new GVRSceneObject(gvrContext,
                         new FutureWrapper<GVRMesh>(subMeshes[index]),
-                        futureTextureList.get(5));
+                        textureList.get(5));
                 children[5].addChildObject(grandchildren[index]);
             }
         }

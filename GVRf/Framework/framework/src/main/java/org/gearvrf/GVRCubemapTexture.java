@@ -21,23 +21,9 @@ import java.util.Map;
 import android.graphics.Bitmap;
 
 /** Cube map texture. */
-public class GVRCubemapTexture extends GVRTexture {
-    /**
-     * Constructs a cube map texture using six pre-existing {@link Bitmap}s.
-     * 
-     * @param gvrContext
-     *            Current {@link GVRContext}
-     * @param bitmapArray
-     *            A {@link Bitmap} array which contains six {@link Bitmap}s. The
-     *            six bitmaps correspond to +x, -x, +y, -y, +z, and -z faces of
-     *            the cube map texture respectively. The default names of the
-     *            six images are "posx.png", "negx.png", "posy.png", "negx.png",
-     *            "posz.png", and "negz.png", which can be changed by calling
-     *            {@link GVRCubemapTexture#setFaceNames(String[])}.
-     */
-    public GVRCubemapTexture(GVRContext gvrContext, Bitmap[] bitmapArray) {
-        this(gvrContext, bitmapArray, gvrContext.DEFAULT_TEXTURE_PARAMETERS);
-    }
+public class GVRCubemapTexture extends GVRImage
+{
+    protected Bitmap[] mFaceBitmaps;
 
     /**
      * Constructs a cube map texture using six pre-existing {@link Bitmap}s and
@@ -52,15 +38,14 @@ public class GVRCubemapTexture extends GVRTexture {
      *            six images are "posx.png", "negx.png", "posy.png", "negx.png",
      *            "posz.png", and "negz.png", which can be changed by calling
      *            {@link GVRCubemapTexture#setFaceNames(String[])}.
-     * @param textureParameters
-     *            User defined object for {@link GVRTextureParameters} which may
-     *            also contain default values.
      */
-    public GVRCubemapTexture(GVRContext gvrContext, Bitmap[] bitmapArray,
-            GVRTextureParameters textureParameters) {
-        super(gvrContext, NativeCubemapTexture.bitmapArrayConstructor(
-                bitmapArray, textureParameters.getCurrentValuesArray()));
+    public GVRCubemapTexture(GVRContext gvrContext, Bitmap[] bitmapArray)
+    {
+        super(gvrContext);
+        mFaceBitmaps = bitmapArray;
     }
+
+    Bitmap[] getFaceBitmaps()   { return mFaceBitmaps; }
 
     /**
      * Set the names of six images in the zip file. The default names of the six
@@ -74,19 +59,21 @@ public class GVRCubemapTexture extends GVRTexture {
      *            corresponding to +x, -x, +y, -y, +z, and -z faces of the cube
      *            map texture respectively.
      */
-    public static void setFaceNames(String[] nameArray) {
-        if (nameArray.length != 6) {
+    public static void setFaceNames(String[] nameArray)
+    {
+        if (nameArray.length != 6)
+        {
             throw new IllegalArgumentException("nameArray length is not 6.");
         }
-
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 6; i++)
+        {
             faceIndexMap.put(nameArray[i], i);
         }
     }
 
-    final static Map<String, Integer> faceIndexMap = new HashMap<String, Integer>(
-            6);
-    static {
+    final static Map<String, Integer> faceIndexMap = new HashMap<String, Integer>(6);
+    static
+    {
         /*
          *  File extensions can be .png for uncompressed cubemap textures,
          *  or .pkm for compressed cubemap textures.
@@ -98,9 +85,4 @@ public class GVRCubemapTexture extends GVRTexture {
         faceIndexMap.put("posz", 4);
         faceIndexMap.put("negz", 5);
     }
-}
-
-class NativeCubemapTexture {
-    static native long bitmapArrayConstructor(Bitmap[] bitmapArray,
-            int[] textureParameterValues);
 }

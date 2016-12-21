@@ -29,6 +29,7 @@
 #define MAX_INDICES 500
 #define BATCH_SIZE 60
 bool do_batching = false;
+
 namespace gvr {
 Renderer* gRenderer = nullptr;
 bool use_multiview= false;

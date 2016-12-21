@@ -18,10 +18,8 @@ package org.gearvrf.asynchronous;
 import static android.opengl.GLES20.*;
 
 import org.gearvrf.GVRContext;
-import org.gearvrf.GVRTexture;
-import org.gearvrf.GVRTextureParameters;
+import org.gearvrf.GVRImage;
 import org.gearvrf.utility.Log;
-import org.gearvrf.utility.RuntimeAssertion;
 
 /**
  * A GL compressed texture; you get it from
@@ -33,7 +31,8 @@ import org.gearvrf.utility.RuntimeAssertion;
  * 
  * @since 1.6.1
  */
-public class GVRCompressedTexture extends GVRTexture {
+public class GVRCompressedTexture extends GVRImage
+{
 
     static final int GL_TARGET = GL_TEXTURE_2D;
 
@@ -43,11 +42,6 @@ public class GVRCompressedTexture extends GVRTexture {
      * Texture field(s) and constructors
      */
 
-    /**
-     * Number of texture levels. 1 means a single image, with no mipmap chain;
-     * values higher than 1 mean the texture has a mipmap chain.
-     */
-    public final int mLevels;
 
     /**
      * The speed/quality parameter passed to
@@ -58,86 +52,44 @@ public class GVRCompressedTexture extends GVRTexture {
      * {@linkplain GVRCompressedTexture#SPEED public constants} in
      * {@link GVRCompressedTexture}.
      */
-    public final int mQuality;
-
-    GVRCompressedTexture(GVRContext gvrContext, int internalFormat, int width,
-            int height, int imageSize, byte[] data, int dataOffset,
-            int levels, int quality) {
-        this(gvrContext, internalFormat, width, height, imageSize, data, dataOffset,
-                levels, quality, gvrContext.DEFAULT_TEXTURE_PARAMETERS);
-    }
+    protected final int mQuality;
+    protected final byte[] mData;
+    protected final int mTarget;
 
     // Texture parameters
-    GVRCompressedTexture(GVRContext gvrContext, int internalFormat, int width,
-            int height, int imageSize, byte[] data, int dataOffset,
-            int levels, int quality,
-            GVRTextureParameters textureParameters) {
-        super(gvrContext, NativeCompressedTexture.normalConstructor(GL_TARGET,
-                internalFormat, width, height, imageSize, data, dataOffset,
-                textureParameters.getCurrentValuesArray()));
-        mLevels = levels;
+    GVRCompressedTexture(GVRContext gvrContext, int width,
+            int height, int internalFormat, byte[] data,
+            int imageSize, int levels, int quality)
+    {
+        super(gvrContext, width, height, internalFormat, 1);
+        mData = data;
+        mTarget = GVRCompressedTexture.GL_TARGET;
+        setImageSize(imageSize);
         mQuality = GVRCompressedTexture.clamp(quality);
-
-        updateMinification();
     }
 
-    GVRCompressedTexture(GVRContext gvrContext, int target, int levels,
-            int quality) {
-        super(gvrContext, NativeCompressedTexture.mipmappedConstructor(target));
-        mLevels = levels;
+    GVRCompressedTexture(GVRContext gvrContext, int width, int height, byte[] data, int levels, int quality)
+    {
+        super(gvrContext, width, height, levels);
         mQuality = GVRCompressedTexture.clamp(quality);
-
-        updateMinification();
+        mData = data;
+        mTarget = GVRCompressedTexture.GL_TARGET;
     }
 
-    private void updateMinification() {
-        boolean rebound = true; // in 2 out of 3 branches ...
-        if (mLevels > 1) {
-            rebind();
-            glTexParameteri(GL_TARGET, GL_TEXTURE_MIN_FILTER,
-                    selectMipMapMinification(mQuality));
-        } else if (mQuality == QUALITY) {
-            Log.d(TAG, "quality == %s, GL_TEXTURE_MIN_FILTER = %s", "QUALITY",
-                    "GL_LINEAR");
-            rebind();
-            glTexParameteri(GL_TARGET, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        } else {
-            rebound = false;
-        }
-        if (rebound) {
-            unbind();
+    public void setDataOffsets(int[] offsets)
+    {
+        assert(mLevels == offsets.length);
+        for (int i = 0; i < mLevels; ++i)
+        {
+            mDataOffsets[i] = offsets[i];
         }
     }
 
-    private static int selectMipMapMinification(int quality) {
-        switch (quality) {
-        case SPEED:
-            Log.d(TAG, "quality == %s, GL_TEXTURE_MIN_FILTER = %s", "SPEED",
-                    "GL_NEAREST_MIPMAP_NEAREST");
-            return GL_NEAREST_MIPMAP_NEAREST;
-        case BALANCED:
-            Log.d(TAG, "quality == %s, GL_TEXTURE_MIN_FILTER = %s", "BALANCED",
-                    "GL_LINEAR_MIPMAP_NEAREST");
-            return GL_LINEAR_MIPMAP_NEAREST;
-        case QUALITY:
-            Log.d(TAG, "quality == %s, GL_TEXTURE_MIN_FILTER = %s", "QUALITY",
-                    "GL_LINEAR_MIPMAP_LINEAR");
-            return GL_LINEAR_MIPMAP_LINEAR;
-        default:
-            throw new RuntimeAssertion(
-                    "The quality parameter should have been clamped");
-        }
-    }
+    public int getTarget()          { return mTarget; }
+    public byte[] getData()         { return mData; }
+    public int getQuality()         { return mQuality; }
 
-    protected void rebind() {
-        glBindTexture(GL_TARGET, getId());
-    }
-
-    protected void unbind() {
-        glBindTexture(GL_TARGET, 0);
-    }
-
-    /*
+     /*
      * Quality tradeoff constants
      */
 
@@ -159,12 +111,4 @@ public class GVRCompressedTexture extends GVRTexture {
             return BALANCED;
         }
     }
-}
-
-class NativeCompressedTexture {
-    static native long normalConstructor(int target, int internalFormat,
-            int width, int height, int imageSize, byte[] data, int dataOffset,
-            int[] textureParameterValues);
-
-    static native long mipmappedConstructor(int target);
 }

@@ -38,8 +38,8 @@ public class GVRAccessiblityObject extends GVRSceneObject {
 
     }
 
-    public GVRAccessiblityObject(GVRContext gvrContext, Future<GVRMesh> futureMesh, Future<GVRTexture> futureTexture) {
-        super(gvrContext, futureMesh, futureTexture);
+    public GVRAccessiblityObject(GVRContext gvrContext, Future<GVRMesh> futureMesh, GVRTexture texture) {
+        super(gvrContext, futureMesh, texture);
 
     }
 

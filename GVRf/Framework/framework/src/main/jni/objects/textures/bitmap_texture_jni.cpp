@@ -17,47 +17,37 @@
  * JNI
  ***************************************************************************/
 
-#include "cubemap_texture.h"
+#include "bitmap_texture.h"
 #include "util/gvr_jni.h"
 #include "util/gvr_java_stack_trace.h"
 #include "android/asset_manager_jni.h"
 
 
 namespace gvr {
+
 extern "C" {
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeCubemapTexture_bitmapArrayConstructor(JNIEnv * env,
-            jobject obj, jobjectArray bitmapArray);
+    Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv * env, jobject obj,
+            jint width, jint height, jbyteArray data);
+
     JNIEXPORT void JNICALL
-    Java_org_gearvrf_NativeCubemapTexture_update(JNIEnv * env,
-             jobject obj, jobject jcubemap, jobjectArray bitmapArray);
+    Java_org_gearvrf_NativeBitmapImage_update(JNIEnv * env, jobject obj,
+            jlong jtexture, jint width, jint height, jbyteArray jdata);
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeCubemapTexture_bitmapArrayConstructor(JNIEnv * env,
-    jobject obj, jobjectArray bitmapArray)
+Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv * env, jobject obj,
+                jint width, jint height, jbyteArray data)
 {
-    if (env->GetArrayLength(bitmapArray) != 6) {
-        std::string error =
-        "new CubemapTexture() failed! Input bitmapList's length is not 6.";
-        throw error;
-    }
-    jlong result = 0;
-    try {
-        result = reinterpret_cast<jlong>(new CubemapTexture(env, bitmapArray));
-    } catch (const std::string &err) {
-        printJavaCallStack(env, err);
-        throw err;
-    }
+    jlong result =  reinterpret_cast<jlong>(new BitmapImage(env, width, height, data));
     return result;
 }
 
 JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeCubemapTexture_update(JNIEnv * env,
-    jobject obj, jobject jcubemap, jobjectArray bitmapArray)
-{
-    CubemapTexture* cubemap = reinterpret_cast<CubemapTexture*>(jcubemap);
-    cubemap->update(env, bitmapArray);
+Java_org_gearvrf_NativeBitmapImage_update(JNIEnv * env, jobject obj,
+        jlong jtexture, jint width, jint height, jbyteArray jdata) {
+    BitmapImage* texture = reinterpret_cast<BitmapImage*>(jtexture);
+    texture->update(env, width, height, jdata);
 }
 
 }

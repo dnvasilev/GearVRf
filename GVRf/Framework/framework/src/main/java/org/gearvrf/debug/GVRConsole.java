@@ -24,13 +24,15 @@ import org.gearvrf.GVRBitmapTexture;
 import org.gearvrf.GVRCamera;
 import org.gearvrf.GVRCameraRig;
 import org.gearvrf.GVRContext;
+import org.gearvrf.GVRImage;
 import org.gearvrf.GVRPostEffectShaderManager;
 import org.gearvrf.GVRScene;
 import org.gearvrf.GVRScript;
 import org.gearvrf.GVRShader;
 import org.gearvrf.GVRShaderData;
 import org.gearvrf.GVRShaderId;
-import org.gearvrf.utility.TextFile;
+import org.gearvrf.GVRTexture;
+import org.gearvrf.R;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -38,6 +40,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import org.gearvrf.R;
+import org.gearvrf.utility.TextFile;
 
 /**
  * A debugging console for VR apps.
@@ -120,7 +123,7 @@ public class GVRConsole extends GVRShaderData
     private Canvas canvas = new Canvas(HUD);
     private final Paint paint = new Paint();
     private final float defaultTextSize = paint.getTextSize();
-    private GVRBitmapTexture texture = null;
+    private GVRTexture texture = null;
     private float textXOffset = 0.0f;
     private float textYOffset = TOP_FUDGE;
     private int hudWidth = HUD_WIDTH;
@@ -393,28 +396,33 @@ public class GVRConsole extends GVRShaderData
 
     private void setMainTexture() {
 
-        Future<Boolean> textureUpdated = null;
-        if (texture != null) {
-            textureUpdated = texture.update(HUD);
+        Boolean textureUpdated = false;
+        if (texture == null)
+        {
+            texture = new GVRTexture(getGVRContext());
         }
-
-        try {
-            if (texture == null || (textureUpdated.get() != null && !textureUpdated.get())) {
-                texture = new GVRBitmapTexture(getGVRContext(), HUD);
-                setTexture("u_overlay", texture);
+        GVRImage image = texture.getImage();
+        if (image != null)
+        {
+            if (GVRBitmapTexture.class.isAssignableFrom(image.getClass()))
+            {
+                GVRBitmapTexture bmapImage = (GVRBitmapTexture) image;
+                bmapImage.setBitmap(HUD);
+                textureUpdated = true;
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
-    }
+        if (!textureUpdated)
+        {
+            image = new GVRBitmapTexture(getGVRContext(), HUD);
+            texture.setImage(image);
+            setTexture("u_texture", texture);
+        }
+     }
 
     private static synchronized GVRShaderId getShaderId(GVRContext gvrContext) {
-        if (shaderId == null) {
-            GVRPostEffectShaderManager shaderManager = gvrContext
-                    .getPostEffectShaderManager();
-            shaderId = shaderManager.getShaderType(ConsoleShader.class);
+        if (shaderId == null)
+        {
+            shaderId = gvrContext.getMaterialShaderManager().getShaderType(ConsoleShader.class);
         }
         return shaderId;
     }

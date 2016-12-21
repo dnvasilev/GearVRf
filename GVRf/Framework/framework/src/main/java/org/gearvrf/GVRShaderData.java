@@ -49,15 +49,14 @@ public class GVRShaderData extends GVRHybridObject
     protected String mUniformDescriptor = null;
     protected String mTextureDescriptor = null;
 
-    private static class TextureInfo
+    protected static class TextureInfo
     {
         public GVRTexture Texture;
         public String TexCoordAttr;
         public String ShaderVar;
     }
 
-    ;
-    final private Map<String, TextureInfo> textures = new HashMap();
+    final protected Map<String, TextureInfo> textures = new HashMap();
 
     /**
      * Initialize a post effect, with a shader id.
@@ -173,76 +172,6 @@ public class GVRShaderData extends GVRHybridObject
         }
         if (texture != null)
             NativeShaderData.setTexture(getNative(), key, texture.getNative());
-    }
-
-    public void setTexture(final String key, final Future<GVRTexture> texture)
-    {
-        if (texture.isDone())
-        {
-            try
-            {
-                setTexture(key, texture.get());
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-        else
-        {
-            if (texture instanceof GVRAsynchronousResourceLoader.FutureResource<?>)
-            {
-                setTexture(key, (GVRTexture) null);
-                GVRAndroidResource.TextureCallback callback =
-                        new GVRAndroidResource.TextureCallback()
-                        {
-                            @Override
-                            public void loaded(GVRTexture texture,
-                                               GVRAndroidResource ignored)
-                            {
-                                setTexture(key, texture);
-                                Log.d(TAG, "Finish loading and setting texture %s",
-                                      texture);
-                            }
-
-                            @Override
-                            public void failed(Throwable t,
-                                               GVRAndroidResource androidResource)
-                            {
-                                Log.e(TAG, "Error loading texture %s; exception: %s",
-                                      texture, t.getMessage());
-                            }
-
-                            @Override
-                            public boolean stillWanted(GVRAndroidResource androidResource)
-                            {
-                                return true;
-                            }
-                        };
-
-                getGVRContext().getAssetLoader().loadTexture(
-                        ((GVRAsynchronousResourceLoader.FutureResource<GVRTexture>) texture).getResource(),
-                        callback);
-            }
-            else
-            {
-                Threads.spawn(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            setTexture(key, texture.get());
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-        }
     }
 
     /**

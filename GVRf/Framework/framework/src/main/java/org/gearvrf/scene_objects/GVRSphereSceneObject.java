@@ -123,16 +123,15 @@ public class GVRSphereSceneObject extends GVRSceneObject {
      *            whether the triangles and normals should be facing in or
      *            facing out.
      * 
-     * @param futureTexture
-     *            the texture for the sphere. {@code Future<GVRTexture>} is used
-     *            here for asynchronously loading the texture.
+     * @param texture
+     *            the texture for the sphere.
      */
     public GVRSphereSceneObject(GVRContext gvrContext, boolean facingOut,
-            Future<GVRTexture> futureTexture) {
+            GVRTexture texture) {
         super(gvrContext);
 
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(futureTexture);
+        material.setMainTexture(texture);
         generateSphereObject(gvrContext, STACK_NUMBER, SLICE_NUMBER, facingOut,
                 material);
     }
@@ -159,15 +158,14 @@ public class GVRSphereSceneObject extends GVRSceneObject {
      *            whether the triangles and normals should be facing in or
      *            facing out.
      * 
-     * @param futureTexture
-     *            the texture for the sphere. {@code Future<GVRTexture>} is used
-     *            here for asynchronously loading the texture.
+     * @param texture
+     *            the texture for the sphere.
      */
-    public GVRSphereSceneObject(GVRContext gvrContext, int stackNumber, int sliceNumber, boolean facingOut, Future<GVRTexture> futureTexture) {
+    public GVRSphereSceneObject(GVRContext gvrContext, int stackNumber, int sliceNumber, boolean facingOut, GVRTexture texture) {
         super(gvrContext);
 
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(futureTexture);
+        material.setMainTexture(texture);
         generateSphereObject(gvrContext, stackNumber, sliceNumber, facingOut, material);
     }
 

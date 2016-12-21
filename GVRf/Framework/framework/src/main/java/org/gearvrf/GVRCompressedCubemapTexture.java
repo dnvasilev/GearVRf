@@ -1,25 +1,26 @@
 package org.gearvrf;
 
-public class GVRCompressedCubemapTexture extends GVRTexture
+public class GVRCompressedCubemapTexture extends GVRImage
 {
-  // Compressed cubemap texture parameters
-  public GVRCompressedCubemapTexture(GVRContext gvrContext, int internalFormat, int width,
-          int height, int imageSize, byte[][] data, int[] dataOffset,
-          GVRTextureParameters textureParameters) {
-      super(gvrContext, NativeCompressedCubemapTexture.compressedTextureArrayConstructor(
-              internalFormat, width, height, imageSize, data, dataOffset,
-              textureParameters.getCurrentValuesArray()));
-  }
+    protected byte[][] mData;
 
   public GVRCompressedCubemapTexture(GVRContext gvrContext, int internalFormat, int width,
-          int height, int imageSize, byte[][] data, int[] dataOffset) {
-      this(gvrContext, internalFormat, width, height, imageSize, data, dataOffset,
-              gvrContext.DEFAULT_TEXTURE_PARAMETERS);
+          int height, int imageSize, byte[][] data, int[] dataOffsets)
+  {
+      super(gvrContext, width, height, internalFormat, dataOffsets.length);
+      setImageSize(imageSize);
+      setDataOffsets(dataOffsets);
+      mData = data;
   }
-}
 
-class NativeCompressedCubemapTexture {
-  static native long compressedTextureArrayConstructor(int internalFormat,
-          int width, int height, int imageSize, byte[][] data, int[] dataOffset,
-          int[] textureParameterValues);
+    public void setDataOffsets(int[] offsets)
+    {
+        assert(mLevels == offsets.length);
+        for (int i = 0; i < mLevels; ++i)
+        {
+            mDataOffsets[i] = offsets[i];
+        }
+    }
+
+    public byte[][] getData() { return mData; }
 }

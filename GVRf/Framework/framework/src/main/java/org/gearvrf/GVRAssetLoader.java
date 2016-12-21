@@ -198,36 +198,10 @@ public final class GVRAssetLoader {
                 }
                 catch (IOException ex)
                 {
-                    request.loaded(getDefaultTexture(mContext), null);
+                    request.loaded(getDefaultTexture(mContext).getImage(), null);
                     onTextureError(mContext, ex.getMessage(), request.TextureFile);
                 }
             }
-        }
-
-        /**
-         * Load a future texture asynchronously with a callback.
-         * @param request callback that indicates which texture to load
-         */
-        public Future<GVRTexture> loadFutureTexture(TextureRequest request)
-        {
-            synchronized (mNumTextures)
-            {
-                ++mNumTextures;
-                Log.d(TAG, "ASSET: loadFutureTexture %s %d", request.TextureFile, mNumTextures);
-            }
-            try
-            {
-                GVRAndroidResource resource = mVolume.openResource(request.TextureFile);
-                FutureResource<GVRTexture> result = new FutureResource<GVRTexture>(resource);
-                mContext.getAssetLoader().loadTexture(resource, request);
-                return result;
-            }
-            catch (IOException ex)
-            {
-                request.loaded(getDefaultTexture(mContext), null);
-                onTextureError(mContext, ex.getMessage(), request.TextureFile);
-            }
-            return null;
         }
 
         /**
@@ -241,20 +215,22 @@ public final class GVRAssetLoader {
          * @param aitex   Assimp texture containing the pixel data
          * @return GVRTexture made from embedded texture
          */
-        public GVRTexture loadEmbeddedTexture(final TextureRequest request, final AiTexture aitex, final GVRTextureParameters texParams) throws IOException
+        public GVRTexture loadEmbeddedTexture(final TextureRequest request, final AiTexture aitex) throws IOException
         {
             GVRAndroidResource resource = new GVRAndroidResource(request.TextureFile);
-            GVRBitmapTexture bmapTex;
+            GVRTexture bmapTex = request.Texture;
+            GVRImage image;
 
             Log.d(TAG, "ASSET: loadEmbeddedTexture %s %d", request.TextureFile, mNumTextures);
-            Map<String, GVRTexture> texCache = GVRAssetLoader.getEmbeddedTextureCache();
+            Map<String, GVRImage> texCache = GVRAssetLoader.getEmbeddedTextureCache();
             synchronized (texCache)
             {
-                GVRTexture tex = texCache.get(request.TextureFile);
-                if (tex != null)
+                image = texCache.get(request.TextureFile);
+                if (image != null)
                 {
                     Log.d(TAG, "ASSET: loadEmbeddedTexture found %s", resource.getResourceFilename());
-                    return tex;
+                    bmapTex.setImage(image);
+                    return bmapTex;
                 }
                 synchronized (mNumTextures)
                 {
@@ -271,11 +247,12 @@ public final class GVRAssetLoader {
                     bmap = Bitmap.createBitmap(aitex.getWidth(), aitex.getHeight(), Bitmap.Config.ARGB_8888);
                     bmap.setPixels(aitex.getIntData(), 0, aitex.getWidth(), 0, 0, aitex.getWidth(), aitex.getHeight());
                 }
-                bmapTex = new GVRBitmapTexture(mContext, bmap, texParams);
+                image = new GVRBitmapTexture(mContext, bmap);
                 Log.d(TAG, "ASSET: loadEmbeddedTexture saved %s", resource.getResourceFilename());
-                texCache.put(request.TextureFile, bmapTex);
+                texCache.put(request.TextureFile, image);
+                bmapTex.setImage(image);
             }
-            request.loaded(bmapTex, resource);
+            request.loaded(image, resource);
             return bmapTex;
         }
 
@@ -457,50 +434,85 @@ public final class GVRAssetLoader {
     public static class TextureRequest implements TextureCallback
     {
         public final String TextureFile;
+        public final GVRTexture Texture;
         protected GVRTextureParameters mTexParams;
         protected AssetRequest mAssetRequest;
+        private final TextureCallback mCallback;
         private boolean loadFinished;
 
-        public TextureRequest(AssetRequest assetRequest, String texFile, final GVRTextureParameters texParams)
+
+        public TextureRequest(AssetRequest assetRequest, GVRTexture texture, String texFile)
         {
             mAssetRequest = assetRequest;
             TextureFile = texFile;
-            mTexParams = texParams;
+            Texture = texture;
+            mCallback = null;
             loadFinished = false;
         }
 
-        public TextureRequest(AssetRequest assetRequest, String texFile)
+        public TextureRequest(GVRAndroidResource resource, GVRTexture texture)
         {
-            mAssetRequest = assetRequest;
-            TextureFile = texFile;
-            mTexParams = GVRAssetLoader.DEFAULT_TEXTURE_PARAMETERS;
+            mAssetRequest = null;
+            TextureFile = resource.getResourceFilename();
+            Texture = texture;
+            mCallback = null;
             loadFinished = false;
         }
 
-        public void loaded(final GVRTexture texture, GVRAndroidResource resource)
+        public TextureRequest(GVRAndroidResource resource, GVRTexture texture, TextureCallback callback)
         {
-            mAssetRequest.getContext().runOnGlThread(new Runnable()
+            mAssetRequest = null;
+            TextureFile = resource.getResourceFilename();
+            Texture = texture;
+            mCallback = callback;
+            loadFinished = false;
+        }
+
+        public void loaded(final GVRImage image, GVRAndroidResource resource)
+        {
+            GVRContext ctx = Texture.getGVRContext();
+            Texture.loaded(image, resource);
+            if (mCallback != null)
             {
-                public void run()
-                {
-                    texture.updateTextureParameters(mTexParams);
-                }
-            });
+                mCallback.loaded(image, resource);
+            }
             if (!loadFinished)
             {
-                mAssetRequest.onTextureLoaded(mAssetRequest.getContext(), texture, TextureFile);
+                if (mAssetRequest != null)
+                {
+                    mAssetRequest.onTextureLoaded(ctx, Texture, TextureFile);
+                }
+                else
+                {
+                    ctx.getEventManager().sendEvent(ctx, IAssetEvents.class,
+                            "onTextureLoaded", new Object[] { ctx, Texture, TextureFile });
+                }
             }
             loadFinished = true;
         }
 
         @Override
-        public void failed(Throwable t, GVRAndroidResource androidResource)
+        public void failed(Throwable t, GVRAndroidResource resource)
         {
+            GVRContext ctx = Texture.getGVRContext();
+            Texture.failed(t, resource);
+            if (mCallback != null)
+            {
+                mCallback.failed(t, resource);
+            }
             if (!loadFinished)
             {
-                mAssetRequest.onTextureError(mAssetRequest.getContext(), t.getMessage(), TextureFile);
+                if (mAssetRequest != null)
+                {
+                    mAssetRequest.onTextureError(ctx, t.getMessage(), TextureFile);
+                    loaded(getDefaultTexture(ctx).getImage(), null);
+                }
+                else
+                {
+                    ctx.getEventManager().sendEvent(ctx, IAssetEvents.class,
+                            "onTextureError", new Object[] { ctx, t.getMessage(), TextureFile });
+                }
                 loadFinished = true;
-                loaded(getDefaultTexture(mAssetRequest.getContext()), null);
             }
         }
 
@@ -511,46 +523,9 @@ public final class GVRAssetLoader {
         }
     }
 
-    /**
-     * Texture load callback that binds the texture to the material.
-     */
-    public static class MaterialTextureRequest extends TextureRequest
-    {
-        public final GVRMaterial Material;
-        public final String TextureName;
-
-        public MaterialTextureRequest(AssetRequest assetRequest, String texFile)
-        {
-        	super(assetRequest, texFile);
-            Material = null;
-            TextureName = null;
-        }
-
-        public MaterialTextureRequest(AssetRequest assetRequest, String texFile, GVRMaterial material, String textureName,
-                                      final GVRTextureParameters texParams)
-        {
-        	super(assetRequest, texFile, texParams);
-            Material = material;
-            TextureName = textureName;
-            if (Material != null)
-            {
-                Material.setTexture(textureName, (GVRTexture) null);
-            }
-        }
-
-        public void loaded(GVRTexture texture, GVRAndroidResource ignored)
-        {
-            if (Material != null)
-            {
-                Material.setTexture(TextureName, texture);
-            }
-            super.loaded(texture,  ignored);
-        }
-    }
-
     protected GVRContext mContext;
-    protected static ResourceCache<GVRTexture> mTextureCache = new ResourceCache<GVRTexture>();
-    protected static HashMap<String, GVRTexture> mEmbeddedCache = new HashMap<String, GVRTexture>();
+    protected static ResourceCache<GVRImage> mTextureCache = new ResourceCache<GVRImage>();
+    protected static HashMap<String, GVRImage> mEmbeddedCache = new HashMap<String, GVRImage>();
 
     protected static GVRTexture mDefaultTexture = null;
 
@@ -564,8 +539,8 @@ public final class GVRAssetLoader {
 
             @Override
             public void run() {
-                mTextureCache = new ResourceCache<GVRTexture>();
-                mEmbeddedCache = new HashMap<String, GVRTexture>();
+                mTextureCache = new ResourceCache<GVRImage>();
+                mEmbeddedCache = new HashMap<String, GVRImage>();
                 mDefaultTexture = null;
             }
         });
@@ -590,7 +565,7 @@ public final class GVRAssetLoader {
      * embedded textures.
      * @return embedded texture cache
      */
-    static Map<String, GVRTexture> getEmbeddedTextureCache()
+    static Map<String, GVRImage> getEmbeddedTextureCache()
     {
         return mEmbeddedCache;
     }
@@ -639,16 +614,18 @@ public final class GVRAssetLoader {
     public GVRTexture loadTexture(GVRAndroidResource resource,
                                   GVRTextureParameters textureParameters)
     {
-        GVRBitmapTexture bmapTex = null;
+        GVRTexture texture = new GVRTexture(mContext, textureParameters);
+        GVRImage image;
         synchronized (mTextureCache)
         {
-            GVRTexture texture = mTextureCache.get(resource);
-            if (texture != null)
+            image = mTextureCache.get(resource);
+            if (image != null)
             {
+                texture.setImage(image);
                 return texture;
             }
-            bmapTex = new GVRBitmapTexture(mContext, (Bitmap) null, textureParameters);
-            mTextureCache.put(resource, bmapTex);
+            image = new GVRBitmapTexture(mContext, (Bitmap) null);
+            mTextureCache.put(resource, image);
         }
         try
         {
@@ -656,19 +633,24 @@ public final class GVRAssetLoader {
             resource.closeStream();
             if (bitmap != null)
             {
-                bmapTex.update(bitmap);
+                image = new GVRBitmapTexture(mContext, bitmap);
+                texture.setImage(image);
             }
         }
         catch (IOException ex)
         {
             return null;
         }
-        return bmapTex;
+        return texture;
     }
 
     public GVRTexture loadTexture(GVRAndroidResource resource)
     {
-        return loadTexture(resource, DEFAULT_TEXTURE_PARAMETERS);
+        GVRTexture texture = new GVRTexture(mContext, DEFAULT_TEXTURE_PARAMETERS);
+        TextureRequest request = new TextureRequest(resource, texture);
+        GVRAsynchronousResourceLoader.loadTexture(mContext, mTextureCache,
+                request, resource, DEFAULT_TEXTURE_PARAMETERS, DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
+        return texture;
     }
 
 
@@ -707,10 +689,6 @@ public final class GVRAssetLoader {
      *            {@link GVRAndroidResource.TextureCallback#stillWanted(GVRAndroidResource)
      *            stillWanted()} at least once (on a background thread) to give
      *            you a chance to abort a 'stale' load.
-     *
-     *            <p>
-     *            Use {@link #loadFutureTexture(GVRAndroidResource)} to avoid
-     *            having to implement a callback.
      * @param resource
      *            Basically, a stream containing a texture file. The
      *            {@link GVRAndroidResource} class has six constructors to
@@ -737,14 +715,17 @@ public final class GVRAssetLoader {
      *            {@linkplain GVRBitmapTexture bitmapped textures} don't take a
      *            quality parameter.
      */
-    public void loadTexture(GVRAndroidResource resource, TextureCallback callback, GVRTextureParameters texparams, int priority, int quality)
+    public GVRTexture loadTexture(GVRAndroidResource resource, TextureCallback callback, GVRTextureParameters texparams, int priority, int quality)
     {
         if (texparams == null)
         {
             texparams = DEFAULT_TEXTURE_PARAMETERS;
         }
+        GVRTexture texture = new GVRTexture(mContext, texparams);
+        TextureRequest request = new TextureRequest(resource, texture);
         GVRAsynchronousResourceLoader.loadTexture(mContext, mTextureCache,
-                callback, resource, texparams, priority, quality);
+                request, resource, texparams, DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
+        return texture;
     }
 
     /**
@@ -782,43 +763,42 @@ public final class GVRAssetLoader {
      *            {@link GVRAndroidResource.TextureCallback#stillWanted(GVRAndroidResource)
      *            stillWanted()} at least once (on a background thread) to give
      *            you a chance to abort a 'stale' load.
-     *
-     *            <p>
-     *            Use {@link #loadFutureTexture(GVRAndroidResource)} to avoid
-     *            having to implement a callback.
      * @param resource
      *            Basically, a stream containing a texture file. The
      *            {@link GVRAndroidResource} class has six constructors to
      *            handle a wide variety of Android resource types. Taking a
      *            {@code GVRAndroidResource} here eliminates six overloads.
      */
-    public void loadTexture(GVRAndroidResource resource, TextureCallback callback)
+    public GVRTexture loadTexture(GVRAndroidResource resource, TextureCallback callback)
     {
+        GVRTexture texture = new GVRTexture(mContext, DEFAULT_TEXTURE_PARAMETERS);
+        TextureRequest request = new TextureRequest(resource, texture);
         GVRAsynchronousResourceLoader.loadTexture(mContext, mTextureCache,
-                callback, resource, DEFAULT_TEXTURE_PARAMETERS, DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
+                request, resource, DEFAULT_TEXTURE_PARAMETERS, DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
+        return texture;
     }
 
-    public Future<GVRTexture> loadFutureTexture(GVRAndroidResource resource,
-                                                int priority, int quality)
+    public GVRTexture loadCubemapTexture(GVRAndroidResource resource, TextureCallback callback)
     {
-        return GVRAsynchronousResourceLoader.loadFutureTexture(mContext,
-                mTextureCache, resource, priority, quality);
-    }
-
-    public Future<GVRTexture> loadFutureTexture(GVRAndroidResource resource)
-    {
-        return GVRAsynchronousResourceLoader.loadFutureTexture(mContext,
-                mTextureCache, resource, GVRAssetLoader.DEFAULT_PRIORITY, GVRCompressedTexture.BALANCED);
-    }
-
-    public Future<GVRTexture> loadFutureCubemapTexture(GVRAndroidResource resource)
-    {
-        return GVRAsynchronousResourceLoader.loadFutureCubemapTexture(mContext,
-                mTextureCache, resource, DEFAULT_PRIORITY,
+        GVRTexture texture = new GVRTexture(mContext, DEFAULT_TEXTURE_PARAMETERS);
+        TextureRequest request = new TextureRequest(resource, texture);
+        GVRAsynchronousResourceLoader.loadCubemapTexture(mContext,
+                mTextureCache, request, resource, DEFAULT_PRIORITY,
                 GVRCubemapTexture.faceIndexMap);
+        return texture;
     }
 
-    public Future<GVRTexture> loadFutureCompressedCubemapTexture(GVRAndroidResource resource)
+    public GVRTexture loadCubemapTexture(GVRAndroidResource resource)
+    {
+        GVRTexture texture = new GVRTexture(mContext, DEFAULT_TEXTURE_PARAMETERS);
+        TextureRequest request = new TextureRequest(resource, texture);
+        GVRAsynchronousResourceLoader.loadCubemapTexture(mContext,
+                mTextureCache, request, resource, DEFAULT_PRIORITY,
+                GVRCubemapTexture.faceIndexMap);
+        return texture;
+    }
+
+    public GVRTexture loadCompressedCubemapTexture(GVRAndroidResource resource)
     {
         return GVRAsynchronousResourceLoader.loadFutureCompressedCubemapTexture(mContext,
                 mTextureCache, resource, DEFAULT_PRIORITY,

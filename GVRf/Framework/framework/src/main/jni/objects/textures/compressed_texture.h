@@ -20,117 +20,80 @@
 #ifndef compressed_texture_H_
 #define compressed_texture_H_
 
-#include "objects/textures/texture.h"
 #include "util/gvr_jni.h"
 #include "util/gvr_log.h"
 #include "util/jni_utils.h"
+#include "bitmap_texture.h"
 
-namespace gvr {
-class CompressedTexture: public Texture {
+namespace gvr
+{
+class CompressedTexture : public BitmapImage
+{
 public:
 
-    // The constructor to use when loading a mipmap chain, from Java
-    explicit CompressedTexture(GLenum target) :
-            Texture(new GLTexture(target)),
-            target(target) {
-        pending_gl_task_ = GL_TASK_INIT_PLAIN;
-    }
-
     // The constructor to use when loading a single-level texture
-    explicit CompressedTexture(JNIEnv* env, GLenum target, GLenum internalFormat,
-            GLsizei width, GLsizei height, GLsizei imageSize, jbyteArray bytes,
-            int dataOffset, int* texture_parameters) :
-            Texture(new GLTexture(target, texture_parameters)), target(target) {
-        pending_gl_task_ = GL_TASK_INIT_INTERNAL_FORMAT;
-        if (JNI_OK != env->GetJavaVM(&javaVm_)) {
-            FAIL("GetJavaVM failed");
-        }
-
-        internalFormat_ = internalFormat;
-        width_ = width;
-        height_ = height;
-        imageSize_ = imageSize;
-        bytesRef_ = static_cast<jbyteArray>(env->NewGlobalRef(bytes));
-        dataOffset_ = dataOffset;
+    explicit CompressedTexture(JNIEnv *env, int target, int format,
+                               int width, int height, jbyteArray bytes,
+                               int levels, int *dataOffsets) :
+            BitmapImage(env, target, width, height, env->GetArrayLength(bytes), format, levels)
+    {
+        update(env, width, height, bytes, levels, dataOffsets);
     }
 
-    virtual ~CompressedTexture() {
-        JNIEnv* env = getCurrentEnv(javaVm_);
-
-        // Release global refs. Race condition does not occur because if
-        // the runPendingGL is running, the object won't be destructed.
-        switch (pending_gl_task_) {
-        case GL_TASK_INIT_INTERNAL_FORMAT: {
-            env->DeleteGlobalRef(bytesRef_);
-            break;
-        }
-
-        default:
-            break;
-        }
+    void update(JNIEnv *env, int width, int height, jbyteArray bytes, int levels,
+                int *dataOffsets)
+    {
+        env->DeleteGlobalRef(mData);
+        mWidth = width;
+        mHeight = height;
+        mLevels = levels;
+        mImageSize = env->GetArrayLength(bytes);
+        mData = static_cast<jbyteArray>(env->NewGlobalRef(bytes));
+        setDataOffsets(dataOffsets, mLevels);
+        mPendingUpdate = true;
     }
 
-    GLenum getTarget() const {
-        return target;
-    }
-
-    virtual void runPendingGL() {
-        Texture::runPendingGL();
-
-        switch (pending_gl_task_) {
-        case GL_TASK_NONE:
-            return;
-
-        case GL_TASK_INIT_PLAIN:
-            glBindTexture(target, gl_texture_->id());
-            break;
-
-        case GL_TASK_INIT_INTERNAL_FORMAT: {
-            JNIEnv* env = getCurrentEnv(javaVm_);
-            jbyte* data = env->GetByteArrayElements(bytesRef_, 0);
-
-            glBindTexture(target, gl_texture_->id());
-            glCompressedTexImage2D(target, 0, internalFormat_, width_, height_, 0,
-                    imageSize_, data + dataOffset_);
-
-            env->ReleaseByteArrayElements(bytesRef_, data, 0);
-            env->DeleteGlobalRef(bytesRef_);
-            break;
+    virtual void update(int texid)
+    {
+        JNIEnv *env = getCurrentEnv(mJava);
+        jbyte *data = env->GetByteArrayElements(mData, 0);
+        glBindTexture(mType, texid);
+        if (mLevels > 1) {
+            loadCompressedMipMaps(data);
         }
-
-        } // switch
-
-        pending_gl_task_ = GL_TASK_NONE;
+        else {
+            glCompressedTexImage2D(mType, 0, mFormat, mWidth, mHeight, 0,
+                                   mImageSize, data + getDataOffset(0));
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        env->ReleaseByteArrayElements(mData, data, 0);
+        env->DeleteGlobalRef(mData);
+        mPendingUpdate = false;
     }
 
 private:
-    CompressedTexture(const CompressedTexture& compressed_texture) = delete;
-    CompressedTexture(CompressedTexture&& compressed_texture) = delete;
-    CompressedTexture& operator=(const CompressedTexture& compressed_texture) = delete;
-    CompressedTexture& operator=(CompressedTexture&& compressed_texture) = delete;
+    CompressedTexture(const CompressedTexture &compressed_texture) = delete;
 
-private:
-    GLenum const target;
+    CompressedTexture(CompressedTexture &&compressed_texture) = delete;
 
-    // Enum for pending GL tasks. Keep a comma with each line
-    // for easier merging.
-    enum {
-        GL_TASK_NONE = 0,
-        GL_TASK_INIT_PLAIN,
-        GL_TASK_INIT_INTERNAL_FORMAT,
-    };
-    int pending_gl_task_;
+    CompressedTexture &operator=(const CompressedTexture &compressed_texture) = delete;
 
-    JavaVM* javaVm_;
+    CompressedTexture &operator=(CompressedTexture &&compressed_texture) = delete;
 
-    // For GL_TASK_INIT_INTERNAL_FORMAT
-    GLenum internalFormat_;
-    GLsizei width_;
-    GLsizei height_;
-    GLsizei imageSize_;
-    int dataOffset_;
-    jbyteArray bytesRef_;
+
+    void loadCompressedMipMaps(jbyte *data)
+    {
+        for (int level = 0; level < mLevels; ++level) {
+            int levelOffset = getDataOffset(level);
+            int levelSize = getDataOffset(level + 1) - levelOffset;
+            int width = mWidth >> level;
+            int height = mHeight >> level;
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+            glCompressedTexImage2D(mType, level, mFormat, width, height, levelOffset, levelSize,
+                                   data);
+        }
+    }
 };
-
 }
 #endif

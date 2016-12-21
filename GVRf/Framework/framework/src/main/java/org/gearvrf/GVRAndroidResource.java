@@ -618,7 +618,7 @@ public class GVRAndroidResource {
      * 
      * @since 1.6.7
      */
-    public interface TextureCallback extends CancelableCallback<GVRTexture> {
+    public interface TextureCallback extends CancelableCallback<GVRImage> {
     }
 
     /** Callback for asynchronous mesh loads */

@@ -22,39 +22,44 @@
 
 namespace gvr {
 extern "C" {
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_asynchronous_NativeCompressedTexture_normalConstructor(JNIEnv * env,
-        jobject obj, jint target, jint internalFormat,
-        jint width, jint height, jint imageSize, jbyteArray bytes, jint dataOffset,
-        jintArray jtexture_parameters);
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_asynchronous_NativeCompressedTexture_constructor(JNIEnv *env,
+              jobject obj, jint target,
+              jint internalFormat,
+              jint width, jint height,
+              jbyteArray bytes,
+              jintArray dataOffsets);
 
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_asynchronous_NativeCompressedTexture_mipmappedConstructor(JNIEnv * env,
-        jobject obj, jint target);
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_asynchronous_NativeCompressedTexture_update(JNIEnv *env,
+              jobject obj, jobject jtexture,
+              jint width, jint height,
+              jbyteArray bytes,
+              jintArray dataOffsets);
+};
+
+JNIEXPORT void JNICALL
+Java_org_gearvrf_asynchronous_NativeCompressedTexture_update(JNIEnv * env,
+    jobject obj, jobject jtexture,
+    jint width, jint height, jbyteArray bytes, jintArray jDataOffsets)
+{
+    jint* dataOffsets = env->GetIntArrayElements(jDataOffsets,0);
+    CompressedTexture* texture = reinterpret_cast<CompressedTexture*>(jtexture);
+    texture->update(env, width, height, bytes, env->GetArrayLength(jDataOffsets), dataOffsets);
+    env->ReleaseIntArrayElements(jDataOffsets, dataOffsets, 0);
 }
 
-
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_asynchronous_NativeCompressedTexture_normalConstructor(JNIEnv * env,
-    jobject obj, jint target, jint internalFormat,
-    jint width, jint height, jint imageSize, jbyteArray bytes, jint dataOffset,
-    jintArray jtexture_parameters) {
+Java_org_gearvrf_asynchronous_NativeCompressedTexture_constructor(JNIEnv * env,
+                                                                  jobject obj, jint target, jint internalFormat,
+                                                                  jint width, jint height, jbyteArray bytes, jintArray jDataOffsets)
+{
+    jint* dataOffsets = env->GetIntArrayElements(jDataOffsets,0);
 
-    jint* texture_parameters = env->GetIntArrayElements(jtexture_parameters,0);
-
-    CompressedTexture* texture =
-            new CompressedTexture(env, target, internalFormat, width, height, imageSize,
-                                  bytes, dataOffset, texture_parameters);
-
-    env->ReleaseIntArrayElements(jtexture_parameters, texture_parameters, 0);
-
+    CompressedTexture* texture = new CompressedTexture(env, target, internalFormat,
+                                                       width, height, bytes,
+                                                       env->GetArrayLength(jDataOffsets), dataOffsets);
+    env->ReleaseIntArrayElements(jDataOffsets, dataOffsets, 0);
     return reinterpret_cast<jlong>(texture);
 }
-
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_asynchronous_NativeCompressedTexture_mipmappedConstructor(JNIEnv * env,
-    jobject obj, jint target) {
-    return reinterpret_cast<jlong>(new CompressedTexture(target));
-}
-
 }
