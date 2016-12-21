@@ -621,7 +621,7 @@ namespace gvr {
         Descriptor &transform = rdata->getVkData().getDescriptor();
         VkDescriptorSetLayoutBinding &transform_uniformBinding = transform.getLayoutBinding();
 
-        VkDescriptorSetLayoutBinding uniformAndSamplerBinding[3] = {};
+        VkDescriptorSetLayoutBinding uniformAndSamplerBinding[2] = {};
         // Our MVP matrix
         uniformAndSamplerBinding[0].binding = 0;
         uniformAndSamplerBinding[0].descriptorCount = 1;
@@ -632,20 +632,19 @@ namespace gvr {
         Descriptor *material_descriptor = rdata->material(0)->getDescriptor();
         VkDescriptorSetLayoutBinding &material_uniformBinding = material_descriptor->getLayoutBinding();
 
-        material_uniformBinding.binding = 2;
-        uniformAndSamplerBinding[2] = material_uniformBinding;
+        uniformAndSamplerBinding[1] = material_uniformBinding;
 
         // Texture
-        uniformAndSamplerBinding[1].binding = 1;
+        /*uniformAndSamplerBinding[1].binding = 1;
         uniformAndSamplerBinding[1].descriptorCount = 1;
         uniformAndSamplerBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         uniformAndSamplerBinding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         uniformAndSamplerBinding[1].pImmutableSamplers = nullptr;
-
+*/
 
         VkDescriptorSetLayout &descriptorLayout = rdata->getVkData().getDescriptorLayout();
 
-        ret = vkCreateDescriptorSetLayout(m_device, gvr::DescriptorSetLayoutCreateInfo(0, 3,
+        ret = vkCreateDescriptorSetLayout(m_device, gvr::DescriptorSetLayoutCreateInfo(0, 2,
                                                                                        &uniformAndSamplerBinding[0]),
                                           nullptr,
                                           &descriptorLayout);
@@ -982,11 +981,14 @@ namespace gvr {
         scissor.extent.height = m_height;
         scissor.offset.x = 0;
         scissor.offset.y = 0;
-
+/*
         std::vector<uint32_t> result_vert = CompileShader("VulkanVS", VERTEX_SHADER,
                                                           vertexShaderData);//vs;//
         std::vector<uint32_t> result_frag = CompileShader("VulkanFS", FRAGMENT_SHADER,
                                                           data_frag);//fs;//
+ */
+        std::vector<uint32_t> result_vert = vs;
+        std::vector<uint32_t> result_frag = fs;
 
         // We define two shader stages: our vertex and fragment shader.
         // they are embedded as SPIR-V into a header file for ease of deployment.
@@ -1348,58 +1350,21 @@ namespace gvr {
             case 'f':
             case 'm':
                 fv = material->getFloatVec(key, size);
-                if (fv != NULL) {
-                    switch (size) {
-                        case 1:
-                            data.x = *fv;
-                            material_ubo->setVec(key, glm::value_ptr(data), 4);
-                            break;
-
-                        case 2:
-                            data.x = *fv;
-                            data.y = fv[1];
-                            material_ubo->setVec(key, glm::value_ptr(data), 4);
-                            break;
-
-                        case 3:
-                            data.x = fv[0];
-                            data.y = fv[1];
-                            data.z = fv[2];
-                            material_ubo->setVec(key, glm::value_ptr(data), 4);
-                            break;
-
-                        case 4:
-                            material_ubo->setVec(key, fv, 4);
-                            break;
-
-                        case 16:
-                            material_ubo->setVec(key, fv, 16);
-                            break;
-                    }
+                if (fv != NULL)
+                {
+                    material_ubo->setVec(key, fv, size);
                 }
                 break;
+
 
             case 'i':
                 iv = material->getIntVec(key, size);
                 if (iv != NULL)
-                    switch (size) {
-                        case 1:
-                            material_ubo->setInt(key, *iv);
-                            break;
-
-                        case 2:
-                            material_ubo->setIntVec(key, iv, 2);
-                            break;
-
-                        case 3:
-                            material_ubo->setIntVec(key, iv, 3);
-                            break;
-
-                        case 4:
-                            material_ubo->setIntVec(key, iv, 4);
-                            break;
-                    }
+                {
+                    material_ubo->setIntVec(key, iv, size);
+                }
                 break;
+
         }
     }
 
@@ -1443,21 +1408,21 @@ namespace gvr {
     void VulkanCore::InitDescriptorSetForRenderData(
             RenderData *rdata) { //VkDescriptorSet &m_descriptorSet) {
         //Create a pool with the amount of descriptors we require
-        VkDescriptorPoolSize poolSize[3] = {};
+        VkDescriptorPoolSize poolSize[2] = {};
         poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSize[0].descriptorCount = 1;
 
-        poolSize[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize[2].descriptorCount = 1;
-
+        poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize[1].descriptorCount = 1;
+/*
         poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSize[1].descriptorCount = 1;
-
+*/
         VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
         descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         descriptorPoolCreateInfo.pNext = nullptr;
         descriptorPoolCreateInfo.maxSets = 1;
-        descriptorPoolCreateInfo.poolSizeCount = 3;
+        descriptorPoolCreateInfo.poolSizeCount = 2;
         descriptorPoolCreateInfo.pPoolSizes = poolSize;
 
         VkResult err;
@@ -1485,10 +1450,10 @@ namespace gvr {
         write1.dstSet = descriptorSet;
         VkWriteDescriptorSet writes[3] = {};
         writes[0] = write;
-        writes[2] = write1;
-        write1.dstBinding = 2;
+        writes[1] = write1;
+       // write1.dstBinding = 2;
 
-
+/*
         // Texture
         VkDescriptorImageInfo descriptorImageInfo = {};
         descriptorImageInfo.sampler = textureObject->m_sampler;
@@ -1502,9 +1467,9 @@ namespace gvr {
         writes[1].descriptorCount = 1;
         writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writes[1].pImageInfo = &descriptorImageInfo;
-
+*/
         LOGI("Vulkan before update descriptor");
-        vkUpdateDescriptorSets(m_device, 3, &writes[0], 0, nullptr);
+        vkUpdateDescriptorSets(m_device, 2, &writes[0], 0, nullptr);
         LOGI("Vulkan after update descriptor");
     }
 

@@ -222,18 +222,6 @@ int calcSize(std::string type)
         bindings.push_back(binding);
 
         ////
-        const std::vector<glm::vec2>& texcord = getVec2Vector("a_texcoord");
-
-        if(vertices_len && vertices_len != texcord.size()){
-            LOGE("ERROR: length of vector is not same as of vertices");
-        }
-        binding.data_type = "vec2";
-        binding.size = calcSize(binding.data_type);
-        binding.offset = total_size * sizeof(float);
-        total_size +=calcSize(binding.data_type) ;
-        binding.index = attrib_index++;
-        binding.data = texcord.data();
-        bindings.push_back(binding);
 
 
         if(descriptor.find("a_normal")!=std::string::npos || descriptor.find("normalTexture")!=std::string::npos){
