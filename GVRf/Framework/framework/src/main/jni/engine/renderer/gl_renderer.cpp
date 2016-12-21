@@ -54,6 +54,19 @@ UniformBlock* GLRenderer::createUniformBlock(const std::string& desc)
     return new GLUniformBlock(desc);
 }
 
+GLRenderer::GLRenderer() : transform_ubo_(nullptr)
+{
+    std::string desc;
+
+    if(use_multiview)
+       desc = " mat4 u_view_[2]; mat4 u_mvp_[2]; mat4 u_mv_[2]; mat4 u_mv_it_[2]; mat4 u_model; mat4 u_view_i; mat4 u_right; ";
+    else
+        desc = " mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; mat4 u_right;";
+    transform_ubo_ = reinterpret_cast<GLUniformBlock*>(Renderer::getInstance()->createUniformBlock(desc));
+    transform_ubo_->setGLBindingPoint(TRANSFORM_UBO_INDEX);
+    transform_ubo_->setBlockName("Transform_ubo");
+}
+
 void GLRenderer::renderCamera(Scene* scene, Camera* camera, int framebufferId,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight,
         ShaderManager* shader_manager,
@@ -513,13 +526,8 @@ void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_da
 
 void GLRenderer::updateTransforms(RenderState& rstate)
 {
-    GLUniformBlock* transform_ubo =  reinterpret_cast<GLUniformBlock*>(rstate.scene->getTransformUbo());
+    GLUniformBlock* transform_ubo =  transform_ubo_;
 
-    if (transform_ubo->getGLBindingPoint() != TRANSFORM_UBO_INDEX)
-    {
-        transform_ubo->setGLBindingPoint(TRANSFORM_UBO_INDEX);
-        transform_ubo->setBlockName("Transform_ubo");
-    }
     if (use_multiview)
     {
         transform_ubo->setMat4("u_view_", rstate.uniforms.u_view_[0]);

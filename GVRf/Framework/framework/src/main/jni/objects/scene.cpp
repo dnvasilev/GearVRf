@@ -34,16 +34,12 @@ Scene::Scene() :
         javaObj_(0),
         main_camera_rig_(),
         frustum_flag_(false),
-        dirtyFlag_(0),transform_ubo_(nullptr),
+        dirtyFlag_(0),
         occlusion_flag_(false),
         bindShadersMethod_(0),
         pick_visible_(true),
         is_shadowmap_invalid(true) {
-    if(use_multiview)
-        uniform_desc_ = " mat4 u_view_[2]; mat4 u_mvp_[2]; mat4 u_mv_[2]; mat4 u_mv_it_[2]; mat4 u_model; mat4 u_view_i; mat4 u_right; ";
-    else
-        uniform_desc_ = " mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; mat4 u_right;";
-    transform_ubo_ = Renderer::getInstance()->createUniformBlock(uniform_desc_);
+
 }
 
 Scene::~Scene() {

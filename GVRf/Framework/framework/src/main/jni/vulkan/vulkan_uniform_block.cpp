@@ -20,7 +20,21 @@ namespace gvr {
     VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor) : UniformBlock(descriptor)
     {
     }
+     void VulkanUniformBlock::createDescriptorWriteInfo(int binding_index, int stageFlags,
+                                                     VkDescriptorSet &descriptor, bool sampler) {
 
+        VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                                                   : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+        GVR_Uniform &uniform = getBuffer();
+        gvr::DescriptorWrite writeInfo = gvr::DescriptorWrite(
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, binding_index, descriptor, 1,
+                descriptorType, uniform.bufferInfo);
+        writeDescriptorSet = *writeInfo;
+
+    }
+    VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
+          return writeDescriptorSet;
+      }
     void VulkanUniformBlock::updateBuffer(VkDevice &device,VulkanCore* vk){
 
         //  if(!buffer_init_)
@@ -76,6 +90,6 @@ namespace gvr {
 
     void VulkanUniformBlock::createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk)
     {
-        vk_descriptor->createDescriptor(device,vk,MATERIAL_UBO_INDEX,VK_SHADER_STAGE_FRAGMENT_BIT);
+        vk_descriptor->createDescriptor(device,vk,MATERIAL_UBO_INDEX,VK_SHADER_STAGE_FRAGMENT_BIT, this);
     }
 }

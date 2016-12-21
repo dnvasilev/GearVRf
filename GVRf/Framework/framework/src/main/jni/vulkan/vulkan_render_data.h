@@ -30,7 +30,7 @@ namespace gvr
     {
 
     public:
-        VulkanData() : vk_descriptor(
+        VulkanData() : ubo(
                 "mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; mat4 u_right;")
         {
         }
@@ -38,7 +38,7 @@ namespace gvr
         void createTransformDescriptor(VkDevice &device, VulkanCore *vk)
         {
             vk_descriptor
-                    .createDescriptor(device, vk, TRANSFORM_UBO_INDEX, VK_SHADER_STAGE_VERTEX_BIT);
+                    .createDescriptor(device, vk, TRANSFORM_UBO_INDEX, VK_SHADER_STAGE_VERTEX_BIT,&ubo);
         }
 
         VkPipeline &getVKPipeline()
@@ -70,7 +70,9 @@ namespace gvr
         {
             return m_descriptorSet;
         }
-
+        VulkanUniformBlock& getTransformUbo(){
+            return ubo;
+        }
         VkPipelineLayout m_pipelineLayout;
         // Vulkan
         GVR_Uniform m_modelViewMatrixUniform;
@@ -79,7 +81,7 @@ namespace gvr
         VkDescriptorSet m_descriptorSet;
 
     private:
-
+        VulkanUniformBlock ubo;
         VkDescriptorPool m_descriptorPool;
         VkDescriptorSetLayout m_descriptorLayout;
         VulkanDescriptor vk_descriptor;
@@ -104,7 +106,9 @@ namespace gvr
         {
             vkData.createTransformDescriptor(device, vk);
         }
-
+        VulkanUniformBlock& getTransformUbo(){
+            return vkData.getTransformUbo();
+        }
         VulkanData &getVkData()
         {
             return vkData;

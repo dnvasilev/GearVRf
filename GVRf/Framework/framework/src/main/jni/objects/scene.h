@@ -188,11 +188,6 @@ public:
 
     static void set_main_scene(Scene* scene);
 
-    UniformBlock* getTransformUbo()
-    {
-        return transform_ubo_;
-    }
-
 private:
     Scene(const Scene& scene);
     Scene(Scene&& scene);
@@ -203,7 +198,6 @@ private:
 
 
 private:
-    UniformBlock* transform_ubo_;
     std::string uniform_desc_;
     static Scene* main_scene_;
     JavaVM* javaVM_;

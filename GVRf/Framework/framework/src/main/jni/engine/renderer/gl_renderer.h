@@ -40,7 +40,7 @@
 #include "gl/gl_program.h"
 #include <unordered_map>
 #include "renderer.h"
-
+#include "gl/gl_uniform_block.h"
 typedef unsigned long Long;
 namespace gvr {
 class Camera;
@@ -56,7 +56,7 @@ class Light;
 class GLRenderer: public Renderer {
     friend class Renderer;
 protected:
-    GLRenderer(){}
+    GLRenderer();
     virtual ~GLRenderer(){}
 public:
     // pure virtual
@@ -98,6 +98,7 @@ public:
     virtual RenderData* createRenderData();
     virtual UniformBlock* createUniformBlock(const std::string& desc);
     void updateTransforms(RenderState& rstate);
+    GLUniformBlock* getTransformUbo() { return transform_ubo_; }
 
 private:
     // this is specific to GL
@@ -109,6 +110,7 @@ private:
     void occlusion_cull(RenderState& rstate,
                     std::vector<SceneObject*>& scene_objects);
 
+    GLUniformBlock* transform_ubo_;
 };
 }
 #endif

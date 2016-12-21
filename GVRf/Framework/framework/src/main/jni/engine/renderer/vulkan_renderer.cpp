@@ -68,7 +68,7 @@ namespace gvr {
 
         if(render_data_vector.size() == 1)
             return;
-
+        
         std::vector<VkDescriptorSet> allDescriptors;
 
         int swapChainIndex = vulkanCore_->AcquireNextImage();
@@ -97,9 +97,9 @@ namespace gvr {
             }
 
             allDescriptors.push_back(vkRdata->getVkData().m_descriptorSet);
-            VulkanUniformBlock* transformUBO = reinterpret_cast<VulkanUniformBlock*>(scene->getTransformUbo());
-            updateTransforms(transformUBO, vkRdata->owner_object()->transform(), camera);
-            vulkanCore_->UpdateUniforms(transformUBO);
+            VulkanUniformBlock& transformUBO = (vkRdata->getTransformUbo());
+            updateTransforms(&transformUBO, vkRdata->owner_object()->transform(), camera);
+            vulkanCore_->UpdateUniforms(&transformUBO);
         }
         vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, render_data_vector,camera);
 
