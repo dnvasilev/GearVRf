@@ -56,7 +56,7 @@ void Renderer::initializeStats() {
 ***/
 Renderer* Renderer::getInstance(std::string type){
     if(nullptr == instance){
-     if(0){
+     if(1){
             instance = new VulkanRenderer();
             isVulkan_ = true;
         }
