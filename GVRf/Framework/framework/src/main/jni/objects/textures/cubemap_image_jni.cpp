@@ -17,7 +17,7 @@
  * JNI
  ***************************************************************************/
 
-#include "cubemap_texture.h"
+#include "cubemap_image.h"
 #include "util/gvr_jni.h"
 #include "util/gvr_java_stack_trace.h"
 #include "android/asset_manager_jni.h"
@@ -26,25 +26,25 @@
 namespace gvr {
 extern "C" {
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeCubemapTexture_bitmapArrayConstructor(JNIEnv * env,
+    Java_org_gearvrf_NativeCubemapImage_bitmapArrayConstructor(JNIEnv * env,
             jobject obj, jobjectArray bitmapArray);
     JNIEXPORT void JNICALL
-    Java_org_gearvrf_NativeCubemapTexture_update(JNIEnv * env,
+    Java_org_gearvrf_NativeCubemapImage_update(JNIEnv * env,
              jobject obj, jobject jcubemap, jobjectArray bitmapArray);
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeCubemapTexture_bitmapArrayConstructor(JNIEnv * env,
+Java_org_gearvrf_NativeCubemapImage_bitmapArrayConstructor(JNIEnv * env,
     jobject obj, jobjectArray bitmapArray)
 {
     if (env->GetArrayLength(bitmapArray) != 6) {
         std::string error =
-        "new CubemapTexture() failed! Input bitmapList's length is not 6.";
+        "new CubemapImage() failed! Input bitmapList's length is not 6.";
         throw error;
     }
     jlong result = 0;
     try {
-        result = reinterpret_cast<jlong>(new CubemapTexture(env, bitmapArray));
+        result = reinterpret_cast<jlong>(new CubemapImage(env, bitmapArray));
     } catch (const std::string &err) {
         printJavaCallStack(env, err);
         throw err;
@@ -53,10 +53,10 @@ Java_org_gearvrf_NativeCubemapTexture_bitmapArrayConstructor(JNIEnv * env,
 }
 
 JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeCubemapTexture_update(JNIEnv * env,
+Java_org_gearvrf_NativeCubemapImage_update(JNIEnv * env,
     jobject obj, jobject jcubemap, jobjectArray bitmapArray)
 {
-    CubemapTexture* cubemap = reinterpret_cast<CubemapTexture*>(jcubemap);
+    CubemapImage* cubemap = reinterpret_cast<CubemapImage*>(jcubemap);
     cubemap->update(env, bitmapArray);
 }
 

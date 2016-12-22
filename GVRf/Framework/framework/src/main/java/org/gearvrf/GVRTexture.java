@@ -227,7 +227,7 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
      * some GL hardware handshaking. Reusing the texture reduces this overhead
      * (primarily by delaying garbage collection). Do be aware that updating a
      * texture will affect any and all {@linkplain GVRMaterial materials}
-     * (and/or {@link GVRPostEffect post effects)} that use the texture!
+     * (and/or post effects that use the texture!
      *
      * @param bitmapImage
      *            A GVRBitmapTexture containing an Android Bitmap or grayscale data.
@@ -292,7 +292,7 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
      * some GL hardware handshaking. Reusing the texture reduces this overhead
      * (primarily by delaying garbage collection). Do be aware that updating a
      * texture will affect any and all {@linkplain GVRMaterial materials}
-     * (and/or {@link GVRPostEffect post effects)} that use the texture!
+     * (and/or post effects that use the texture!
      *
      * @param bitmap
      *            A standard Android {@link Bitmap}
@@ -320,12 +320,12 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
         Bitmap[] bitmapArray = cubemap.getFaceBitmaps();
         if (nativePtr == 0)
         {
-            nativePtr = NativeCubemapTexture.bitmapArrayConstructor(bitmapArray);
+            nativePtr = NativeCubemapImage.bitmapArrayConstructor(bitmapArray);
             cubemap.setNative(nativePtr);
         }
         else
         {
-            NativeCubemapTexture.update(nativePtr, bitmapArray);
+            NativeCubemapImage.update(nativePtr, bitmapArray);
         }
     }
 
@@ -494,7 +494,7 @@ final class NativeBaseTexture {
     static native void setImage(long texPointer, long imagePointer);
 }
 
-class NativeCubemapTexture
+class NativeCubemapImage
 {
     static native long bitmapArrayConstructor(Bitmap[] bitmapArray);
     static native void update(long pointer, Bitmap[] bitmapArray);

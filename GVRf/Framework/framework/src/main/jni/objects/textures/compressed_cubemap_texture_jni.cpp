@@ -2,7 +2,7 @@
  * JNI
  ***************************************************************************/
 
-#include "cubemap_texture.h"
+#include "cubemap_image.h"
 #include "util/gvr_jni.h"
 #include "util/gvr_java_stack_trace.h"
 #include "android/asset_manager_jni.h"
@@ -26,17 +26,17 @@ Java_org_gearvrf_NativeCompressedCubemapTexture_constructor(JNIEnv * env,
     jobjectArray textureArray, jintArray joffsetArray) {
     if (env->GetArrayLength(textureArray) != 6) {
         std::string error =
-        "new CubemapTexture() failed! Input texture list's length is not 6.";
+        "new CubemapImage() failed! Input texture list's length is not 6.";
         throw error;
     }
     if (env->GetArrayLength(joffsetArray) != 6) {
         std::string error =
-        "new CubemapTexture() failed! Texture offset list's length is not 6.";
+        "new CubemapImage() failed! Texture offset list's length is not 6.";
         throw error;
     }
     try {
         jint* texture_offsets = env->GetIntArrayElements(joffsetArray, 0);
-        jlong rv = reinterpret_cast<jlong>(new CubemapTexture(env,
+        jlong rv = reinterpret_cast<jlong>(new CubemapImage(env,
                 internalFormat, width, height, imageSize,
                 textureArray, texture_offsets));
         env->ReleaseIntArrayElements(joffsetArray, texture_offsets, 0);
@@ -55,11 +55,11 @@ Java_org_gearvrf_NativeCompressedCubemapTexture_update(JNIEnv* env,
     if (env->GetArrayLength(joffsetArray) != 6)
     {
         std::string error =
-                "new CubemapTexture() failed! Texture offset list's length is not 6.";
+                "new CubemapImage() failed! Texture offset list's length is not 6.";
         throw error;
     }
     jint* offsets = env->GetIntArrayElements(joffsetArray, 0);
-    CubemapTexture* cubemap = reinterpret_cast<CubemapTexture*>(jTexture);
+    CubemapImage* cubemap = reinterpret_cast<CubemapImage*>(jTexture);
     cubemap->update(env, imageSize, textureArray, offsets);
     env->ReleaseIntArrayElements(joffsetArray, offsets, 0);
 }
