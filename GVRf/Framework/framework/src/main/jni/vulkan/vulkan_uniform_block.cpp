@@ -17,8 +17,9 @@
 
 namespace gvr {
 
-    VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor) : UniformBlock(descriptor)
+    VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor, int bindingPoint) : UniformBlock(descriptor, bindingPoint), vk_descriptor(nullptr)
     {
+        vk_descriptor = new VulkanDescriptor();
     }
      void VulkanUniformBlock::createDescriptorWriteInfo(int binding_index, int stageFlags,
                                                      VkDescriptorSet &descriptor, bool sampler) {
@@ -37,8 +38,8 @@ namespace gvr {
       }
     void VulkanUniformBlock::updateBuffer(VkDevice &device,VulkanCore* vk){
 
-        //  if(!buffer_init_)
-        //      createBuffer(device, vk);
+        if(!buffer_init_)
+              createBuffer(device, vk);
 
         VkResult ret = VK_SUCCESS;
         uint8_t *pData;
@@ -52,6 +53,8 @@ namespace gvr {
 
     }
     void VulkanUniformBlock::createBuffer(VkDevice &device,VulkanCore* vk){
+        VkDescriptorSet desc;
+        createDescriptorWriteInfo(bindingPoint_, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, desc);
 
         VkResult err = VK_SUCCESS;
         memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
@@ -86,10 +89,12 @@ namespace gvr {
         m_bufferInfo.bufferInfo.buffer = m_bufferInfo.buf;
         m_bufferInfo.bufferInfo.offset = 0;
         m_bufferInfo.bufferInfo.range = TotalSize;
+        buffer_init_ = true;
     }
 
     void VulkanUniformBlock::createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk)
     {
-        vk_descriptor->createDescriptor(device,vk,MATERIAL_UBO_INDEX,VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        createBuffer(device,vk);
+        vk_descriptor->createDescriptor(device,vk,bindingPoint_,VK_SHADER_STAGE_FRAGMENT_BIT);
     }
 }

@@ -25,10 +25,9 @@ namespace gvr {
     {
     public:
         VulkanDescriptor();
-        VulkanDescriptor(const std::string& ubo_descriptor);
-        VulkanDescriptor(VulkanUniformBlock* ubo);
+       // VulkanDescriptor(const std::string& ubo_descriptor);
         ~VulkanDescriptor();
-        void createDescriptor(VkDevice &, VulkanCore*, int, VkShaderStageFlagBits,VulkanUniformBlock*);
+        void createDescriptor(VkDevice &, VulkanCore*, int, VkShaderStageFlagBits);
 
         void createLayoutBinding(int binding_index,int stageFlags, bool sampler=false);
         //void createDescriptorWriteInfo(int binding_index,int stageFlags, VkDescriptorSet& descriptor, bool sampler=false);
@@ -37,7 +36,7 @@ namespace gvr {
       //  VkWriteDescriptorSet& getDescriptorSet();
 
     private:
-        void createBuffer(VkDevice &device, VulkanCore* vk,VulkanUniformBlock*);
+      //  void createBuffer(VkDevice &device, VulkanCore* vk,VulkanUniformBlock*);
         //VulkanUniformBlock* ubo;
         VkDescriptorSetLayoutBinding layout_binding;
     //    VkWriteDescriptorSet writeDescriptorSet;
@@ -53,7 +52,7 @@ namespace gvr {
     class VulkanUniformBlock : public UniformBlock
     {
     public:
-        VulkanUniformBlock(const std::string& descriptor);
+        VulkanUniformBlock(const std::string& descriptor, int);
         void createBuffer(VkDevice &, VulkanCore*);
         void updateBuffer(VkDevice &device, VulkanCore* vk);
         void createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk);
@@ -64,14 +63,15 @@ namespace gvr {
         GVR_Uniform m_bufferInfo;
         VkWriteDescriptorSet& getDescriptorSet();
     protected:
+        bool buffer_init_ = false;
         VkWriteDescriptorSet writeDescriptorSet;
         VulkanDescriptor* vk_descriptor;
     };
 
 
-    inline VulkanDescriptor::VulkanDescriptor() { }
-    inline VulkanDescriptor::VulkanDescriptor(const std::string& ubo_descriptor) { }
-    inline VulkanDescriptor::VulkanDescriptor( VulkanUniformBlock* ubo) { }
+    inline VulkanDescriptor::VulkanDescriptor() {  }
+   // inline VulkanDescriptor::VulkanDescriptor(const std::string& ubo_descriptor){ }
+  //  inline VulkanDescriptor::VulkanDescriptor( VulkanUniformBlock* ubo) { }
     inline VulkanDescriptor::~VulkanDescriptor() { }
 
     inline VulkanDescriptor* VulkanUniformBlock::getDescriptor() { return vk_descriptor; }

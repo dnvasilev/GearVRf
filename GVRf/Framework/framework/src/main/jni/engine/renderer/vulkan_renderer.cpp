@@ -41,9 +41,9 @@ namespace gvr {
         return new VulkanRenderData();
     }
 
-    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc)
+    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc,int  index)
     {
-        return new VulkanUniformBlock(desc);
+        return new VulkanUniformBlock(desc,index);
     }
 
     void VulkanRenderer::updateTransforms(VulkanUniformBlock* transform_ubo, Transform* modelTrans, Camera* camera)
@@ -68,7 +68,7 @@ namespace gvr {
 
         if(render_data_vector.size() == 1)
             return;
-        
+
         std::vector<VkDescriptorSet> allDescriptors;
 
         int swapChainIndex = vulkanCore_->AcquireNextImage();

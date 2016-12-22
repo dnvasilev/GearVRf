@@ -70,16 +70,16 @@ namespace gvr {
     uint8_t *oculusTexData;
     uint8_t *oculus_data[SWAP_CHAIN_COUNT];
 
-    void VulkanDescriptor::createBuffer(VkDevice &device, VulkanCore *vk, VulkanUniformBlock* ubo) {
+ /*   void VulkanDescriptor::createBuffer(VkDevice &device, VulkanCore *vk, VulkanUniformBlock* ubo,int index) {
         ubo->createBuffer(device, vk);
-    }
-
-    void VulkanDescriptor::createDescriptor(VkDevice &device, VulkanCore *vk, int index,
-                                      VkShaderStageFlagBits shaderStageFlagBits, VulkanUniformBlock* ubo) {
-        createBuffer(device, vk, ubo);
-        createLayoutBinding(index, shaderStageFlagBits);
         VkDescriptorSet desc;
-        ubo->createDescriptorWriteInfo(index, shaderStageFlagBits, desc, ubo);
+        ubo->createDescriptorWriteInfo(index, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, desc);
+    }
+*/
+    void VulkanDescriptor::createDescriptor(VkDevice &device, VulkanCore *vk, int index,
+                                      VkShaderStageFlagBits shaderStageFlagBits) {
+        //createBuffer(device, vk, ubo, index);
+        createLayoutBinding(index, shaderStageFlagBits);
 
     }
 
@@ -87,7 +87,7 @@ namespace gvr {
         VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                                                    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
 
-        gvr::DescriptorLayout layout = gvr::DescriptorLayout(binding_index, 1, descriptorType,
+        gvr::DescriptorLayout layout(binding_index, 1, descriptorType,
                                                              stageFlags, 0);
         layout_binding = *layout;
     }

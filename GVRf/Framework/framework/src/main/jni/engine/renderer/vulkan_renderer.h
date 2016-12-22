@@ -96,7 +96,7 @@ public:
     void set_face_culling(int cull_face){}
     virtual ShaderData* createMaterial(const std::string& desc);
     virtual RenderData* createRenderData();
-    virtual UniformBlock* createUniformBlock(const std::string& desc);
+    virtual UniformBlock* createUniformBlock(const std::string& desc, int);
     void updateTransforms(VulkanUniformBlock* transform_ubo, Transform* modelTrans, Camera* camera);
 
 private:

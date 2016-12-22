@@ -96,7 +96,7 @@ public:
 
     virtual ShaderData* createMaterial(const std::string& desc);
     virtual RenderData* createRenderData();
-    virtual UniformBlock* createUniformBlock(const std::string& desc);
+    virtual UniformBlock* createUniformBlock(const std::string& desc, int);
     void updateTransforms(RenderState& rstate);
     GLUniformBlock* getTransformUbo() { return transform_ubo_; }
 

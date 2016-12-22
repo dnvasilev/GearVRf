@@ -32,7 +32,7 @@ namespace gvr {
 class GLUniformBlock : public UniformBlock
 {
 public:
-    GLUniformBlock(const std::string& descriptor);
+    GLUniformBlock(const std::string& descriptor, int);
 
     virtual ~GLUniformBlock()
     {
@@ -64,25 +64,6 @@ public:
      */
     const std::string& getBlockName() const { return BlockName; }
 
-    /**
-     * Gets the OpenGL binding point for this uniform block.
-     * @return GL binding point or -1 if not set
-     */
-    int getGLBindingPoint() const
-    {
-        return GLBindingPoint;
-    }
-
-    /**
-     * Sets the GL binding point for this uniform block.
-     * This is a zero-based index indicating which buffer
-     * slot in the shader this uniform block is bound to.
-     * @param bufferNum 0 based buffer index
-     */
-    void setGLBindingPoint(int bufferNum)
-    {
-        GLBindingPoint = bufferNum;
-    }
 
     /**
      * Dump the contents of the shader uniforms to the log.
@@ -90,11 +71,12 @@ public:
      * @param blockIndex OpenGL binding point
      */
     static void dump(GLuint programID, int blockIndex);
-
+    GLuint getBuffer(){
+        return GLBuffer;
+    }
 protected:
     std::string BlockName;
     GLint       GLBlockIndex;
-    GLint       GLBindingPoint;
     GLuint      GLBuffer;
     GLuint      GLOffset;
 };
