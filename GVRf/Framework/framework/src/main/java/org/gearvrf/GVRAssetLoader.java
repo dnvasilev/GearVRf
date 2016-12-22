@@ -624,7 +624,7 @@ public final class GVRAssetLoader {
                 texture.setImage(image);
                 return texture;
             }
-            image = new GVRBitmapTexture(mContext, (Bitmap) null);
+            image = new GVRBitmapTexture(mContext);
             mTextureCache.put(resource, image);
         }
         try

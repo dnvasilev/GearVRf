@@ -48,6 +48,13 @@ public class GVRBitmapTexture extends GVRImage
         mGrayscaleData = null;
     }
 
+    public GVRBitmapTexture(GVRContext gvrContext)
+    {
+        super(gvrContext, 0, 0, GL_RGB);
+        mBitmap = null;
+        mGrayscaleData = null;
+    }
+
     /**
      * Constructs a texture by loading a bitmap from a PNG file in (or under)
      * the {@code assets} directory.
