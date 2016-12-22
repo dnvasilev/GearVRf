@@ -31,9 +31,11 @@ class BitmapImage : public Image
 public:
 
     explicit BitmapImage(JNIEnv* env, int width, int height, jbyteArray data) :
-            Image(GL_TEXTURE_2D, width, height, width * height, GL_LUMINANCE, 1)
+            Image(GL_TEXTURE_2D, width, height, width * height, GL_LUMINANCE, 1),
+            mData(NULL)
     {
-        if (JNI_OK != env->GetJavaVM(&mJava)) {
+        if (JNI_OK != env->GetJavaVM(&mJava))
+        {
             FAIL("GetJavaVM failed");
         }
         update(env, width, height, data);
@@ -42,35 +44,59 @@ public:
     explicit BitmapImage(JNIEnv* env, int target, int width, int height, int imagesize, int format, int levels) :
             Image(target, width, height, imagesize, format, levels)
     {
-        if (JNI_OK != env->GetJavaVM(&mJava)) {
+        if (JNI_OK != env->GetJavaVM(&mJava))
+        {
             FAIL("GetJavaVM failed");
         }
     }
 
     virtual ~BitmapImage()
     {
-        JNIEnv* env = getCurrentEnv(mJava);
-        env->DeleteGlobalRef(mData);
+        clearData(getCurrentEnv(mJava));
+    }
+
+    void clearData(JNIEnv* env)
+    {
+        if (mData != NULL)
+        {
+            jobject ref = env->NewLocalRef(mData);
+            if (ref != NULL)
+            {
+                env->DeleteWeakGlobalRef(mData);
+                env->DeleteLocalRef(ref);
+            }
+            mData = NULL;
+        }
     }
 
     void update(JNIEnv* env, int width, int height, jbyteArray data)
     {
+        clearData(env);
         mWidth = width;
         mHeight = height;
-        mData = static_cast<jbyteArray>(env->NewGlobalRef(data));
-        mPendingUpdate = true;
+        if (data != NULL)
+        {
+            mData = static_cast<jbyteArray>(env->NewWeakGlobalRef(data));
+            mPendingUpdate = true;
+        }
     }
 
     virtual void update(int texid)
     {
-        JNIEnv* env = getCurrentEnv(mJava);
-        jbyte* data = env->GetByteArrayElements(mData, 0);
-        env->ReleaseByteArrayElements(mData, data, 0);
-        env->DeleteGlobalRef(mData);
-        glBindTexture(GL_TEXTURE_2D, texid);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mWidth, mHeight, 0,
-                     GL_LUMINANCE, GL_UNSIGNED_BYTE, mData);
-        glGenerateMipmap (GL_TEXTURE_2D);
+        if (mData != NULL)
+        {
+            JNIEnv *env = getCurrentEnv(mJava);
+            jbyteArray array = static_cast<jbyteArray>(env->NewLocalRef(mData));
+            jbyte *data = env->GetByteArrayElements(array, 0);
+            env->ReleaseByteArrayElements(mData, data, 0);
+            glBindTexture(GL_TEXTURE_2D, texid);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mWidth, mHeight, 0, GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE, mData
+            );
+            glGenerateMipmap(GL_TEXTURE_2D);
+            env->DeleteLocalRef(array);
+            clearData(env);
+        }
         mPendingUpdate = false;
     }
 

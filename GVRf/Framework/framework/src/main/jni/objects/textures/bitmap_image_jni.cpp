@@ -17,7 +17,7 @@
  * JNI
  ***************************************************************************/
 
-#include "bitmap_texture.h"
+#include "bitmap_image.h"
 #include "util/gvr_jni.h"
 #include "util/gvr_java_stack_trace.h"
 #include "android/asset_manager_jni.h"
@@ -45,7 +45,8 @@ Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv * env, jobject obj,
 
 JNIEXPORT void JNICALL
 Java_org_gearvrf_NativeBitmapImage_update(JNIEnv * env, jobject obj,
-        jlong jtexture, jint width, jint height, jbyteArray jdata) {
+        jlong jtexture, jint width, jint height, jbyteArray jdata)
+{
     BitmapImage* texture = reinterpret_cast<BitmapImage*>(jtexture);
     texture->update(env, width, height, jdata);
 }

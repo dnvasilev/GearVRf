@@ -243,14 +243,14 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
         final byte[] grayscale = bitmapImage.getGrayscale();
 
         if ((width <= 0) || (height <= 0) ||
-            (grayscale != null) || (grayscale.length < height * width))
+            ((grayscale != null) && (grayscale.length < height * width)))
         {
             throw new IllegalArgumentException();
         }
         long nativePtr = bitmapImage.getNative();
         if (nativePtr == 0)
         {
-            nativePtr = NativeBitmapImage.constructor(GL_TEXTURE_2D, format, width, height, grayscale);
+            nativePtr = NativeBitmapImage.constructor(width, height, grayscale);
             bitmapImage.setNative(nativePtr);
         }
         if (getGVRContext().isCurrentThreadGLThread())
@@ -259,7 +259,7 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
             {
                 updateFromBitmap(bitmap);
             }
-            else
+            else if (grayscale != null)
             {
                 NativeBitmapImage.update(nativePtr, width, height, grayscale);
             }
@@ -274,7 +274,7 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
                 {
                     updateFromBitmap(bitmap);
                 }
-                else
+                else if (grayscale != null)
                 {
                     NativeBitmapImage.update(bitmapImage.getNative(), width, height, grayscale);
                 }
@@ -514,8 +514,7 @@ class NativeCompressedTexture {
 }
 
 class NativeBitmapImage {
-    static native long constructor(int target, int internalFormat,
-                                   int width, int height, byte[] data);
+    static native long constructor(int width, int height, byte[] data);
 
     static native void update(long pointer, int width, int height, byte[] data);
 }
