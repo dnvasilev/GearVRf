@@ -41,9 +41,9 @@ namespace gvr {
         return new VulkanRenderData();
     }
 
-    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc)
+    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc,int  index)
     {
-        return new VulkanUniformBlock(desc);
+        return new VulkanUniformBlock(desc,index);
     }
 
     void VulkanRenderer::updateTransforms(VulkanUniformBlock* transform_ubo, Transform* modelTrans, Camera* camera)
@@ -97,9 +97,9 @@ namespace gvr {
             }
 
             allDescriptors.push_back(vkRdata->getVkData().m_descriptorSet);
-            VulkanUniformBlock* transformUBO = reinterpret_cast<VulkanUniformBlock*>(scene->getTransformUbo());
-            updateTransforms(transformUBO, vkRdata->owner_object()->transform(), camera);
-            vulkanCore_->UpdateUniforms(transformUBO);
+            VulkanUniformBlock& transformUBO = (vkRdata->getTransformUbo());
+            updateTransforms(&transformUBO, vkRdata->owner_object()->transform(), camera);
+            vulkanCore_->UpdateUniforms(&transformUBO);
         }
         vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, render_data_vector,camera);
 

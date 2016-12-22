@@ -31,6 +31,7 @@
 #include <shaderc/shaderc.hpp>
 #include <gl/gl_material.h>
 #include <gl/gl_render_data.h>
+#include <engine/renderer/gl_renderer.h>
 
 
 namespace gvr {
@@ -336,7 +337,8 @@ void Shader::render(RenderState* rstate, RenderData* render_data, ShaderData* ma
     /*
      * Update values of uniform variables
      */
-    GLUniformBlock* transform_ubo =  reinterpret_cast<GLUniformBlock*>(rstate->scene->getTransformUbo());
+    GLRenderer* renderer = reinterpret_cast<GLRenderer*>(Renderer::getInstance());
+    GLUniformBlock* transform_ubo =  renderer->getTransformUbo();
 
     transform_ubo->render(programID);
 

@@ -24,9 +24,8 @@ void GLRenderData::renderBones(int programId)
     GLUniformBlock* bones_ubo = reinterpret_cast<GLUniformBlock*>(bones_ubo_);
     if (bones_ubo != nullptr)
     {
-        if (bones_ubo->getGLBindingPoint() != BONES_UBO_INDEX)
+        if (bones_ubo->getBuffer() == 0)
         {
-            bones_ubo->setGLBindingPoint(BONES_UBO_INDEX);
             bones_ubo->setBlockName("Bones_ubo");
         }
         bones_ubo->bindBuffer(programId);

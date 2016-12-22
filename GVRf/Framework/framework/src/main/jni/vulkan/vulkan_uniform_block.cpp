@@ -17,14 +17,29 @@
 
 namespace gvr {
 
-    VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor) : UniformBlock(descriptor)
+    VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor, int bindingPoint) : UniformBlock(descriptor, bindingPoint), vk_descriptor(nullptr)
     {
+        vk_descriptor = new VulkanDescriptor();
     }
+     void VulkanUniformBlock::createDescriptorWriteInfo(int binding_index, int stageFlags,
+                                                     VkDescriptorSet &descriptor, bool sampler) {
 
+        VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                                                   : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+        GVR_Uniform &uniform = getBuffer();
+        gvr::DescriptorWrite writeInfo = gvr::DescriptorWrite(
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, binding_index, descriptor, 1,
+                descriptorType, uniform.bufferInfo);
+        writeDescriptorSet = *writeInfo;
+
+    }
+    VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
+          return writeDescriptorSet;
+      }
     void VulkanUniformBlock::updateBuffer(VkDevice &device,VulkanCore* vk){
 
-        //  if(!buffer_init_)
-        //      createBuffer(device, vk);
+        if(!buffer_init_)
+              createBuffer(device, vk);
 
         VkResult ret = VK_SUCCESS;
         uint8_t *pData;
@@ -38,6 +53,8 @@ namespace gvr {
 
     }
     void VulkanUniformBlock::createBuffer(VkDevice &device,VulkanCore* vk){
+        VkDescriptorSet desc;
+        createDescriptorWriteInfo(bindingPoint_, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, desc);
 
         VkResult err = VK_SUCCESS;
         memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
@@ -72,10 +89,12 @@ namespace gvr {
         m_bufferInfo.bufferInfo.buffer = m_bufferInfo.buf;
         m_bufferInfo.bufferInfo.offset = 0;
         m_bufferInfo.bufferInfo.range = TotalSize;
+        buffer_init_ = true;
     }
 
     void VulkanUniformBlock::createVkMaterialDescriptor(VkDevice &device, VulkanCore* vk)
     {
-        vk_descriptor->createDescriptor(device,vk,MATERIAL_UBO_INDEX,VK_SHADER_STAGE_FRAGMENT_BIT);
+        createBuffer(device,vk);
+        vk_descriptor->createDescriptor(device,vk,bindingPoint_,VK_SHADER_STAGE_FRAGMENT_BIT);
     }
 }

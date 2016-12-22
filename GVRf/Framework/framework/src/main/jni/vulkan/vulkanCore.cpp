@@ -70,16 +70,16 @@ namespace gvr {
     uint8_t *oculusTexData;
     uint8_t *oculus_data[SWAP_CHAIN_COUNT];
 
-    void VulkanDescriptor::createBuffer(VkDevice &device, VulkanCore *vk) {
+ /*   void VulkanDescriptor::createBuffer(VkDevice &device, VulkanCore *vk, VulkanUniformBlock* ubo,int index) {
         ubo->createBuffer(device, vk);
+        VkDescriptorSet desc;
+        ubo->createDescriptorWriteInfo(index, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, desc);
     }
-
+*/
     void VulkanDescriptor::createDescriptor(VkDevice &device, VulkanCore *vk, int index,
                                       VkShaderStageFlagBits shaderStageFlagBits) {
-        createBuffer(device, vk);
+        //createBuffer(device, vk, ubo, index);
         createLayoutBinding(index, shaderStageFlagBits);
-        VkDescriptorSet desc;
-        createDescriptorWriteInfo(index, shaderStageFlagBits, desc);
 
     }
 
@@ -87,36 +87,24 @@ namespace gvr {
         VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                                                    : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
 
-        gvr::DescriptorLayout layout = gvr::DescriptorLayout(binding_index, 1, descriptorType,
+        gvr::DescriptorLayout layout(binding_index, 1, descriptorType,
                                                              stageFlags, 0);
         layout_binding = *layout;
     }
 
-    void VulkanDescriptor::createDescriptorWriteInfo(int binding_index, int stageFlags,
-                                               VkDescriptorSet &descriptor, bool sampler) {
 
-        VkDescriptorType descriptorType = (sampler ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-                                                   : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-        GVR_Uniform &uniform = ubo->getBuffer();
-        gvr::DescriptorWrite writeInfo = gvr::DescriptorWrite(
-                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, binding_index, descriptor, 1,
-                descriptorType, uniform.bufferInfo);
-        writeDescriptorSet = *writeInfo;
-
-    }
-
-    VulkanUniformBlock* VulkanDescriptor::getUBO() {
+  /*  VulkanUniformBlock* VulkanDescriptor::getUBO() {
         return ubo;
     }
-
+*/
     VkDescriptorSetLayoutBinding& VulkanDescriptor::getLayoutBinding() {
         return layout_binding;
     }
 
-    VkWriteDescriptorSet& VulkanDescriptor::getDescriptorSet() {
+  /*  VkWriteDescriptorSet& VulkanDescriptor::getDescriptorSet() {
         return writeDescriptorSet;
     }
-
+*/
     bool VulkanCore::CreateInstance() {
         VkResult ret = VK_SUCCESS;
 
@@ -1376,16 +1364,16 @@ namespace gvr {
         err = vkAllocateDescriptorSets(m_device, &descriptorSetAllocateInfo, &descriptorSet);
         GVR_VK_CHECK(!err);
 
-        VulkanDescriptor &transform_desc = rdata->getVkData().getDescriptor();
-        VkWriteDescriptorSet &write = transform_desc.getDescriptorSet();
+        VkWriteDescriptorSet &transform_desc = rdata->getTransformUbo().getDescriptorSet();
+
         VulkanMaterial* vkMtl = reinterpret_cast<VulkanMaterial*>(rdata->material(0));
-        write.dstSet = descriptorSet;
-        VulkanDescriptor* mat_desc = vkMtl->getVulkanUniforms().getDescriptor();
-        VkWriteDescriptorSet &write1 = mat_desc->getDescriptorSet();
-        write1.dstSet = descriptorSet;
+        transform_desc.dstSet = descriptorSet;
+        VkWriteDescriptorSet& mat_desc = vkMtl->getVulkanUniforms().getDescriptorSet();
+        //VkWriteDescriptorSet &write1 = mat_desc->getDescriptorSet();
+        mat_desc.dstSet = descriptorSet;
         VkWriteDescriptorSet writes[3] = {};
-        writes[0] = write;
-        writes[1] = write1;
+        writes[0] = transform_desc;
+        writes[1] = mat_desc;
        // write1.dstBinding = 2;
 
 /*

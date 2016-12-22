@@ -65,8 +65,15 @@ protected:
 
 public:
     UniformBlock();
-    UniformBlock(const std::string& descriptor);
-
+    UniformBlock(const std::string& descriptor, int binding_point);
+    /**
+     * Gets the OpenGL binding point for this uniform block.
+     * @return GL binding point or -1 if not set
+     */
+    int getBindingPoint() const
+    {
+        return bindingPoint_;
+    }
     /**
      * Determine if a named uniform exists in this block.
      * This function will return false for names which are
@@ -409,11 +416,11 @@ protected:
      */
     char* getData(const std::string& name, int& bytesize);
     const char* getData(const std::string& name, int& bytesize) const;
-
+    int          bindingPoint_;
     bool        ownData;        // true if this uniform owns its data block
     std::string Descriptor;     // descriptor with name, type and size of uniforms
     void*       UniformData;    // -> data block with uniform values
-    GLint       TotalSize;      // number of bytes in data block
+    int        TotalSize;      // number of bytes in data block
     std::map<std::string, Uniform> UniformMap;
 };
 

@@ -196,7 +196,7 @@ void RenderData::updateBones(const float* boneData, int numFloats)
 {
     if (bones_ubo_ == NULL)
     {
-        bones_ubo_ = Renderer::getInstance()->createUniformBlock("mat4 u_bone_matrix[60];");
+        bones_ubo_ = Renderer::getInstance()->createUniformBlock("mat4 u_bone_matrix[60];",BONES_UBO_INDEX);
     }
     bones_ubo_->setFloatVec("u_bone_matrix", boneData, numFloats);
 }

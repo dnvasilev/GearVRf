@@ -18,11 +18,10 @@
 
 
 namespace gvr {
-    GLUniformBlock::GLUniformBlock(const std::string& descriptor) :
-            UniformBlock(descriptor),
+    GLUniformBlock::GLUniformBlock(const std::string& descriptor, int bindingPoint) :
+            UniformBlock(descriptor,bindingPoint),
             BlockName("Material_ubo"),
             GLBlockIndex(-1),
-            GLBindingPoint(MATERIAL_UBO_INDEX),
             GLOffset(0),
             GLBuffer(0)
     {
@@ -30,7 +29,7 @@ namespace gvr {
 
     void GLUniformBlock::bindBuffer(GLuint programId)
     {
-        if (GLBindingPoint < 0)
+        if (bindingPoint_ < 0)
             return;
         if (GLBlockIndex < 0)
         {
@@ -44,14 +43,14 @@ namespace gvr {
             glGenBuffers(1, &GLBuffer);
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
             glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
-            glUniformBlockBinding(programId, GLBlockIndex, GLBindingPoint);
-            glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
+            glUniformBlockBinding(programId, GLBlockIndex, bindingPoint_);
+            glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint_, GLBuffer);
             checkGlError("bindUBO ");
-            LOGV("SHADER: UniformBlock: %s bound to #%d at index %d buffer = %d\n", getBlockName().c_str(), GLBindingPoint, GLBlockIndex, GLBuffer);
+            LOGV("SHADER: UniformBlock: %s bound to #%d at index %d buffer = %d\n", getBlockName().c_str(), bindingPoint_, GLBlockIndex, GLBuffer);
         }
         else {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-            glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint_, GLBuffer);
         }
     }
 
@@ -62,7 +61,7 @@ namespace gvr {
         if (GLBuffer >= 0)
         {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-            glBindBufferBase(GL_UNIFORM_BUFFER, GLBindingPoint, GLBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint_, GLBuffer);
             glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
             LOGV("SHADER: UniformBlock: offset %d : total Size %d\n", GLOffset, getTotalSize());
         }

@@ -110,7 +110,7 @@ public:
      }
      virtual ShaderData* createMaterial(const std::string& desc) = 0;
      virtual RenderData* createRenderData() = 0;
-     virtual UniformBlock* createUniformBlock(const std::string& desc) = 0;
+     virtual UniformBlock* createUniformBlock(const std::string& desc,int) = 0;
      virtual void initializeStats();
      virtual void set_face_culling(int cull_face) = 0;
      virtual void renderRenderDataVector(RenderState &rstate);

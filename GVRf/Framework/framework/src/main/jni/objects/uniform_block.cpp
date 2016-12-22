@@ -20,8 +20,9 @@
 
 namespace gvr
 {
-    UniformBlock::UniformBlock(const std::string &descriptor) :
+    UniformBlock::UniformBlock(const std::string &descriptor, int bindingPoint) :
             TotalSize(0),
+            bindingPoint_(bindingPoint),
             UniformData(NULL)
     {
         ownData = false;
