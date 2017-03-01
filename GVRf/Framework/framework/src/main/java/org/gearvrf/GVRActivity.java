@@ -49,7 +49,7 @@ import android.view.WindowManager;
  * The typical GVRF application will have a single Android {@link Activity},
  * which <em>must</em> descend from {@link GVRActivity}, not directly from
  * {@code Activity}.
- * 
+ *
  * {@code GVRActivity} creates and manages the internal classes which use sensor
  * data to manage a viewpoint, and thus present an appropriate stereoscopic view
  * of your scene graph. {@code GVRActivity} also gives GVRF a full-screen window
@@ -227,13 +227,13 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
 
     /**
      * Links {@linkplain GVRMain a script} to the activity; sets the version;
-     * 
+     *
      * @param gvrMain
      *            An instance of {@link GVRMain} to handle callbacks on the GL
      *            thread.
      * @param dataFileName
-     *            Name of the XML file containing the framebuffer parameters. 
-     * 
+     *            Name of the XML file containing the framebuffer parameters.
+     *
      *            <p>
      *            The XML filename is relative to the application's
      *            {@code assets} directory, and can specify a file in a
@@ -328,7 +328,7 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
 
     /**
      * Sets whether to force rendering to be single-eye, monoscopic view.
-     * 
+     *
      * @param force
      *            If true, will create a OvrMonoscopicViewManager when
      *            {@linkplain GVRActivity#setMain(GVRMain, String)} is called. If false, will
@@ -346,7 +346,7 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
     /**
      * Returns whether a monoscopic view was asked to be forced during
      * {@linkplain #setMain(GVRMain, String) setMain()}.
-     * 
+     *
      * @see GVRActivity#setForceMonoscopic(boolean)
      * @deprecated
      */
@@ -553,7 +553,7 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
 
     /**
      * Remove a child view of Android hierarchy view .
-     * 
+     *
      * @param view View to be removed.
      */
     public final void unregisterView(final View view) {

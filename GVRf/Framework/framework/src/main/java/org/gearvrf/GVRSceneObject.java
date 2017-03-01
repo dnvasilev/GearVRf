@@ -26,7 +26,6 @@ import java.util.concurrent.Future;
 
 import org.gearvrf.GVRMaterial.GVRShaderType;
 import org.gearvrf.GVRMaterial.GVRShaderType.Texture;
-import org.gearvrf.asynchronous.GVRCompressedTexture;
 import org.gearvrf.script.IScriptable;
 import org.gearvrf.utility.Log;
 import org.joml.Vector3f;
@@ -127,25 +126,39 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      * 
      */
     public GVRSceneObject(GVRContext gvrContext, GVRMesh mesh,
-            GVRTexture texture, GVRMaterialShaderId shaderId) {
+            GVRTexture texture, GVRShaderId shaderId) {
         super(gvrContext, NativeSceneObject.ctor());
-
         attachComponent(new GVRTransform(getGVRContext()));
 
+        if ((mesh == null) && (texture == null)) {
+            return;
+        }
+        GVRRenderData renderData = new GVRRenderData(gvrContext);
+        attachComponent(renderData);
         if (mesh != null) {
-            GVRRenderData renderData = new GVRRenderData(gvrContext);
-            attachComponent(renderData);
             renderData.setMesh(mesh);
         }
+        if (shaderId == null) {
+            shaderId = GVRShaderType.Phong.ID;
+        }
+        GVRMaterial material = new GVRMaterial(gvrContext, shaderId);
+        renderData.setMaterial(material);
 
         if (texture != null) {
-            GVRMaterial material = new GVRMaterial(gvrContext, shaderId);
             material.setMainTexture(texture);
-            getRenderData().setMaterial(material);
         }
     }
 
-    private static final GVRMaterialShaderId STANDARD_SHADER = GVRShaderType.Texture.ID;
+    public GVRSceneObject(GVRContext gvrContext, GVRMesh mesh, GVRMaterial material) {
+        super(gvrContext, NativeSceneObject.ctor());
+        attachComponent(new GVRTransform(getGVRContext()));
+
+        GVRRenderData renderData = new GVRRenderData(gvrContext, material);
+        attachComponent(renderData);
+        renderData.setMesh(mesh);
+    }
+
+    private static final GVRShaderId STANDARD_SHADER = GVRShaderType.Texture.ID;
 
     /**
      * Constructs a scene object with {@linkplain GVRMesh an arbitrarily complex
@@ -184,13 +197,13 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      *            current {@link GVRContext}.
      * @param futureMesh
      *            mesh of the object.
-     * @param futureTexture
+     * @param texture
      *            texture of the object.
      * 
      * @since 1.6.8
      */
     public GVRSceneObject(GVRContext gvrContext, Future<GVRMesh> futureMesh,
-            Future<GVRTexture> futureTexture) {
+            GVRTexture texture) {
         this(gvrContext);
 
         // Create the render data
@@ -201,7 +214,7 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
 
         // Set the texture
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(futureTexture);
+        material.setMainTexture(texture);
         renderData.setMaterial(material);
 
         // Attach the render data
@@ -223,9 +236,9 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      * @since 1.6.7
      */
     public GVRSceneObject(GVRContext gvrContext, GVRAndroidResource mesh,
-            GVRAndroidResource texture) {
+            GVRAndroidResource resource) {
         this(gvrContext, gvrContext.loadFutureMesh(mesh), gvrContext
-                .getAssetLoader().loadFutureTexture(texture));
+                .getAssetLoader().loadTexture(resource));
     }
 
     /**
@@ -244,7 +257,7 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      *            a specific shader Id
      */
     public GVRSceneObject(GVRContext gvrContext, float width, float height,
-            GVRTexture texture, GVRMaterialShaderId shaderId) {
+            GVRTexture texture, GVRShaderId shaderId) {
         this(gvrContext, gvrContext.createQuad(width, height), texture,
                 shaderId);
     }

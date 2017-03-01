@@ -26,6 +26,7 @@
 #include <string>
 #include <set>
 #include <unordered_set>
+//#include <objects/components/render_data.h>
 
 #include "gl/gl_headers.h"
 
@@ -35,30 +36,30 @@
 
 #include "objects/components/bone.h"
 #include "objects/hybrid_object.h"
-#include "objects/material.h"
+#include "objects/shader_data.h"
 #include "objects/bounding_volume.h"
 #include "objects/vertex_bone_data.h"
-
+#include "vulkan/vulkan_headers.h"
 namespace gvr {
+
 class Mesh: public HybridObject {
 public:
-    Mesh() :
-            vertices_(),
-            normals_(),
-            indices_(),
-            float_vectors_(),
-            vec2_vectors_(),
-            vec3_vectors_(),
-            vec4_vectors_(),
-            have_bounding_volume_(false),
-            vao_dirty_(true),
-            boneVboID_(0),
-            vertexBoneData_(this),
-            bone_data_dirty_(true)
+    Mesh(const std::string& descriptor) :
+            vertexDescriptor_(descriptor), vertices_(), normals_(), indices_(), float_vectors_(), vec2_vectors_(), vec3_vectors_(), vec4_vectors_(),
+            have_bounding_volume_(false), vao_dirty_(true), vkVertices_(new GVR_VK_Vertices()),
+            boneVboID_(0), vertexBoneData_(this), bone_data_dirty_(true), totalStride_(0)
     {
+        m_vertices.vi_bindings = NULL;
+        m_vertices.vi_attrs = NULL;
     }
 
     ~Mesh() {
+        if (m_vertices.vi_bindings) {
+            delete m_vertices.vi_bindings;
+        }
+        if (m_vertices.vi_attrs) {
+            delete m_vertices.vi_attrs;
+        }
         cleanUp();
     }
 
@@ -72,7 +73,7 @@ public:
         normals.swap(normals_);
         std::vector<unsigned short> indices;
         indices.swap(indices_);
-
+        delete vkVertices_;
         deleteVaos();
     }
 
@@ -116,7 +117,7 @@ public:
         have_bounding_volume_ = false;
         getBoundingVolume(); // calculate bounding volume
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     void set_vertices(std::vector<glm::vec3>&& vertices) {
@@ -124,7 +125,7 @@ public:
         have_bounding_volume_ = false;
         getBoundingVolume(); // calculate bounding volume
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     const std::vector<glm::vec3>& normals() const {
@@ -134,13 +135,13 @@ public:
     void set_normals(const std::vector<glm::vec3>& normals) {
         normals_ = normals;
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     void set_normals(std::vector<glm::vec3>&& normals) {
         normals_ = std::move(normals);
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     const std::vector<unsigned short>& triangles() const {
@@ -150,13 +151,13 @@ public:
     void set_triangles(const std::vector<unsigned short>& triangles) {
         indices_ = triangles;
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     void set_triangles(std::vector<unsigned short>&& triangles) {
         indices_ = std::move(triangles);
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     const std::vector<unsigned short>& indices() const {
@@ -166,29 +167,18 @@ public:
     void set_indices(const std::vector<unsigned short>& indices) {
         indices_ = indices;
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
     void set_indices(std::vector<unsigned short>&& indices) {
         indices_ = std::move(indices);
         vao_dirty_ = true;
-        dirty();
+        dirty(STD_ATTRIBS);
     }
 
-    bool hasAttribute(std::string key) const {
-        if (vec3_vectors_.find(key) != vec3_vectors_.end()) {
-            return true;
-        }
-        if (vec2_vectors_.find(key) != vec2_vectors_.end()) {
-            return true;
-        }
-        if (vec4_vectors_.find(key) != vec4_vectors_.end()) {
-            return true;
-        }
-        if (float_vectors_.find(key) != float_vectors_.end()) {
-            return true;
-        }
-        return false;
+    bool hasAttribute(const std::string& key) const {
+        size_t found = vertexDescriptor_.find(key);
+        return (found != std::string::npos);
     }
 
     const std::vector<float>& getFloatVector(std::string key) const {
@@ -205,6 +195,7 @@ public:
     void setFloatVector(std::string key, const std::vector<float>& vector) {
         float_vectors_[key] = vector;
         vao_dirty_ = true;
+        dirty(CUSTOM_ATTRIBS);
     }
 
     const std::vector<glm::vec2>& getVec2Vector(std::string key) const {
@@ -231,7 +222,10 @@ public:
     void setVec2Vector(std::string key, const std::vector<glm::vec2>& vector) {
         vec2_vectors_[key] = vector;
         if(strstr((key.c_str()),"a_texcoord")) {
-            dirty();
+            dirty(STD_ATTRIBS);
+        }
+        else {
+            dirty(CUSTOM_ATTRIBS);
         }
         vao_dirty_ = true;
     }
@@ -249,6 +243,7 @@ public:
     void setVec3Vector(std::string key, const std::vector<glm::vec3>& vector) {
         vec3_vectors_[key] = vector;
         vao_dirty_ = true;
+        dirty(CUSTOM_ATTRIBS);
     }
 
     const std::vector<glm::vec4>& getVec4Vector(std::string key) const {
@@ -264,6 +259,7 @@ public:
     void setVec4Vector(std::string key, const std::vector<glm::vec4>& vector) {
         vec4_vectors_[key] = vector;
         vao_dirty_ = true;
+        dirty(CUSTOM_ATTRIBS);
     }
 
     Mesh* createBoundingBox();
@@ -274,6 +270,7 @@ public:
     //  code for vertex attribute location
 
     void setBoneLoc(GLuint boneIndicesLoc, GLuint boneWeightsLoc) {
+
         boneIndicesLoc_ = boneIndicesLoc;
         boneWeightsLoc_ = boneWeightsLoc;
     }
@@ -335,15 +332,19 @@ public:
 
     void getAttribNames(std::set<std::string> &attrib_names);
 
-    void forceShouldReset() { // one time, then false
-        vao_dirty_ = true;
-        bone_data_dirty_ = true;
+     // generate VAO
+     int generateVAO(int programId);
+ //   void generateVAO(VkDevice &m_device, VulkanCore*);
+
+    void add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
+    void dirty(DIRTY_BITS bit);
+
+   GVR_VK_Vertices& getVkVertices(){
+        return m_vertices;
     }
-
-    void generateVAO(int programId);
-
-    void add_dirty_flag(const std::shared_ptr<bool>& dirty_flag);
-    void dirty();
+    GVR_VK_Indices& getVkIndices(){
+        return m_indices;
+    }
 
 private:
     Mesh(const Mesh& mesh);
@@ -352,6 +353,10 @@ private:
 
 
 private:
+    GVR_VK_Indices m_indices;
+    GVR_VK_Vertices m_vertices;
+
+    GVR_VK_Vertices* vkVertices_;
     std::vector<glm::vec3> vertices_;
     std::vector<glm::vec3> normals_;
 
@@ -378,6 +383,7 @@ private:
     std::map<GLuint, GLVaoVboId> program_ids_;
 
     struct GLAttributeMapping {
+        std::string     data_type;
         GLuint          index;
         GLuint          size;
         GLenum          type;
@@ -391,6 +397,7 @@ private:
 
     // triangle information
     GLuint numTriangles_;
+    int totalStride_;
     bool vao_dirty_;
     bool have_bounding_volume_;
     BoundingVolume bounding_volume;
@@ -402,9 +409,14 @@ private:
 
     GLuint boneVboID_;
     bool bone_data_dirty_;
+    std::string vertexDescriptor_;
     static std::vector<std::string> dynamicAttribute_Names_;
+    std::unordered_set<std::shared_ptr<u_short>> dirty_flags_;
 
-    std::unordered_set<std::shared_ptr<bool>> dirty_flags_;
+ public:
+     void getAttribData(const std::string& descriptor,std::vector<GLAttributeMapping>& bindings, int& total_size);
+     void generateVKBuffers(const std::string&, VulkanRenderer* renderer);
+
 };
 }
 #endif
