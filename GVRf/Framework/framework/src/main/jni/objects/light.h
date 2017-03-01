@@ -25,30 +25,34 @@
 #include <string>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
 
-#include "objects/hybrid_object.h"
-#include "../objects/scene_object.h"
 #include "components/component.h"
 #include "util/gvr_jni.h"
-#include "objects/material.h"
-#include "../engine/renderer/renderer.h"
-#include "glm/gtc/matrix_inverse.hpp"
+#include "objects/hybrid_object.h"
+#include "objects/scene_object.h"
+#include "objects/shader_data.h"
+#include "engine/renderer/renderer.h"
+
+
 namespace gvr {
 class Color;
 class SceneObject;
 class Scene;
 class ShaderManager;
 class GLFrameBuffer;
+class GLImage;
+class Shader;
 
-//#define DEBUG_LIGHT 1
+#define DEBUG_LIGHT 1
 
-class Light: public Component {
+class Light: public JavaComponent {
 public:
     static const int MAX_SHADOW_MAPS;
     static const int SHADOW_MAP_SIZE;
 
     explicit Light()
-    :   Component(Light::getComponentType()),
+    :   JavaComponent(Light::getComponentType()),
         shadowMaterial_(nullptr),
  		shadowFB_(NULL),
 		shadowMapIndex_(-1) {
@@ -64,6 +68,7 @@ public:
         enabled_ = enable;
         setDirty();
     }
+    virtual JNIEnv* set_java(jobject javaObj, JavaVM* jvm);
 
     float getFloat(std::string key) {
         auto it = floats_.find(key);
@@ -144,7 +149,7 @@ public:
      * bindShadowMaps will bind the resulting framebuffer as a
      * texture on the light.
      */
-    void castShadow(Material* material) {
+    void castShadow(ShaderData* material) {
         shadowMaterial_ = material;
         setDirty();
     }
@@ -154,9 +159,8 @@ public:
      * Internal function called at the start of each shader
      * to update the light uniforms (if necessary).
      * @param program   ID of GL shader program
-     * @param texIndex  GL texture index for shadow map
      */
-    void render(int program, int texIndex);
+    void render(Shader* shader);
 
     /**
      * Internal function called at the start of each frame
@@ -168,7 +172,7 @@ public:
      * Internal function called during rendering to bind the shadow map
      * framebuffer to the texture for this light.
      */
-    static void bindShadowMap(int program, int texIndex);
+    static void bindShadowMap(Shader* shader, int texIndex);
 
     /***
      * Creates the storage for shadow maps
@@ -195,6 +199,8 @@ public:
     };
 
     void cleanup();
+    virtual void onAddedToScene(Scene* scene);
+    virtual void onRemovedFromScene(Scene* scene);
 
 private:
     Light(const Light& light);
@@ -231,30 +237,21 @@ private:
         }
         return -1;
     }
-#ifdef DEBUG_LIGHT
-    void writeShadowMapToDisk();
-#endif
-
-public:
-#ifdef DEBUG_LIGHT
-    std::string ShadowMapFile;
-#endif
 
 private:
     int size_;
     int shadowMapIndex_;
     GLFrameBuffer* shadowFB_;
     std::string lightID_;
-    Material* shadowMaterial_;
+    ShaderData* shadowMaterial_;
     std::map<int, bool> dirty_;
-    glm::mat4 shadow_matrix_;
     std::map<std::string, float> floats_;
     std::map<std::string, glm::vec3> vec3s_;
     std::map<std::string, glm::vec4> vec4s_;
     std::map<std::string, glm::mat4> mat4s_;
     std::map<std::string, std::map<int, int> > offsets_;
     std::map<std::string, Texture*> textures_;
-    static GLTexture* depth_texture_;
+    static GLImage* depth_texture_;
 };
 }
 #endif

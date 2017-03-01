@@ -40,24 +40,31 @@
 #include "gl/gl_program.h"
 #include <unordered_map>
 #include "renderer.h"
+#include "gl/gl_uniform_block.h"
 
 typedef unsigned long Long;
 namespace gvr {
 class Camera;
 class Scene;
 class SceneObject;
-class PostEffectData;
-class PostEffectShaderManager;
+class ShaderData;
+class RenderTexture;
 class RenderData;
 class RenderTexture;
-class ShaderManager;
 class Light;
 
 class GLRenderer: public Renderer {
     friend class Renderer;
 protected:
-    GLRenderer(){}
-    virtual ~GLRenderer(){}
+    GLRenderer();
+
+    virtual ~GLRenderer()
+    {
+        if(transform_ubo_)
+            delete transform_ubo_;
+        transform_ubo_ = NULL;
+    }
+
 public:
     // pure virtual
      void renderCamera(Scene* scene, Camera* camera,
@@ -76,7 +83,7 @@ public:
     void setRenderStates(RenderData* render_data, RenderState& rstate);
     void renderShadowMap(RenderState& rstate, Camera* camera, GLuint framebufferId, std::vector<SceneObject*>& scene_objects);
     void makeShadowMaps(Scene* scene, ShaderManager* shader_manager, int width, int height);
-
+    Texture* createSharedTexture(int id);
 
     // Specific to GL
      void renderCamera(Scene* scene, Camera* camera, int framebufferId,
@@ -94,18 +101,30 @@ public:
 
      void set_face_culling(int cull_face);
 
+    virtual ShaderData* createMaterial(const std::string& desc);
+    virtual RenderData* createRenderData();
+    virtual UniformBlock* createUniformBlock(const std::string& desc, int binding, const std::string& name);
+    virtual Image* createImage(int type, int format);
+    virtual Texture* createTexture(int target = GL_TEXTURE_2D);
+    virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
+                                               int jcolor_format, int jdepth_format, bool resolve_depth,
+                                               const TextureParameters* texture_parameters);
+    virtual Shader* createShader(int id, const std::string& signature,
+                                 const std::string& uniformDescriptor, const std::string& textureDescriptor,
+                                 const std::string& vertexDescriptor, const std::string& vertexShader,
+                                 const std::string& fragmentShader);
+    GLUniformBlock* getTransformUbo() { return transform_ubo_; }
+
 private:
-    // this is specific to GL
-    bool checkTextureReady(Material* material);
-
-    // Pure Virtual
+    void updateLights(RenderState &rstate, Shader* shader, int texIndex);
     virtual void renderMesh(RenderState& rstate, RenderData* render_data);
-    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, Material *material) ;
-    void occlusion_cull(Scene* scene,
-                    std::vector<SceneObject*>& scene_objects,
-                    ShaderManager *shader_manager, glm::mat4 vp_matrix);
-
+    virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
+    virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, Shader* shader);
+    void occlusion_cull(RenderState& rstate,
+                    std::vector<SceneObject*>& scene_objects);
     void clearBuffers(const Camera& camera) const;
+
+    GLUniformBlock* transform_ubo_;
 };
 
 }
