@@ -22,6 +22,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.opengl.GLUtils;
 
+import org.gearvrf.asynchronous.GVRAsynchronousResourceLoader;
 import org.gearvrf.utility.Log;
 
 import java.io.IOException;
@@ -58,15 +59,20 @@ public class GVRBitmapTexture extends GVRImage
      * 
      * @param gvrContext
      *            Current {@link GVRContext}
-     * @param pngAssetFilename
-     *            The name of a {@code .png} file, relative to the assets
+     * @param assetFile
+     *            The name of a texture file, relative to the assets
      *            directory. The assets directory may contain an arbitrarily
      *            complex tree of subdirectories; the file name can specify any
      *            location in or under the assets directory.
      */
-    public GVRBitmapTexture(GVRContext gvrContext, String pngAssetFilename)
+    public GVRBitmapTexture(GVRContext gvrContext, String assetFile) throws IOException
     {
-        this(gvrContext, loadBitmap(gvrContext, pngAssetFilename));
+        this(gvrContext);
+        GVRAndroidResource resource = new GVRAndroidResource(gvrContext, assetFile);
+        Bitmap bitmap = GVRAsynchronousResourceLoader.decodeStream(resource.getStream(), false);
+        resource.closeStream();
+        setFileName(assetFile);
+        setBitmap(bitmap);
     }
 
      /**
@@ -151,6 +157,8 @@ public class GVRBitmapTexture extends GVRImage
 
 class NativeBitmapImage {
     static native long constructor(int type, int format);
+    static native void setFileName(long pointer, String fname);
+    static native String getFileName(long pointer);
     static native void updateFromMemory(long pointer, int width, int height, byte[] data);
     static native void updateFromBitmap(long pointer, Bitmap bitmap);
     static native void updateCompressed(long pointer, int width, int height, int imageSize, byte[] data, int levels, int[] offsets);

@@ -60,19 +60,25 @@ public:
             HybridObject(), mState(UNINITIALIZED), mType(NONE), mFormat(0),
             mWidth(0), mHeight(0), mImageSize(0), mUpdateLock(),
             mLevels(0)
-    { }
+    {
+        mFileName[0] = 0;
+    }
 
     Image(ImageType type, int format) :
             HybridObject(), mState(UNINITIALIZED), mType(type), mFormat(format),
             mWidth(0), mHeight(0), mImageSize(0), mUpdateLock(),
             mLevels(0)
-    { }
+    {
+        mFileName[0] = 0;
+    }
 
     Image(ImageType type, short width, short height, int imagesize, int format, short levels) :
             HybridObject(), mType(type), mState(UNINITIALIZED), mUpdateLock(),
             mWidth(width), mHeight(height), mImageSize(imagesize),
             mFormat(format), mLevels(levels)
-    { }
+    {
+        mFileName[0] = 0;
+    }
 
     virtual int getId() = 0;
     virtual bool isReady() = 0;
@@ -84,6 +90,17 @@ public:
     short getLevels() const { return mLevels; }
     short getType() const { return mType; }
     int getFormat() const { return mFormat; }
+    void setFileName(const char* fname)
+    {
+        int len = strlen(fname);
+        if (len < sizeof(mFileName))
+        {
+            len = sizeof(mFileName) - 1;
+        }
+        strncpy(mFileName, fname, len);
+    }
+
+    const char* getFileName() const  { return mFileName; }
 
     int getDataOffset(int level)
     {
@@ -107,7 +124,8 @@ public:
     {
         if (texid && updatePending())
         {
-            LOGV("Texture: Image::checkForUpdate %d", texid);
+            const char* fname = getFileName();
+            LOGV("Texture: Image::checkForUpdate %lx %d %s", this, texid, fname);
             std::lock_guard<std::mutex> lock(mUpdateLock);
             update(texid);
             updateComplete();
@@ -130,6 +148,7 @@ protected:
     short   mState;
     int     mImageSize;
     int     mFormat;
+    char    mFileName[64];
     std::vector<int>    mDataOffsets;
 
 private:

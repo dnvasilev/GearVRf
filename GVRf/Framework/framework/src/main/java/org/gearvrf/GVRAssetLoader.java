@@ -32,7 +32,6 @@ import java.util.UUID;
 import org.gearvrf.GVRAndroidResource.TextureCallback;
 import org.gearvrf.animation.GVRAnimator;
 import org.gearvrf.asynchronous.GVRAsynchronousResourceLoader;
-
 import org.gearvrf.asynchronous.GVRCompressedTextureLoader;
 import org.gearvrf.jassimp.GVROldWrapperProvider;
 import org.gearvrf.jassimp2.AiTexture;
@@ -238,7 +237,10 @@ public final class GVRAssetLoader {
                     bmap = Bitmap.createBitmap(aitex.getWidth(), aitex.getHeight(), Bitmap.Config.ARGB_8888);
                     bmap.setPixels(aitex.getIntData(), 0, aitex.getWidth(), 0, 0, aitex.getWidth(), aitex.getHeight());
                 }
-                image = new GVRBitmapTexture(mContext, bmap);
+                GVRBitmapTexture bmaptex = new GVRBitmapTexture(mContext);
+                bmaptex.setFileName(resource.getResourceFilename());
+                bmaptex.setBitmap(bmap);
+                image = bmaptex;
                 Log.d(TAG, "ASSET: loadEmbeddedTexture saved %s", resource.getResourceFilename());
                 texCache.put(request.TextureFile, image);
                 bmapTex.setImage(image);
@@ -289,7 +291,7 @@ public final class GVRAssetLoader {
                                                  "onTextureLoaded", new Object[] { mContext, texture, texFile });
             synchronized (mNumTextures)
             {
-                Log.e(TAG, "ASSET: successfully loaded texture %s %d", texFile, mNumTextures);
+                Log.e(TAG, "ASSET: Texture: successfully loaded texture %s %d", texFile, mNumTextures);
                 if (mNumTextures >= 1)
                 {
                     --mNumTextures;
@@ -439,6 +441,7 @@ public final class GVRAssetLoader {
             Texture = texture;
             mCallback = null;
             loadFinished = false;
+            Log.v("ASSET", "loadTexture " + TextureFile);
         }
 
         public TextureRequest(GVRAndroidResource resource, GVRTexture texture)
@@ -448,6 +451,7 @@ public final class GVRAssetLoader {
             Texture = texture;
             mCallback = null;
             loadFinished = false;
+            Log.v("ASSET", "loadTexture " + TextureFile);
         }
 
         public TextureRequest(GVRAndroidResource resource, GVRTexture texture, TextureCallback callback)
@@ -457,6 +461,7 @@ public final class GVRAssetLoader {
             Texture = texture;
             mCallback = callback;
             loadFinished = false;
+            Log.v("ASSET", "loadTexture " + TextureFile);
         }
 
         public void loaded(final GVRImage image, GVRAndroidResource resource)
@@ -607,17 +612,11 @@ public final class GVRAssetLoader {
                                   GVRTextureParameters textureParameters)
     {
         GVRTexture texture = new GVRTexture(mContext, textureParameters);
-        GVRImage image;
-        synchronized (mTextureCache)
+        GVRImage image = mTextureCache.get(resource);
+        if (image != null)
         {
-            image = mTextureCache.get(resource);
-            if (image != null)
-            {
-                texture.setImage(image);
-                return texture;
-            }
-            image = new GVRBitmapTexture(mContext);
-            mTextureCache.put(resource, image);
+            texture.setImage(image);
+            return texture;
         }
         try
         {
@@ -625,8 +624,12 @@ public final class GVRAssetLoader {
             resource.closeStream();
             if (bitmap != null)
             {
-                image = new GVRBitmapTexture(mContext, bitmap);
+                GVRBitmapTexture bmap = new org.gearvrf.GVRBitmapTexture(mContext);
+                image = bmap;
+                image.setFileName(resource.getResourceFilename());
+                bmap.setBitmap(bitmap);
                 texture.setImage(image);
+                mTextureCache.put(resource, image);
             }
         }
         catch (IOException ex)

@@ -83,13 +83,13 @@ void GLBitmapImage::update(int texid)
     {
         updateFromBitmap(texid);
         clearData(getCurrentEnv(mJava));
-        LOGV("Texture: GLBitmapImage::update(%d, bitmap)", texid);
+        LOGV("Texture: GLBitmapImage::update(%d, bitmap) %s", texid, getFileName());
     }
     else if (mData != NULL)
     {
         updateFromMemory(texid);
         clearData(getCurrentEnv(mJava));
-        LOGV("Texture: GLBitmapImage::update(%d, byteArray)", texid);
+        LOGV("Texture: GLBitmapImage::update(%d, byteArray) %s", texid, getFileName());
     }
 }
 
