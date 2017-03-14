@@ -87,7 +87,7 @@ namespace gvr {
             LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
             return 0;
         }
-        int status = shaderData->updateGPU(this, shader->getTextureDescriptor(), shader->getUniformDescriptor());
+        int status = shaderData->updateGPU(this, shader);
         if (status < 0)
         {
             LOGE("SHADER: textures not ready %s", rdata->owner_object()->name().c_str());

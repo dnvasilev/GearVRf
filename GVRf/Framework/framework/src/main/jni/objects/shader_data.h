@@ -195,23 +195,33 @@ public:
         return uniforms().hasUniform(key);
     }
 
-    virtual int updateGPU(Renderer* renderer, const std::string& textureDescriptor, const std::string& uniformDescriptor)
+    virtual int updateGPU(Renderer* renderer, Shader* shader)
     {
-
         std::lock_guard<std::mutex> lock(lock_);
+        const std::string& textureDescriptor = shader->getTextureDescriptor();
+        const std::string& uniformDescriptor = shader->getUniformDescriptor();
 
-        if(!textureDescriptor.empty()) {
-            for (auto it = textures_.begin(); it != textures_.end(); ++it) {
+        if (!textureDescriptor.empty())
+        {
+            for (auto it = textures_.begin(); it != textures_.end(); ++it)
+            {
                 Texture *tex = it->second;
-                if (tex == NULL) {
-                    LOGV("ShaderData::areTexturesReady %s is null", it->first.c_str());
+                if (tex == NULL)
+                {
+                    LOGV("Texture: ShaderData::areTexturesReady %s is null", it->first.c_str());
                     return -1;
                 }
                 bool ready = tex->isReady();
                 if (Shader::LOG_SHADER)
-                    LOGV("ShaderData::areTexturesReady %s is %s", it->first.c_str(),
-                         ready ? "ready" : "not ready");
-                if ((tex == NULL) || !ready) {
+                {
+                    Image* image = tex->getImage();
+                    const char* fname = image ? image->getFileName() : "";
+                    if (!ready) LOGD("Texture: %s not ready", fname);
+                    //LOGV("Texture: ShaderData::areTexturesReady %s %s is %s",
+                    //     it->first.c_str(), fname, ready ? "ready" : "not ready");
+                }
+                if ((tex == NULL) || !ready)
+                {
                     return -1;
                 }
             }

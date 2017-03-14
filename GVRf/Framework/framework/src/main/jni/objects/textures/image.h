@@ -21,7 +21,6 @@
 #include <vector>
 #include "objects/hybrid_object.h"
 #include "util/gvr_log.h"
-#include "gl/gl_headers.h"  // for GL_TEXTURE_xxx
 
 namespace gvr {
 class Texture;
@@ -122,10 +121,15 @@ public:
 
     bool checkForUpdate(int texid)
     {
+        const char* fname = getFileName();
+        const char* status = "UNINITIALIZED";
+        int state = mState;
+
+        if (state == UPDATE_PENDING) status = "UPDATE_PENDING";
+        if (state == HAS_DATA) status = "HAS_DATA";
+        LOGD("Texture: Image::checkForUpdate %p %d %s %s", this, texid, fname, status);
         if (texid && updatePending())
         {
-            const char* fname = getFileName();
-            LOGV("Texture: Image::checkForUpdate %lx %d %s", this, texid, fname);
             std::lock_guard<std::mutex> lock(mUpdateLock);
             update(texid);
             updateComplete();
@@ -135,9 +139,19 @@ public:
 
 
 protected:
-    void signalUpdate() { mState = UPDATE_PENDING; }
+    void signalUpdate()
+    {
+        mState = UPDATE_PENDING;
+        LOGD("Texture: UPDATE_PENDING %s", getFileName());
+    }
+
     bool updatePending() const { return mState == UPDATE_PENDING; }
-    void updateComplete() { mState = HAS_DATA; }
+    void updateComplete()
+    {
+        mState = HAS_DATA;
+        LOGD("Texture: UPDATE_COMPLETE %s", getFileName());
+    }
+
     virtual void update(int texid) { }
 
     std::mutex mUpdateLock;

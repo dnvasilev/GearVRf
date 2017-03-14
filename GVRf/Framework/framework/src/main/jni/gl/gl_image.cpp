@@ -65,7 +65,7 @@ GLuint GLImage::createTexture()
 {
     GLuint id;
     glGenTextures(1, &id);
-    LOGV("Texture: GLImage: texture %lx created GL ID = %d", this, id);
+    LOGD("Texture: texture %p created GL ID = %d", this, id);
     checkGLError("GLImage::createTexture");
     return id;
 }
@@ -94,7 +94,7 @@ void GLImage::updateTexParams(const TextureParameters& texparams)
     glTexParameteri(mGLTarget, GL_TEXTURE_WRAP_T, wrap_t_type_);
     glTexParameteri(mGLTarget, GL_TEXTURE_MIN_FILTER, min_filter_type_);
     glTexParameteri(mGLTarget, GL_TEXTURE_MAG_FILTER, mag_filter_type_);
-    LOGV("Texture: GLImage: update texparams for %lx %d", this, mId);
+    LOGD("Texture: GLImage: update texparams for %p %d", this, mId);
     checkGLError("GLImage::updateTexParams");
 }
 

@@ -589,9 +589,9 @@ namespace gvr
             LOGE("SHADER: shader not ready %s %p", owner->name().c_str(), render_data);
             return;
         }
-        if (material->updateGPU(this,shader->getTextureDescriptor(), shader->getUniformDescriptor()) < 0)
+        if (material->updateGPU(this, shader) < 0)
         {
-            LOGE("SHADER: textures not ready %s", owner->name().c_str());
+            LOGE("SHADER: Texture: textures not ready %s", owner->name().c_str());
             return;
         }
         GLUniformBlock* transform_ubo = getTransformUbo();
@@ -642,7 +642,7 @@ namespace gvr
             return 0;
         }
         GLRenderData* rdata = static_cast<GLRenderData*>(renderData);
-        if (material->updateGPU(this, shader->getTextureDescriptor(),shader->getUniformDescriptor()) < 0)
+        if (material->updateGPU(this, shader) < 0)
         {
             return 0;
         }
@@ -653,7 +653,7 @@ namespace gvr
         }
         catch (const std::string& error)
         {
-            LOGE("Error detected in Renderer::renderPostEffectData; error : %s", error.c_str());
+            LOGE("Error detected in Renderer::renderWithShader; error : %s", error.c_str());
             return -1;
         }
         int texIndex = material->bindToShader(shader);
