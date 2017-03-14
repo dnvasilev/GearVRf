@@ -50,4 +50,14 @@ public class GVRImage extends GVRHybridObject
     }
 
     protected static final String TAG = "GVRImage";
+
+    public String getFileName()
+    {
+        return NativeBitmapImage.getFileName(getNative());
+    }
+
+    public void setFileName(String fname)
+    {
+        NativeBitmapImage.setFileName(getNative(), fname);
+    }
 }

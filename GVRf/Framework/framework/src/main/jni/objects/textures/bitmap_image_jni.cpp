@@ -32,6 +32,13 @@ extern "C" {
              int imageType, int pixelFormat);
 
     JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeBitmapImage_setFileName(JNIEnv *env, jobject obj,
+                                                   jlong jtexture, jstring jfile);
+
+    JNIEXPORT jstring JNICALL
+    Java_org_gearvrf_NativeBitmapImage_getFileName(JNIEnv *env, jobject obj, jlong jtexture);
+
+    JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeBitmapImage_updateFromMemory(JNIEnv *env, jobject obj,
               jlong jtexture, jint width,
               jint height, jbyteArray jdata);
@@ -90,5 +97,23 @@ Java_org_gearvrf_NativeBitmapImage_updateCompressed(JNIEnv *env, jobject obj,
     env->ReleaseIntArrayElements(array, offsets, 0);
     env->DeleteLocalRef(keep1);
     env->DeleteLocalRef(keep2);
+}
+
+JNIEXPORT void JNICALL
+Java_org_gearvrf_NativeBitmapImage_setFileName(JNIEnv *env, jobject obj,
+                                               jlong jtexture, jstring jfile)
+{
+    BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
+    const char* char_name = env->GetStringUTFChars(jfile, 0);
+    bmap->setFileName(char_name);
+    env->ReleaseStringUTFChars(jfile, char_name);
+}
+
+JNIEXPORT jstring JNICALL
+Java_org_gearvrf_NativeBitmapImage_getFileName(JNIEnv *env, jobject obj, jlong jtexture)
+{
+    BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
+    const char* fname = bmap->getFileName();
+    return env->NewStringUTF(fname);
 }
 }

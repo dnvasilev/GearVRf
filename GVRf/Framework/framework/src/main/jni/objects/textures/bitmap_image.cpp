@@ -45,7 +45,7 @@ void BitmapImage::update(JNIEnv* env, int width, int height, jbyteArray data)
     {
         mData = static_cast<jbyteArray>(env->NewGlobalRef(data));
         signalUpdate();
-        LOGV("Texture: BitmapImage::update(byteArray)");
+        LOGV("Texture: BitmapImage::update(byteArray) %s", getFileName());
     }
 }
 
@@ -57,7 +57,7 @@ void BitmapImage::update(JNIEnv* env, jobject bitmap)
     if (bitmap != NULL)
     {
         mBitmap = static_cast<jbyteArray>(env->NewGlobalRef(bitmap));
-        LOGV("Texture: BitmapImage::update(bitmap)");
+        LOGV("Texture: BitmapImage::update(bitmap) %s", getFileName());
         signalUpdate();
     }
 }
@@ -77,7 +77,7 @@ void BitmapImage::update(JNIEnv *env, int width, int height, int imageSize,
     if (data != NULL)
     {
         mData = static_cast<jbyteArray>(env->NewGlobalRef(data));
-        LOGV("Texture: BitmapImage::update(byteArray, offsets)");
+        LOGV("Texture: BitmapImage::update(byteArray, offsets) %s", getFileName());
         signalUpdate();
     }
 }

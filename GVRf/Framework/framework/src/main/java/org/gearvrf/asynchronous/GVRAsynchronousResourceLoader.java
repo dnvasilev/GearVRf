@@ -140,6 +140,7 @@ public class GVRAsynchronousResourceLoader {
         final GVRImage cached = textureCache == null ? null : textureCache
                 .get(resource);
         if (cached != null) {
+            Log.v("ASSET", "Texture: %s loaded from cache", cached.getFileName());
             gvrContext.runOnGlThread(new Runnable() {
 
                 @Override
@@ -147,32 +148,14 @@ public class GVRAsynchronousResourceLoader {
                     callback.loaded(cached, resource);
                 }
             });
-        } else {
-            // Load the bytes on a background thread
-            Threads.spawn(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        final CompressedTexture compressedTexture = CompressedTexture
-                                .load(resource.getStream(), -1, false);
-                        // Create texture on GL thread
-                        gvrContext.runOnGlThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                GVRImage image = compressedTexture.toTexture(gvrContext, quality);
-                                if (textureCache != null) {
-                                    textureCache.put(resource, image);
-                                }
-                                callback.loaded(image, resource);
-                            }
-                        });
-                    } catch (Exception e) {
-                        callback.failed(e, resource);
-                    } finally {
-                        resource.closeStream();
-                    }
-                }
-            });
+        }
+        else
+        {
+            CompressedTextureCallback actualCallback = textureCache == null ? callback
+                    : ResourceCache.wrapCallback(textureCache, callback);
+            AsyncCompressedTexture.loadTexture(gvrContext,
+                                           CancelableCallbackWrapper.wrap(GVRCompressedTexture.class, actualCallback),
+                                           resource, GVRContext.LOWEST_PRIORITY);
         }
     }
 
@@ -215,6 +198,7 @@ public class GVRAsynchronousResourceLoader {
                 : (GVRImage) textureCache.get(resource);
         if (cached != null)
         {
+            Log.v("ASSET", "Texture: %s loaded from cache", cached.getFileName());
             context.runOnGlThread(new Runnable()
             {
                 @Override
@@ -274,6 +258,7 @@ public class GVRAsynchronousResourceLoader {
                 final GVRImage cached = textureCache == null ? null
                         : textureCache.get(resource);
                 if (cached != null) {
+                    Log.v("ASSET", "Texture: %s loaded from cache", cached.getFileName());
                     callback.loaded(cached, resource);
                 } else {
                     // 'Sniff' out compressed textures on a thread from the
@@ -353,6 +338,7 @@ public class GVRAsynchronousResourceLoader {
         GVRTexture tex = new GVRTexture(gvrContext);
         if (cached != null)
         {
+            Log.v("ASSET", "Future Texture: %s loaded from cache", cached.getFileName());
             tex.setImage(cached);
         }
         else
@@ -396,6 +382,7 @@ public class GVRAsynchronousResourceLoader {
         GVRImage cached = textureCache.get(resource);
         if (cached != null)
         {
+            Log.v("ASSET", "Future Texture: %s loaded from cache", cached.getFileName());
             tex.setImage(cached);
         }
         else
@@ -446,6 +433,7 @@ public class GVRAsynchronousResourceLoader {
                 : (GVRImage) textureCache.get(resource);
         if (cached != null)
         {
+            Log.v("ASSET", "Texture: %s loaded from cache", cached.getFileName());
             context.runOnGlThread(new Runnable()
             {
                 @Override
@@ -501,6 +489,7 @@ public class GVRAsynchronousResourceLoader {
                 : (GVRImage) textureCache.get(resource);
         if (cached != null)
         {
+            Log.v("ASSET", "Texture: %s loaded from cache", cached.getFileName());
             context.runOnGlThread(new Runnable()
             {
                 @Override
