@@ -159,20 +159,22 @@ public class GVRShaderData extends GVRHybridObject
     public void setTexture(String key, GVRTexture texture)
     {
         checkStringNotNullOrEmpty("key", key);
-        TextureInfo tinfo = textures.get(key);
-        if (tinfo == null)
+        synchronized (textures)
         {
-            tinfo = new TextureInfo();
-            tinfo.Texture = texture;
-            textures.put(key, tinfo);
+            TextureInfo tinfo = textures.get(key);
+            if (tinfo == null)
+            {
+                tinfo = new TextureInfo();
+                textures.put(key, tinfo);
+            }
+            if (texture != null)
+            {
+                tinfo.Texture = texture;
+                NativeShaderData.setTexture(getNative(), key, texture.getNative());
+            }
         }
-        else
-        {
-            tinfo.Texture = texture;
-        }
-        if (texture != null)
-            NativeShaderData.setTexture(getNative(), key, texture.getNative());
     }
+
 
     /**
      * Get the {@code float} bound to the shader uniform {@code key}.
@@ -308,14 +310,17 @@ public class GVRShaderData extends GVRHybridObject
      */
     public void setTexCoord(String texName, String texCoordAttr, String shaderVarName)
     {
-        GVRShaderData.TextureInfo tinfo = textures.get(texName);
-        if (tinfo == null)
+        synchronized (textures)
         {
-            tinfo = new GVRShaderData.TextureInfo();
-            textures.put(texName, tinfo);
+            GVRShaderData.TextureInfo tinfo = textures.get(texName);
+            if (tinfo == null)
+            {
+                tinfo = new GVRShaderData.TextureInfo();
+                textures.put(texName, tinfo);
+            }
+            tinfo.TexCoordAttr = texCoordAttr;
+            tinfo.ShaderVar = shaderVarName;
         }
-        tinfo.TexCoordAttr = texCoordAttr;
-        tinfo.ShaderVar = shaderVarName;
     }
 
     /**
