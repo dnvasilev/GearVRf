@@ -88,7 +88,7 @@ GLShader::~GLShader()
 void GLShader::initialize()
 {
     std::string modified_frag_shader;
-    if (fragmentShader_.find("samplerExternalOES")!= std::string::npos)
+ /*   if (fragmentShader_.find("samplerExternalOES")!= std::string::npos)
     {
         std::istringstream iss(fragmentShader_.c_str());
         const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
@@ -115,7 +115,7 @@ void GLShader::initialize()
         }
     }
     else
-    {
+   */ {
         modified_frag_shader = fragmentShader_;
     }
 

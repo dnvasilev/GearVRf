@@ -36,19 +36,22 @@ namespace gvr
         GLShader *glshader = reinterpret_cast<GLShader *>(shader);
         GLuint programID = glshader->getProgramId();
 
-        for (auto it = textures_.begin(); it != textures_.end(); ++it)
-        {
-            int loc = glshader->getLocation(it->first);
+        std::string texDescriptor = shader->getTextureDescriptor();
+        const std::vector<std::string>& textures = shader->parseTextureDescriptor();
+
+        for(auto texture: textures){
+            int loc = glshader->getLocation(texture);
             if (loc < 0)
             {
-                loc = glGetUniformLocation(programID, it->first.c_str());
+                loc = glGetUniformLocation(programID, texture.c_str());
                 if (loc < 0)
                 {
                     allOK = false;
-                    continue;
+                    LOGW("texture is not present in shader");
+                    return -1;
                 }
             }
-            Texture* tex = it->second;
+            Texture* tex = textures_[texture];
             if (tex && tex->getImage())
             {
                 GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
@@ -65,6 +68,7 @@ namespace gvr
             }
         }
         return allOK ? texIndex : -1;
+
     }
 }
 
