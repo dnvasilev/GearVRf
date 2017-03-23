@@ -446,6 +446,16 @@ protected:
     }
 
     /**
+     * Mark this uniform block as dirty so it will
+     * be copied to the GPU next frame.
+     */
+    void markDirty()
+    {
+        mIsDirty = true;
+        //LOGV("SHADER: UniformBlock: %p %s DIRTY", this, getBlockName().c_str());
+    }
+
+    /**
      * Look up the named uniform in the mUniformMap.
      * This function fails if the uniform found does not
      * have the same byte size as the input bytesize.

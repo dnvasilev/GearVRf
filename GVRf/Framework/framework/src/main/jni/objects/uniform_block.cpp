@@ -46,7 +46,7 @@ namespace gvr
         mOwnData = false;
         if (!descriptor.empty())
         {
-            LOGE("setting descriptor %s", descriptor.c_str());
+            LOGD("UniformBlock: %p %s descriptor %s", this, blockName.c_str(), descriptor.c_str());
             setDescriptor(descriptor);
         }
     }
@@ -79,7 +79,7 @@ namespace gvr
         if (data != NULL)
         {
             *((float *) data) = val;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -93,7 +93,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, val, actual_size);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -106,7 +106,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -120,7 +120,7 @@ namespace gvr
         {
             data[0] = val.x;
             data[1] = val.y;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -135,7 +135,7 @@ namespace gvr
             data[0] = val.x;
             data[1] = val.y;
             data[2] = val.z;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -151,7 +151,7 @@ namespace gvr
             data[1] = val.y;
             data[2] = val.z;
             data[3] = val.w;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -165,7 +165,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, mtxdata, bytesize);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -300,7 +300,7 @@ namespace gvr
 
     void  UniformBlock::parseDescriptor()
     {
-        LOGD("UniformBlockNew: %s", mDescriptor.c_str());
+        LOGD("UniformBlock: CREATE %p %s", this, mDescriptor.c_str());
         const char *p = mDescriptor.c_str();
         const char *type_start;
         int type_size;
@@ -376,7 +376,7 @@ namespace gvr
                 LOGE("UniformBlock: ERROR: element %s specified twice\n", name.c_str());
                 continue;
             }
-            LOGV("UniformBlock: %s offset=%d size=%d\n", name.c_str(), uniform.Offset,
+            LOGV("UniformBlock: %p %s offset = %d size = %d\n", this, name.c_str(), uniform.Offset,
                  uniform.Size);
             offset += uniform.Size;
             mTotalSize = uniform.Offset + uniform.Size;
@@ -452,12 +452,12 @@ namespace gvr
         Uniform &u = it->second;
         if (u.Size < bytesize)
         {
-            LOGE("ERROR: UniformBlock not const element %s is %d bytes, should be %d bytes\n",
+            LOGE("ERROR: UniformBlock %s is %d bytes, should be %d bytes\n",
                  name.c_str(), bytesize, u.Size);
             return NULL;
         }
         bytesize = u.Size;
-        LOGV("SHADER: UniformBlock not const element %s offset %d bytes,\n", name.c_str(),
+        LOGV("SHADER: UniformBlock %s offset %d bytes,\n", name.c_str(),
              u.Offset);
         return &u;
     }

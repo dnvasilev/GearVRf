@@ -18,6 +18,16 @@
 namespace gvr
 {
 
+    class MaterialShaderVisitor : public Shader::ShaderVisitor
+    {
+    public:
+        bool TexIndex;
+        ShaderData* Material;
+
+        MaterialShaderVisitor(Shader* shader, ShaderData* mtl) : Shader::ShaderVisitor(shader), TexIndex(0), Material(mtl) {  };
+        virtual void visit(const std::string& key, const std::string& type, int size);
+    };
+
     int GLMaterial::bindToShader(Shader *shader)
     {
         int texIndex = bindTextures(shader);
@@ -31,44 +41,38 @@ namespace gvr
 
     int GLMaterial::bindTextures(Shader *shader)
     {
-        int texIndex = 0;
-        bool allOK = true;
-        GLShader *glshader = reinterpret_cast<GLShader *>(shader);
-        GLuint programID = glshader->getProgramId();
-
-        std::string texDescriptor = shader->getTextureDescriptor();
-        const std::vector<std::string>& textures = shader->parseTextureDescriptor();
-
-        for(auto texture: textures){
-            int loc = glshader->getLocation(texture);
-            if (loc < 0)
-            {
-                loc = glGetUniformLocation(programID, texture.c_str());
-                if (loc < 0)
-                {
-                    allOK = false;
-                    LOGW("texture is not present in shader");
-                    return -1;
-                }
-            }
-            Texture* tex = textures_[texture];
-            if (tex && tex->getImage())
-            {
-                GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
-
-                glActiveTexture(GL_TEXTURE0 + texIndex);
-                glBindTexture(image->getTarget(), image->getId());
-                glUniform1i(loc, texIndex);
-                checkGLError("Material::bindTextures");
-                ++texIndex;
-            }
-            else
-            {
-                allOK = false;
-            }
-        }
-        return allOK ? texIndex : -1;
+        MaterialShaderVisitor visitor(shader, this);
+        shader->forEach(shader->getTextureDescriptor(), visitor);
+        return visitor.TexIndex;
 
     }
+
+    void MaterialShaderVisitor::visit(const std::string& key, const std::string& type, int size)
+    {
+        GLShader* glshader = (GLShader*) shader_;
+        int loc = glshader->getLocation(key);
+        if (loc < 0)
+        {
+            loc = glGetUniformLocation(glshader->getProgramId(), key.c_str());
+            if (loc < 0)
+            {
+                LOGW("texture is not present in shader");
+                TexIndex = -1;
+                return;
+            }
+        }
+        Texture* tex = Material->getTexture(key);
+        if (tex && tex->getImage())
+        {
+            GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
+
+            glActiveTexture(GL_TEXTURE0 + TexIndex);
+            glBindTexture(image->getTarget(), image->getId());
+            glUniform1i(loc, TexIndex);
+            checkGLError("Material::bindTextures");
+            ++TexIndex;
+        }
+    }
+
 }
 

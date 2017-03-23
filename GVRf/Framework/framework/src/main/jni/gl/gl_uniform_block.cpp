@@ -43,7 +43,7 @@ namespace gvr {
             glGenBuffers(1, &GLBuffer);
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
             glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
-            if (Shader::LOG_SHADER) LOGV("SHADER: UniformBlock: %s bound to #%d buffer = %d\n", getBlockName().c_str(), mBindingPoint, GLBuffer);
+            if (Shader::LOG_SHADER) LOGV("SHADER: UniformBlock: %p %s bound to #%d buffer = %d\n", this, getBlockName().c_str(), mBindingPoint, GLBuffer);
         }
         else
         {
@@ -52,7 +52,14 @@ namespace gvr {
         glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
         glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
         mIsDirty = false;
-        if (Shader::LOG_SHADER) LOGV("SHADER: UniformBlock: %s size %d\n", getBlockName().c_str(), getTotalSize());
+        if (Shader::LOG_SHADER)
+        {
+            //LOGV("SHADER: UniformBlock: %s size %d\n", getBlockName().c_str(), getTotalSize());
+            std::string data = toString().c_str();
+            const char* udata = data.c_str();
+            const char* blockname = getBlockName().c_str();
+            LOGD("SHADER: UniformBlock: UPDATE %p %s\n%s", this, blockname, udata);
+        }
         checkGLError("GLUniformBlock::updateGPU");
         return true;
     }
@@ -63,21 +70,15 @@ namespace gvr {
         if (GLBuffer > 0)
         {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-
-            // Do not uncomment below line: UBO is not per shader, so block indices will be different for different shader
-       //     if (GLBlockIndex < 0)
+            GLBlockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
+            if (GLBlockIndex < 0)
             {
-                GLBlockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
-                if (GLBlockIndex < 0)
-                {
-                    LOGE("UniformBlock: ERROR: cannot find block named %s\n",
-                         getBlockName().c_str());
-                    return false;
-                }
+                LOGE("UniformBlock: ERROR: cannot find block named %s\n",
+                     getBlockName().c_str());
+                return false;
             }
             glUniformBlockBinding(glshader->getProgramId(), GLBlockIndex, mBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
-            if (Shader::LOG_SHADER) LOGV("SHADER: UniformBlock: %s bind %d\n", getBlockName().c_str(), mBindingPoint);
             checkGLError("GLUniformBlock::bindBuffer");
             return true;
         }
@@ -112,7 +113,7 @@ namespace gvr {
         // get indices of uniform variables in uniform block
         GLint uniformsIndices[numberOfUniformsInBlock];
         glGetActiveUniformBlockiv(programID, blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, uniformsIndices);
-        LOGV("UniformBlock: %s %d bytes\n", blockName, byteSize);
+        LOGD("UniformBlock: %s %d bytes\n", blockName, byteSize);
 
         // get parameters of all uniform variables in uniform block
         for (int uniformMember=0; uniformMember<numberOfUniformsInBlock; uniformMember++)

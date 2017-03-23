@@ -129,6 +129,7 @@ public:
     }
     virtual bool useShader() = 0;
     static int calcSize(std::string type);
+    void forEach(const std::string& descriptor, ShaderVisitor& visitor);
 
 private:
     Shader(const Shader& shader);
@@ -137,8 +138,6 @@ private:
     Shader& operator=(Shader&& shader);
 
 protected:
-    void forEach(const std::string& descriptor, ShaderVisitor& visitor);
-
     std::unordered_map<std::string,uniformDefination> nameTypeMap;
     std::string signature_;
     std::string vertexShader_;
