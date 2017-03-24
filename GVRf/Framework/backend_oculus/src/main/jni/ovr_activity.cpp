@@ -36,11 +36,9 @@ namespace gvr {
                              jobject callbacks) : envMainThread_(&env), configurationHelper_(env, vrAppSettings) //use_multiview(false)
     {
         activity_ = env.NewGlobalRef(activity);
-
         activityClass_ = GetGlobalClassReference(env, activityClassName);
-        viewManagerClass_ = GetGlobalClassReference(env, viewManagerClassName);
 
-        onDrawEyeMethodId = GetMethodId(env, viewManagerClass_, "onDrawEye", "(I)V");
+    onDrawEyeMethodId = GetMethodId(env, env.FindClass(viewManagerClassName), "onDrawEye", "(I)V");
         updateSensoredSceneMethodId = GetMethodId(env, activityClass_, "updateSensoredScene", "()Z");
     }
 
@@ -48,10 +46,7 @@ namespace gvr {
         LOGV("GVRActivity::~GVRActivity");
         uninitializeVrApi();
 
-        envMainThread_->DeleteGlobalRef(viewManagerClass_);
         envMainThread_->DeleteGlobalRef(activityClass_);
-
-        envMainThread_->DeleteGlobalRef(viewManager_);
         envMainThread_->DeleteGlobalRef(activity_);
     }
 
@@ -97,13 +92,6 @@ namespace gvr {
         sensoredSceneUpdated_ = false;
     }
 
-/**
- * Must be called on the main thread
- */
-    void GVRActivity::setViewManager(jobject viewManager) {
-        viewManager_ = oculusJavaMainThread_.Env->NewGlobalRef(viewManager);
-    }
-
     void GVRActivity::onSurfaceCreated(JNIEnv& env) {
         LOGV("GVRActivity::onSurfaceCreated");
         initializeOculusJava(env, oculusJavaGlThread_);
@@ -124,7 +112,7 @@ namespace gvr {
 
         if (nullptr == oculusMobile_) {
             ovrModeParms parms = vrapi_DefaultModeParms(&oculusJavaGlThread_);
-            bool AllowPowerSave, ResetWindowFullscreen;
+        bool AllowPowerSave, ResetWindowFullscreen;
             configurationHelper_.getModeConfiguration(env, AllowPowerSave, ResetWindowFullscreen);
             parms.Flags |=AllowPowerSave;
             parms.Flags |=ResetWindowFullscreen;
@@ -177,13 +165,12 @@ namespace gvr {
         }
     }
 
-    void GVRActivity::onDrawFrame() {
+void GVRActivity::onDrawFrame(jobject jViewManager) {
         ovrFrameParms parms = vrapi_DefaultFrameParms(&oculusJavaGlThread_, VRAPI_FRAME_INIT_DEFAULT, vrapi_GetTimeInSeconds(),
                                                       NULL);
         parms.FrameIndex = ++frameIndex;
         parms.MinimumVsyncs = 1;
         parms.PerformanceParms = oculusPerformanceParms_;
-        parms.Layers[VRAPI_FRAME_LAYER_TYPE_WORLD].Flags |= VRAPI_FRAME_LAYER_FLAG_CHROMATIC_ABERRATION_CORRECTION;
 
         const double predictedDisplayTime = vrapi_GetPredictedDisplayTime(oculusMobile_, frameIndex);
         const ovrTracking baseTracking = vrapi_GetPredictedTracking(oculusMobile_, predictedDisplayTime);
@@ -196,7 +183,7 @@ namespace gvr {
 
         for ( int eye = 0; eye < VRAPI_FRAME_LAYER_EYE_MAX; eye++ )
         {
-            ovrFrameLayerTexture& eyeTexture = parms.Layers[VRAPI_FRAME_LAYER_TYPE_WORLD].Textures[eye];
+        ovrFrameLayerTexture& eyeTexture = parms.Layers[0].Textures[eye];
 
             eyeTexture.ColorTextureSwapChain = frameBuffer_[use_multiview ? 0 : eye].mColorTextureSwapChain;
             eyeTexture.DepthTextureSwapChain = frameBuffer_[use_multiview ? 0 : eye].mDepthTextureSwapChain;
@@ -204,6 +191,7 @@ namespace gvr {
             eyeTexture.TexCoordsFromTanAngles = texCoordsTanAnglesMatrix_;
             eyeTexture.HeadPose = updatedTracking.HeadPose;
         }
+    parms.Layers[0].Flags |= VRAPI_FRAME_LAYER_FLAG_CHROMATIC_ABERRATION_CORRECTION;
 
         if (docked_) {
             const ovrQuatf& orientation = updatedTracking.HeadPose.Pose.Orientation;
@@ -225,7 +213,7 @@ namespace gvr {
 
             beginRenderingEye(eye);
 
-            oculusJavaGlThread_.Env->CallVoidMethod(viewManager_, onDrawEyeMethodId, eye);
+        oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye);
 
             endRenderingEye(eye);
         }

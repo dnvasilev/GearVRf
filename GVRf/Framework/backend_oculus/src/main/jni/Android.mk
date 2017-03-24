@@ -50,7 +50,6 @@ FILE_LIST := $(wildcard $(LOCAL_PATH)/monoscopic/*.cpp)
 LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)
 
 LOCAL_SHARED_LIBRARIES += vrapi
-LOCAL_STATIC_LIBRARIES += systemutils
 
 ## CPP flags are already defined in cflags.mk.
 #LOCAL_CPPFLAGS += -fexceptions -frtti -std=c++11 -D__GXX_EXPERIMENTAL_CXX0X__ -mhard-float -D_NDK_MATH_NO_SOFTFP=1
@@ -62,7 +61,7 @@ LOCAL_CFLAGS := -Wattributes
 #LOCAL_LDLIBS += -ljnigraphics -lm_hard
 #softFP
 LOCAL_LDLIBS += -ljnigraphics -llog -lGLESv3 -lEGL -lz -landroid
-LOCAL_LDLIBS += $(PROJECT_ROOT)/backend_oculus/build/intermediates/exploded-aar/Framework/framework/unspecified/jni/armeabi-v7a/libgvrf.so
+LOCAL_LDLIBS += $(PROJECT_DIR)/build/intermediates/exploded-aar/Framework/framework/unspecified/jni/$(TARGET_ARCH_ABI)/libgvrf.so
 
 include $(BUILD_SHARED_LIBRARY)
 
