@@ -32,10 +32,10 @@ namespace gvr {
 class GLRenderImage : public GLImage, public Image
 {
 public:
+    explicit GLRenderImage(int width, int height, GLenum gltarget);
     explicit GLRenderImage(int width, int height);
-    explicit GLRenderImage(int width, int height, int sample_count);
-    explicit GLRenderImage(int width, int height, int sample_count,
-            int jcolor_format, int jdepth_format, bool resolve_depth,
+    GLRenderImage(int width, int height,
+            int jcolor_format, int jdepth_format,
             const TextureParameters* texture_parameters);
 
     virtual int getId() { return mId; }
@@ -68,5 +68,18 @@ private:
 
 };
 
+
+class GLRenderImageArray : public GLRenderImage
+{
+public:
+    GLRenderImageArray(int width, int height, int numLayers);
+    virtual void beginRendering();
+    bool bindFrameBuffer(int layerIndex);
+    bool bindTexture(int gl_location, int texIndex);
+
+protected:
+    virtual GLuint  createTexture();
+    int     mNumLayers;
+};
 }
 #endif

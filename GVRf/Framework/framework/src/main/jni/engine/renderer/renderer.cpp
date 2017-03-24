@@ -151,10 +151,7 @@ void Renderer::cull(Scene *scene, Camera *camera,
             || camera->owner_object()->transform() == nullptr) {
         return;
     }
-    std::vector<SceneObject*> scene_objects;
-    scene_objects.reserve(1024);
-
-    cullFromCamera(scene, camera, shader_manager, scene_objects);
+    cullFromCamera(scene, camera, shader_manager);
 
     // Note: this needs to be scaled to sort on N states
     state_sort();
@@ -168,13 +165,10 @@ void Renderer::cull(Scene *scene, Camera *camera,
  * Perform view frustum culling from a specific camera viewpoint
  */
 void Renderer::cullFromCamera(Scene *scene, Camera* camera,
-        ShaderManager* shader_manager,
-        std::vector<SceneObject*>& scene_objects) {
-    if (scene->getLightList().size() != numLights)
-    {
-        numLights = scene->getLightList().size();
-        scene->bindShaders();
-    }
+        ShaderManager* shader_manager)
+{
+    std::vector<SceneObject*> scene_objects;
+
     render_data_vector.clear();
     scene_objects.clear();
     RenderState rstate;
@@ -187,7 +181,6 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
     rstate.scene = scene;
     rstate.render_mask = camera->render_mask();
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
-
     glm::mat4 vp_matrix = glm::mat4(rstate.uniforms.u_proj * rstate.uniforms.u_view);
 
     // Travese all scene objects in the scene as a tree and do frustum culling at the same time if enabled
@@ -200,6 +193,7 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
     if (DEBUG_RENDERER) {
         LOGD("FRUSTUM: start frustum culling for root %s\n", object->name().c_str());
     }
+    //    frustum_cull(camera->owner_object()->transform()->position(), object, frustum, scene_objects, scene->get_frustum_culling(), 0);
     frustum_cull(camera->owner_object()->transform()->position(), object, frustum, scene_objects, scene->get_frustum_culling(), 0);
     if (DEBUG_RENDERER) {
         LOGD("FRUSTUM: end frustum culling for root %s\n", object->name().c_str());

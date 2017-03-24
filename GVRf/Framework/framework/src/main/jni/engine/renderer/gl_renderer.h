@@ -81,9 +81,14 @@ public:
 
     void restoreRenderStates(RenderData* render_data);
     void setRenderStates(RenderData* render_data, RenderState& rstate);
-    void renderShadowMap(RenderState& rstate, Camera* camera, GLuint framebufferId, std::vector<SceneObject*>& scene_objects);
-    void makeShadowMaps(Scene* scene, ShaderManager* shader_manager, int width, int height);
     Texture* createSharedTexture(int id);
+    virtual RenderTexture* createRenderTextureArray(int width, int height, int layers);
+
+    virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
+                        ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
+                        RenderTexture* post_effect_render_texture_a,
+                        RenderTexture* post_effect_render_texture_b);
+    void makeShadowMaps(Scene* scene, ShaderManager* shader_manager);
 
     // Specific to GL
      void renderCamera(Scene* scene, Camera* camera, int framebufferId,

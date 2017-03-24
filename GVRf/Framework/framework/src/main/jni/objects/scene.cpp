@@ -23,6 +23,7 @@
 #include "engine/exporter/exporter.h"
 #include "objects/scene_object.h"
 #include "gl/gl_material.h"
+#include "objects/components/shadow_map.h"
 
 namespace gvr {
 
@@ -128,12 +129,7 @@ void Scene::removeAllSceneObjects() {
 }
 
 void Scene::deleteLightsAndDepthTextureOnRenderThread() {
-    for (auto it = lightList.begin(); it != lightList.end(); ++it)
-    {
-        (*it)->cleanup();
-    }
     lightList.clear();
-    Light::deleteDepthTexture();
 }
 
 void Scene::clearAllColliders() {

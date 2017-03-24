@@ -29,19 +29,38 @@ namespace gvr {
 class RenderTexture : public Texture
 {
 public:
-    explicit RenderTexture(int sample_count = 0)
-            : Texture(TextureType::TEXTURE_2D),
-              mSampleCount(sample_count),
-              readback_started_(false)
+    RenderTexture(int sample_count = 0)
+    : Texture(TextureType::TEXTURE_2D),
+      mSampleCount(sample_count),
+      readback_started_(false),
+      mUseStencil(false),
+    { }
+
+    RenderTexture(Texture::TextureType textype, int sample_count = 0)
+    : Texture(textype),
+      mSampleCount(sample_count),
+      readback_started_(false),
+      mUseStencil(false),
     { }
 
     virtual ~RenderTexture() { }
     virtual int width() const { mImage->getWidth(); }
     virtual int height() const { return mImage->getHeight(); }
     virtual unsigned int getFrameBufferId() const = 0;
+    virtual unsigned int getDepthBufferId() const = 0;
     virtual void bind() = 0;
     virtual void beginRendering() = 0;
     virtual void endRendering() = 0;
+
+    void setBackgroundColor(float r, float g, float b)
+    {
+        mBackColor[0] = r;
+        mBackColor[1] = g;
+        mBackColor[2] = b;
+        mBackColor[3] = 1.0f;
+    }
+
+    void useStencil(bool useFlag)   { mUseStencil = useFlag; }
 
     // Start to read back texture in the background. It can be optionally called before
     // readRenderResult() to read pixels asynchronously. This function returns immediately.
@@ -58,6 +77,8 @@ private:
     RenderTexture& operator=(RenderTexture&&);
 
 protected:
+    bool    mUseStencil;
+    float   mBackColor[4];
     int     mSampleCount;
     bool    readback_started_;  // set by startReadBack()
 };

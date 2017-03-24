@@ -68,7 +68,7 @@ private:
 
 protected:
 
-    GLuint  createTexture();
+    virtual GLuint  createTexture();
 
     static GLenum MapWrap[];
     static GLenum MapFilter[];

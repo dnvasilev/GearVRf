@@ -33,9 +33,10 @@ namespace gvr {
 class GLRenderTexture : public RenderTexture
 {
 public:
-    explicit GLRenderTexture(int width, int height);
-    explicit GLRenderTexture(int width, int height, int sample_count);
-    explicit GLRenderTexture(int width, int height, int sample_count,
+    GLRenderTexture(int width, int height);
+    GLRenderTexture(int width, int height, Image* image);
+    GLRenderTexture(int width, int height, int sample_count);
+    GLRenderTexture(int width, int height, int sample_count,
             int jcolor_format, int jdepth_format, bool resolve_depth,
             const TextureParameters* texture_parameters);
 
@@ -45,13 +46,17 @@ public:
     virtual int width() const { return mImage->getWidth(); }
     virtual int height() const { return mImage->getHeight(); }
 
-    virtual unsigned int getFrameBufferId() const {
+    virtual unsigned int getDepthBufferId() const
+    {
+        return renderTexture_gl_render_buffer_->id();
+    }
+
+    virtual unsigned int getFrameBufferId() const
+    {
         return renderTexture_gl_frame_buffer_->id();
     }
 
-    virtual void bind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_frame_buffer_->id());
-    }
+    virtual void bind();
 
     virtual void beginRendering();
     virtual void endRendering();
