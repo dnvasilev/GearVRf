@@ -34,6 +34,7 @@ public:
       mSampleCount(sample_count),
       readback_started_(false),
       mUseStencil(false),
+      mBackColor{0, 0, 0, 1}
     { }
 
     RenderTexture(Texture::TextureType textype, int sample_count = 0)
@@ -41,6 +42,7 @@ public:
       mSampleCount(sample_count),
       readback_started_(false),
       mUseStencil(false),
+      mBackColor{0, 0, 0, 1}
     { }
 
     virtual ~RenderTexture() { }
