@@ -203,6 +203,7 @@ public class GVRDirectLight extends GVRLightBase
             if ((shadowMap != null) && (shadowMap.getCamera() == null))
             {
                 shadowMap.addOrthoShadowCamera(getGVRContext().getMainScene().getMainCameraRig().getCenterCamera());
+                shadowMap.getCamera().setOwnerObject(getOwnerObject());
             }
         }
     }

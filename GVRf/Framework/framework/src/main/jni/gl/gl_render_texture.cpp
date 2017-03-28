@@ -234,7 +234,8 @@ void GLRenderTexture::beginRendering() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     invalidateFrameBuffer(GL_FRAMEBUFFER, true, true, true);
-    if ((mBackColor[0] + mBackColor[1] + mBackColor[2] + mUseStencil) != 0)
+    // TODO: I don't know why this condition here
+  //  if ((mBackColor[0] + mBackColor[1] + mBackColor[2] + mUseStencil) != 0)
     {
         int mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
         glClearColor(mBackColor[0], mBackColor[1], mBackColor[2], mBackColor[3]);
@@ -245,10 +246,10 @@ void GLRenderTexture::beginRendering() {
         }
         glClear(mask);
     }
-    else
+   /* else
     {
         glClear(GL_DEPTH_BUFFER_BIT);
-    }
+    }*/
 }
 
 void GLRenderTexture::endRendering() {

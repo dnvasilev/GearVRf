@@ -277,6 +277,8 @@ namespace gvr
         if ((post_effects.size() == 0) ||
             (post_effect_render_texture_a == nullptr))
         {
+            std::string shader_sig = "GVRDepthShader";
+            rstate.depth_shader = rstate.shader_manager->findShader(shader_sig);
             saveRenderTexture->useStencil(useStencilBuffer_);
             renderTarget->beginRendering();
             for (auto it = render_data_vector.begin();

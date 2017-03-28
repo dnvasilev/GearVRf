@@ -108,15 +108,15 @@ GLRenderImageArray::GLRenderImageArray(int width, int height, int numLayers)
 
 GLuint  GLRenderImageArray::createTexture()
 {
-    GLuint fbid = GLRenderImage::createTexture();
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fbid);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    GLuint texId = GLRenderImage::createTexture();
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texId);
     //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_RGB8, width,height,depth,0,GL_RGB, GL_UNSIGNED_BYTE,NULL);
     //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_R16F, width,height,depth,0,GL_RED, GL_HALF_FLOAT,NULL);  // does not work for S6 edge
     //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_RGB10_A2, width,height,depth,0,GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV,NULL);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, getWidth(), getHeight(), mNumLayers, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, NULL);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    return texId;
 }
 
 void GLRenderImageArray::beginRendering()
@@ -149,10 +149,9 @@ bool GLRenderImageArray::bindTexture(int gl_location, int texIndex)
  */
 bool GLRenderImageArray::bindFrameBuffer(int layerIndex)
 {
-    updateGPU();
-    int fbid = getId();
+    int texId = getId();
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                              fbid, 0, layerIndex);
+                              texId, 0, layerIndex);
     checkGLError("RenderTextureArray::bindFrameBuffer");
     int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (fboStatus != GL_FRAMEBUFFER_COMPLETE)

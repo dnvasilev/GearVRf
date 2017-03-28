@@ -56,7 +56,11 @@ void  ShadowMap::beginRendering()
     if (image && (mLayerIndex >= 0))
     {
         GLRenderImageArray* texArray = static_cast<GLRenderImageArray*>(image);
-        texArray->bindFrameBuffer(mLayerIndex);
+        if(!fboInit_) {
+            mRenderTexture->bind();
+            texArray->bindFrameBuffer(mLayerIndex);
+            fboInit_ = true;
+        }
     }
     RenderTarget::beginRendering();
     mRenderState.render_mask = 1;

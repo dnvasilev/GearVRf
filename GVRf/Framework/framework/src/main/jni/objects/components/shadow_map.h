@@ -35,6 +35,7 @@ class ShaderData;
 
     protected:
         int     mLayerIndex;
+        bool    fboInit_ = false;
     };
 }
 #endif
