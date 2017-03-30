@@ -44,9 +44,9 @@ std::string data_frag = std::string("") +
                       //  "float line_width;\n" +
                         "};\n"
 
-                                " layout(set = 0, binding = 2) uniform samplerCube tex;\n" +
+                                " layout(set = 0, binding = 2) uniform sampler2D tex;\n" +
                         "layout (location = 0) out vec4 uFragColor;  \n" +
-                        "layout(location = 1 )in vec3 o_texcoord; \n" +
+                        "layout(location = 1 )in vec2 o_texcoord; \n" +
                         "void main() {  \n" +
                   //      " vec4 temp = vec4(1.0,0.0,1.0,1.0);\n" +
                     //    "   uFragColor = vec4(o_texcoord, 0, 1);  \n" +
@@ -69,13 +69,13 @@ std::string vertexShaderData = std::string("") +
                                        "     float u_right;"
                                        " };\n" +
                                "layout(location = 0)in vec3 pos; \n" +
-                              // "layout(location = 1)in vec2 a_texcoord; \n" +
-                               "layout(location = 1)out vec3 o_texcoord; \n" +
+                               "layout(location = 1)in vec2 a_texcoord; \n" +
+                               "layout(location = 1)out vec2 o_texcoord; \n" +
                                "void main() { \n" +
                                "  vec4 pos1 = vec4(pos, 1.0);\n"
-                                          "o_texcoord = normalize((u_model * pos1).xyz); \n" +
-                                            "o_texcoord.z = -o_texcoord.z; \n" +
-                               //       "o_texcoord = a_texcoord; \n" +
+                              //            "o_texcoord = normalize((u_model * pos1).xyz); \n" +
+                               //             "o_texcoord.z = -o_texcoord.z; \n" +
+                                      "o_texcoord = a_texcoord; \n" +
                                "  gl_Position = u_mvp * vec4(pos.x, pos.y, pos.z,1.0); \n" +
                                "}";
 namespace gvr {
