@@ -33,10 +33,10 @@ namespace gvr {
     class vkImage
     {
     public:
-        vkImage(VkImageViewType type) : outBuffer(new VkBuffer),imageType(type), format_(VK_FORMAT_R8G8B8A8_UNORM), usage_flags_(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+        vkImage(VkImageViewType type) : outBuffer(new VkBuffer),imageType(type), size(0), format_(VK_FORMAT_R8G8B8A8_UNORM), usage_flags_(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
         { }
-        vkImage(VkImageViewType type, VkFormat format, int width, int height, int depth,VkImageUsageFlags flags, VkImageLayout imageLayout )
-                : imageType(type), outBuffer(new VkBuffer), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout)
+        vkImage(VkImageViewType type, VkFormat format, int width, int height, int depth, VkImageUsageFlags flags, VkImageLayout imageLayout )
+                : imageType(type), outBuffer(new VkBuffer), size(0), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout)
         { }
         void createImageView(bool host_accessible);
         int updateVkImage(uint64_t texSize, std::vector<void*>& pixels,std::vector<ImageInfo>& bitmapInfos, std::vector<VkBufferImageCopy>& bufferCopyRegions, VkImageViewType target, VkFormat internalFormat, bool isCubemap = false, int mipLevels =1,VkImageCreateFlags flags=0);
@@ -56,6 +56,15 @@ namespace gvr {
         VkDeviceMemory getDeviceMemory(){
             return dev_memory;
         }
+        VkFormat getFormat(){
+            return format_;
+        }
+        const VkImage& getVkImage(){
+            return image;
+        }
+        VkDeviceSize getSize(){
+            return size;
+        }
     private:
         VkImageViewType imageType;
         VkImage image;
@@ -66,6 +75,7 @@ namespace gvr {
         int width_, height_, depth_;
         VkImageUsageFlags usage_flags_;
         std::unique_ptr<VkBuffer> outBuffer;
+        VkDeviceSize size;
     };
 }
 #endif //FRAMEWORK_VK_IMAGE_H

@@ -52,6 +52,7 @@ void vkImage::createImageView(bool host_accessible) {
                                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                                     &memoryTypeIndex);
     GVR_VK_CHECK(pass);
+    size = mem_reqs.size;
 
     ret = vkAllocateMemory(device,
                            gvr::MemoryAllocateInfo(mem_reqs.size, memoryTypeIndex), nullptr,
@@ -155,7 +156,7 @@ void vkImage::createImageView(bool host_accessible) {
                                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                                         &memoryAllocateInfo.memoryTypeIndex);
         assert(pass);
-
+        size = mem_reqs.size;
         err = vkAllocateMemory(device, gvr::MemoryAllocateInfo(mem_reqs.size,
                                                                memoryAllocateInfo.memoryTypeIndex),
                                NULL, &texMemory);

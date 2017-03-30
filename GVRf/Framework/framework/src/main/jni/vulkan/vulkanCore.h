@@ -193,7 +193,8 @@ namespace gvr {
         VkSwapchainKHR m_swapchain;
         GVR_VK_SwapchainBuffer *m_swapchainBuffers;
         GVR_VK_SwapchainBuffer *outputImage;
-
+        std::vector<VkCommandBuffer*> swapChainCmdBuffer;
+        std::vector<vkImage*> swapChainImages;
         uint32_t m_swapchainCurrentIdx;
         uint32_t m_height;
         uint32_t m_width;
@@ -205,6 +206,7 @@ namespace gvr {
         VkCommandPool m_commandPool;
         VkCommandPool m_commandPoolTrans;
         GVR_VK_DepthBuffer *m_depthBuffers;
+        std::vector<vkImage*> depthImages;
         GVR_VK_Vertices m_vertices;
 
         VkDescriptorSetLayout m_descriptorLayout;
