@@ -17,6 +17,89 @@
 #include "engine/renderer/vulkan_renderer.h"
 
 namespace gvr {
+void vkImage::createImageView(bool host_accessible) {
+
+    VkResult ret = VK_SUCCESS;
+    VulkanRenderer *vk_renderer = static_cast<VulkanRenderer *>(Renderer::getInstance());
+    VkDevice device = vk_renderer->getDevice();
+    bool pass;
+    VkMemoryRequirements mem_reqs;
+    uint32_t memoryTypeIndex;
+    VkDeviceMemory memory;
+
+    ret = vkCreateImage(
+            device,
+            gvr::ImageCreateInfo(VK_IMAGE_TYPE_2D, format_, width_,
+                                 height_, depth_, 1, 1,
+                                 VK_IMAGE_TILING_LINEAR,
+                                 usage_flags_, 0, VK_SAMPLE_COUNT_1_BIT,
+                                 imageLayout),
+            nullptr, &image
+    );
+    GVR_VK_CHECK(!ret);
+
+    VkBuffer buffer;
+    ret = vkCreateBuffer(device,
+                         gvr::BufferCreateInfo(width_ * height_ * 4 * sizeof(uint8_t),
+                                               usage_flags_), nullptr,
+                         &buffer);
+    GVR_VK_CHECK(!ret);
+
+    // discover what memory requirements are for this image.
+    vkGetImageMemoryRequirements(device, image, &mem_reqs);
+
+    pass = vk_renderer->GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits,
+                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                    &memoryTypeIndex);
+    GVR_VK_CHECK(pass);
+
+    ret = vkAllocateMemory(device,
+                           gvr::MemoryAllocateInfo(mem_reqs.size, memoryTypeIndex), nullptr,
+                           &memory);
+    GVR_VK_CHECK(!ret);
+
+    // Bind memory to the image
+    ret = vkBindImageMemory(device, image, memory, 0);
+    GVR_VK_CHECK(!ret);
+
+    ret = vkBindBufferMemory(device, buffer, memory, 0);
+    GVR_VK_CHECK(!ret);
+
+    ret = vkCreateImageView(
+            device,
+            gvr::ImageViewCreateInfo(image, imageType,
+                                     format_, 1, 1,
+                                     VK_IMAGE_ASPECT_COLOR_BIT),
+            nullptr, &imageView
+    );
+    GVR_VK_CHECK(!ret);
+
+    if(host_accessible) {
+
+        ret = vkCreateBuffer(device,
+                             gvr::BufferCreateInfo(width_ * height_ * 4 * sizeof(uint8_t),
+                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT), nullptr,
+                             outBuffer.get());
+        GVR_VK_CHECK(!ret);
+
+        // Obtain the memory requirements for this buffer.
+        vkGetBufferMemoryRequirements(device, *outBuffer, &mem_reqs);
+        GVR_VK_CHECK(!ret);
+
+        pass = vk_renderer->GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits,
+                                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                                        &memoryTypeIndex);
+        GVR_VK_CHECK(pass);
+
+        ret = vkAllocateMemory(device,
+                               gvr::MemoryAllocateInfo(mem_reqs.size, memoryTypeIndex), nullptr,
+                               &dev_memory);
+        GVR_VK_CHECK(!ret);
+
+        ret = vkBindBufferMemory(device, *outBuffer, dev_memory, 0);
+        GVR_VK_CHECK(!ret);
+    }
+}
 
     int vkImage::updateMipVkImage(uint64_t texSize, std::vector<void *> &pixels,
                                std::vector<ImageInfo> &bitmapInfos,
