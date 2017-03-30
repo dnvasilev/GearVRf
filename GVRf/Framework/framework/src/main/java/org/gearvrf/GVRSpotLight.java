@@ -166,7 +166,6 @@ public class GVRSpotLight extends GVRPointLight
             {
                 shadowMap.addPerspShadowCamera(getGVRContext().getMainScene().getMainCameraRig().getCenterCamera(),
                                                (float) Math.acos(getFloat("outer_cone_angle")) * 2.0f);
-                shadowMap.getCamera().setOwnerObject(getOwnerObject());
             }
         }
     }

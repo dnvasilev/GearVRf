@@ -86,6 +86,7 @@ public:
     int getWrapU() const { return Params.BitFields.WrapU; }
     int getWrapV() const { return Params.BitFields.WrapV; }
     float getMaxAnisotropy() const { return MaxAnisotropy; }
+    unsigned char getHashCode() const { return Params.HashCode; }
     void setMinFilter(int f) { Params.BitFields.MinFilter = f; }
     void setMagFilter(int f) { Params.BitFields.MagFilter = f; }
     void setWrapU(int wrap) { Params.BitFields.WrapU = wrap; }

@@ -26,7 +26,7 @@ namespace gvr {
 
     VkSamplerAddressMode VkTexture::MapWrap[3] = { VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT };
     VkFilter VkTexture::MapFilter[] = { VK_FILTER_NEAREST, VK_FILTER_LINEAR};
-
+    std::unordered_map<int, VkSampler > samplers_;
     // TODO: Vulkan does not have capability to generate mipmaps on its own, we need to implement this for vulkan
     VkSamplerMipmapMode VkTexture::mipmapMode[] = { VK_SAMPLER_MIPMAP_MODE_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR};
     VkTexture::~VkTexture()
@@ -55,13 +55,16 @@ namespace gvr {
         {
             numlod = mImage->getLevels();
         }
-        if (!m_sampler)
-        {
+        // create hash code
+        int hash = 23;
+        hash = hash * 31 + numlod;
+        hash = hash * 31 + getTexParams().getHashCode();
+
+        if(samplers_.find(hash) != samplers_.end())
+            m_sampler = samplers_[hash];
+        else {
             createSampler(numlod);
-        }
-        else
-        {
-            // TODO: select texture sampler based on texture parameters
+            samplers_[hash] = m_sampler;
         }
     }
 

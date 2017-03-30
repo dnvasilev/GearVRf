@@ -182,6 +182,7 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
     rstate.render_mask = camera->render_mask();
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
     glm::mat4 vp_matrix = glm::mat4(rstate.uniforms.u_proj * rstate.uniforms.u_view);
+    glm::vec3 campos(rstate.uniforms.u_view[3]);
 
     // Travese all scene objects in the scene as a tree and do frustum culling at the same time if enabled
     // 1. Build the view frustum
@@ -194,7 +195,7 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
         LOGD("FRUSTUM: start frustum culling for root %s\n", object->name().c_str());
     }
     //    frustum_cull(camera->owner_object()->transform()->position(), object, frustum, scene_objects, scene->get_frustum_culling(), 0);
-    frustum_cull(camera->owner_object()->transform()->position(), object, frustum, scene_objects, scene->get_frustum_culling(), 0);
+    frustum_cull(campos, object, frustum, scene_objects, scene->get_frustum_culling(), 0);
     if (DEBUG_RENDERER) {
         LOGD("FRUSTUM: end frustum culling for root %s\n", object->name().c_str());
     }

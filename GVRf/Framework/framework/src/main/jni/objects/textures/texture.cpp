@@ -29,7 +29,7 @@ class VkBitmapImage;
 
 Texture::Texture(int type)
         : HybridObject(),
-          mTexParamsDirty(false),
+          mTexParamsDirty(true),
           mType(type),
           mImage(NULL),
           mJava(NULL),
