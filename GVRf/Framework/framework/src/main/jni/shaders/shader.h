@@ -26,6 +26,7 @@
 #include <string>
 #include <mutex>
 #include <vector>
+#include "unordered_map"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -130,7 +131,13 @@ public:
     virtual bool useShader() = 0;
     static int calcSize(std::string type);
     void forEach(const std::string& descriptor, ShaderVisitor& visitor);
-
+    const std::unordered_map<std::string, std::string>& getTextures(){
+        return textures_;
+    }
+    void parseDescriptor(const std::string& descriptor);
+    int getNumberOfTextures(){
+        return textures_.size();
+    }
 private:
     Shader(const Shader& shader);
     Shader(Shader&& shader);
@@ -145,6 +152,7 @@ protected:
     std::string vertexDescriptor_;
     std::string textureDescriptor_;
     std::string uniformDescriptor_;
+    std::unordered_map<std::string, std::string> textures_;
     int id_;
     bool shaderDirty = true;
     bool transformUboPresent = true;

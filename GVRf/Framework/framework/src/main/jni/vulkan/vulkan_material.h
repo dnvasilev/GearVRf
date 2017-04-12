@@ -34,6 +34,8 @@ namespace gvr {
         virtual UniformBlock& uniforms() { return uniforms_; }
         virtual const UniformBlock& uniforms() const { return uniforms_; }
         VulkanUniformBlock& getVulkanUniforms() { return uniforms_; }
+        int bindTextures(Shader *shader);
+
     protected:
         VulkanUniformBlock uniforms_;
     };

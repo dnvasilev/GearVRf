@@ -1,6 +1,9 @@
+#version 400
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 precision mediump float;
-in vec3 a_position;
-layout (std140) uniform Transform_ubo
+layout(location = 0) in vec3 a_position;
+layout (std140, set = 0, binding = 0) uniform Transform_ubo
 {
  #ifdef HAS_MULTIVIEW
      mat4 u_view_[2];

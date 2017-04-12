@@ -91,6 +91,7 @@ public:
     {
         locations_[key] = loc;
     }
+    void convertToGLShaders();
 
 protected:
     void initialize();

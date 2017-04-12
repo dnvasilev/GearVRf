@@ -42,9 +42,11 @@ Shader::Shader(int id,
         transformUboPresent = false;
 
 }
+void Shader::parseDescriptor(const std::string& descriptor){
+    if(textures_.size() != 0){
+        return;
+    }
 
-void Shader::forEach(const std::string& descriptor, ShaderVisitor& visitor)
-{
     const char *p = descriptor.c_str();
     const char *type_start;
     int type_size;
@@ -76,6 +78,48 @@ void Shader::forEach(const std::string& descriptor, ShaderVisitor& visitor)
             break;
         }
         std::string name(name_start, name_size);
+        textures_[name] = type;
+    }
+}
+void Shader::forEach(const std::string& descriptor, ShaderVisitor& visitor)
+{
+    if(textures_.size() != 0){
+        for(auto it: textures_)
+            visitor.visit(it.first, it.second, calcSize(it.second));
+        return;
+    }
+    const char *p = descriptor.c_str();
+    const char *type_start;
+    int type_size;
+    const char *name_start;
+    int name_size;
+
+    while (*p) {
+        while (std::isspace(*p) || std::ispunct(*p))
+            ++p;
+        type_start = p;
+        if (*p == 0)
+            break;
+        while (std::isalnum(*p))
+            ++p;
+        type_size = p - type_start;
+        if (type_size == 0) {
+            LOGE("SHADER: SYNTAX ERROR: expecting data type %s\n", descriptor.c_str());
+            break;
+        }
+        std::string type(type_start, type_size);
+        while (std::isspace(*p))
+            ++p;
+        name_start = p;
+        while (std::isalnum(*p) || (*p == '_'))
+            ++p;
+        name_size = p - name_start;
+        if (name_size == 0) {
+            LOGE("SHADER: SYNTAX ERROR: expecting name\n");
+            break;
+        }
+        std::string name(name_start, name_size);
+        textures_[name] = type;
         visitor.visit(name, type, calcSize(type));
     }
 }

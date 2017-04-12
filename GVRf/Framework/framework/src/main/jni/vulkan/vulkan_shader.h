@@ -16,9 +16,11 @@
 
 #ifndef VULKAN_SHADER_H_
 #define VULKAN_SHADER_H_
-
+#include <sstream>
+#include <iostream>
 #include "shaders/shader.h"
 #include "vulkan_headers.h"
+
 
 namespace gvr {
 class Mesh;
@@ -86,7 +88,7 @@ public:
     {
         return m_descriptorLayout;
     }
-
+    void  convertToVkShaders();
 private:
     VkDescriptorSetLayout m_pipelineLayout;
     VkDescriptorSetLayout m_descriptorLayout;

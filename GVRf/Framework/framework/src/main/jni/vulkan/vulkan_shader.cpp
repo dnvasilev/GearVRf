@@ -22,6 +22,7 @@
 #include "engine/renderer/vulkan_renderer.h"
 #include <shaderc/shaderc.h>
 #include <shaderc/shaderc.hpp>
+#include <glslang/Include/Common.h>
 
 namespace gvr {
 
@@ -41,67 +42,6 @@ void VulkanShader::initialize(Mesh* mesh)
 
 VulkanShader::~VulkanShader() { }
 
-
-void static fillDelims(std::unordered_map<std::string, int> &delims, std::string &delimsTypes)
-{
-    for(uint i = 0; i < delimsTypes.length(); i++){
-        delims[delimsTypes.substr(i,1)] = 1;
-    }
-}
-
-std::vector<std::string> static getTokens(std::string &input)
-{
-    std::vector <std::string> tokens;
-    std::unordered_map<std::string, int> delims;
-    std::string delimiters = " ;+-/*%()<>!={}\n";
-    fillDelims(delims, delimiters);
-
-    int prev = 0;
-    for(uint i = 0; i < input.length(); i++){
-        if(delims[input.substr(i, 1)]){
-            tokens.push_back(input.substr(prev, i-prev));
-            tokens.push_back(input.substr(i, 1));
-            prev = i+1;
-        }
-        else{
-
-        }
-    }
-
-    return tokens;
-}
-
-    void static insertBindingPoints(std::string &shader)
-    {
-        std::unordered_map<std::string, std::string> uniformBindings;
-        uniformBindings["Material_ubo"] = "1";
-        uniformBindings["Transform_ubo"] = "0";
-        std::vector<std::string> tokens = getTokens(shader);
-
-        for(uint i = 0; i < tokens.size(); ++i)
-        {
-            if(tokens[i] == "std140")
-            {
-                for(uint j = i+1; j < tokens.size(); ++j)
-                {
-                    std::unordered_map<std::string, std::string>::const_iterator found = uniformBindings.find(tokens[j]);
-                    if(found != uniformBindings.end())
-                    {
-                        tokens[i] += ", binding = " + uniformBindings[tokens[j]];
-                        i = j + 1;
-                        break;
-                    }
-                }
-            }
-        }
-        shader = "";
-
-        for(uint i = 0; i < tokens.size(); ++i)
-        {
-            shader += tokens[i];
-        }
-    }
-
     std::vector<uint32_t> VulkanShader::CompileVulkanShader(const std::string& shaderName, ShaderType shaderTypeID, std::string& shaderContents)
     {
         shaderc::Compiler compiler;
@@ -118,17 +58,6 @@ std::vector<std::string> static getTokens(std::string &input)
                 shaderType = shaderc_glsl_default_fragment_shader;
                 break;
         }
-
-        // Modify GL Shader to VK Shader
-        std::string append = "400 \n #extension GL_ARB_separate_shader_objects : enable \n #extension GL_ARB_shading_language_420pack : enable \n";
-        std::size_t found = shaderContents.find("300 es");
-        if (found != std::string::npos)
-        {
-            shaderContents.replace(found, 6, append);
-        }
-
-        // Inserting Binding points
-        insertBindingPoints(shaderContents);
 
         shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(shaderContents.c_str(),
                                                                          shaderContents.size(),

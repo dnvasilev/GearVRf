@@ -84,42 +84,68 @@ GLShader::~GLShader()
         delete program_;
     }
 }
+void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line){
+    std::string delimiters = " ;+-/*%()<>!={}\n";
+    std::unordered_set<char>delim;
+    for(int i=0; i<delimiters.length(); i++){
+        delim.insert(delimiters[i]);
+    }
+    int start  =0;
+    for(int i=0; i<line.length(); i++){
+        if(delim.find(line[i])!= delim.end()){
+            if((i-start) > 0)
+                tokens[line.substr(start, i-start)] = start;
+            start = i+1;
+        }
+    }
+}
+void modifyShader(std::string& shader){
+    std::istringstream shaderStream(shader);
+    std::string line;
+    std::getline(shaderStream, line);
+    std::string mod_shader;
+    mod_shader += "#version 300 es \n";
 
-void GLShader::initialize()
-{
-    std::string modified_frag_shader;
- /*   if (fragmentShader_.find("samplerExternalOES")!= std::string::npos)
-    {
-        std::istringstream iss(fragmentShader_.c_str());
-        const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-        std::string extension_string;
-        if(strstr(extensions, "GL_OES_EGL_image_external_essl3"))
-        {
-            extension_string = "#extension GL_OES_EGL_image_external_essl3 : require \n";
+    std::unordered_map<std::string, int>::iterator it;
+    std::unordered_map<std::string, int>::iterator it1;
+
+    while (std::getline(shaderStream, line)) {
+
+        if (line.find("GL_ARB_separate_shader_objects") != std::string::npos || line.find("GL_ARB_shading_language_420pack") != std::string::npos)
+            continue;
+        std::unordered_map<std::string, int> tokens;
+        getTokens(tokens, line);
+
+        if((it = tokens.find("uniform"))!=tokens.end()){
+            int pos = tokens["layout"];
+            mod_shader += ((pos > 0) ? line.substr((0,pos)) :"") + ((tokens.find("sampler")) == tokens.end() ? "layout (std140) " : "") + line.substr(it->second) + "\n";
+        }
+        else if((it = tokens.find("layout"))!=tokens.end()){
+            it1 = tokens.find("in");
+            if(it1 == tokens.end())
+                it1 = tokens.find("out");
+            int pos = it->second;
+
+            mod_shader += ((pos > 0) ? line.substr(0,pos) :"") + line.substr(it1->second) + "\n";
         }
         else
-        {
-            extension_string = "#extension GL_OES_EGL_image_external : require\n";
-        }
-        std::string line;
-        while (std::getline(iss, line))
-        {
-            if(line.find("GL_OES_EGL_image_external") != std::string::npos)
-            {
-                modified_frag_shader = modified_frag_shader + extension_string + "\n";
-            }
-            else
-            {
-                modified_frag_shader = modified_frag_shader + line + "\n";
-            }
-        }
+            mod_shader += line + "\n";
     }
-    else
-   */ {
-        modified_frag_shader = fragmentShader_;
-    }
+    shader = mod_shader;
+}
+void GLShader::convertToGLShaders(){
 
-    program_ = new GLProgram(vertexShader_.c_str(), modified_frag_shader.c_str());
+    if(vertexShader_.find("#version 400")==std::string::npos)
+        return;
+    modifyShader(vertexShader_);
+    modifyShader(fragmentShader_);
+
+}
+void GLShader::initialize()
+{
+
+    convertToGLShaders();
+    program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
     if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
                            && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
                            && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")))

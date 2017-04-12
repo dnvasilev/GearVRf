@@ -41,7 +41,15 @@
 #include "objects/vertex_bone_data.h"
 #include "vulkan/vulkan_headers.h"
 namespace gvr {
-
+struct GLAttributeMapping {
+    std::string     data_type;
+    std::string     name;
+    GLuint          index;
+    GLuint          size;
+    GLenum          type;
+    GLuint          offset;
+    const void*     data;
+};
 class Mesh: public HybridObject {
 public:
     Mesh(const std::string& descriptor) :
@@ -345,7 +353,9 @@ public:
     GVR_VK_Indices& getVkIndices(){
         return m_indices;
     }
-
+    const std::vector<GLAttributeMapping>& getBindings(){
+        return attrMapping;
+    }
 private:
     Mesh(const Mesh& mesh);
     Mesh(Mesh&& mesh);
@@ -382,14 +392,7 @@ private:
 
     std::map<GLuint, GLVaoVboId> program_ids_;
 
-    struct GLAttributeMapping {
-        std::string     data_type;
-        GLuint          index;
-        GLuint          size;
-        GLenum          type;
-        GLuint          offset;
-        const void*     data;
-    };
+
     std::vector<GLAttributeMapping> attrMapping;
 
     void createAttributeMapping(int programId, int& totalStride, int& attrLength);

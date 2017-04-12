@@ -217,6 +217,7 @@ namespace gvr {
         vertices_len = vertices_.size();
 
         binding.data_type = "vec3";
+        binding.name = "a_position";
         binding.size = calcSize(binding.data_type);
         binding.offset = total_size * sizeof(float);
         total_size += calcSize(binding.data_type);
@@ -245,16 +246,18 @@ namespace gvr {
             binding.offset = total_size * sizeof(float);
             total_size += calcSize(binding.data_type);
             binding.index = attrib_index++;
+            binding.name = "a_normal";
             binding.data = normals_.data();
             bindings.push_back(binding);
         }
 
-
+        // TODO:: add case for bones
         if (descriptor.find("normalTexture") != std::string::npos) {
             const std::vector<glm::vec3> &curr = getVec3Vector("a_tangent");
             if (vertices_len && vertices_len != curr.size()) {
                 LOGE("ERROR: length of vector is not same as of vertices");
             }
+            binding.name = "a_tangent";
             binding.offset = total_size * sizeof(float);
             total_size += calcSize(binding.data_type);
             binding.index = attrib_index++;
@@ -266,6 +269,7 @@ namespace gvr {
             if (vertices_len && vertices_len != curr1.size()) {
                 LOGE("ERROR: length of vector is not same as of vertices");
             }
+            binding.name = "a_bitangent";
             binding.offset = total_size * sizeof(float);
             total_size += calcSize(binding.data_type);
             binding.index = attrib_index++;
@@ -279,6 +283,7 @@ namespace gvr {
             if (vertices_len && vertices_len != texcord.size()) {
                 LOGE("ERROR: length of vector is not same as of vertices");
             }
+            binding.name = it;
             binding.data_type = "vec2";
             binding.size = calcSize(binding.data_type);
             binding.offset = total_size * sizeof(float);
