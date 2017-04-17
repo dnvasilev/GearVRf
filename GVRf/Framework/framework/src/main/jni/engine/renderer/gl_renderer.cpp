@@ -664,14 +664,14 @@ namespace gvr
                     glLineWidth(1.0f);
                 }
             }
-            shader->useShader();
+            shader->useShader(render_data->mesh());
         }
         catch (const std::string &error)
         {
             LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
                  render_data->owner_object()->name().c_str(), error.c_str());
             shader = shader_manager->findShader(std::string("GVRErrorShader"));
-            shader->useShader();
+            shader->useShader(render_data->mesh());
         }
         int texIndex = material->bindToShader(shader);
         if (texIndex >= 0)
@@ -700,7 +700,7 @@ namespace gvr
         rdata->updateGPU(this);
         try
         {
-            shader->useShader();
+            shader->useShader(renderData->mesh());
         }
         catch (const std::string& error)
         {

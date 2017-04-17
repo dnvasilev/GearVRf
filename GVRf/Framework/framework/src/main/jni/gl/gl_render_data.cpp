@@ -28,8 +28,8 @@ namespace gvr
         int         a_bone_indices;
         int         a_bone_weights;
 
-        glshader->bindMesh(mesh_);
-        mesh_->getVAOId(programId);
+
+        glBindVertexArray(mesh_->getVAOId(programId));
         a_bone_indices = glGetAttribLocation(programId, "a_bone_indices");
         a_bone_weights = glGetAttribLocation(programId, "a_bone_weights");
         if ((a_bone_indices >= 0) && (a_bone_weights >= 0) && bones_ubo_)
@@ -44,7 +44,7 @@ namespace gvr
         if (mesh_->indices().size() > 0)
         {
             glDrawElements(draw_mode(), mesh_->indices().size(), GL_UNSIGNED_SHORT, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
         }
         else
         {
@@ -53,6 +53,7 @@ namespace gvr
         checkGLError("GLRenderData::render");
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
 }

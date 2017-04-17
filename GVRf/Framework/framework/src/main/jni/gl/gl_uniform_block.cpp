@@ -52,7 +52,7 @@ namespace gvr {
         glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
         glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
         mIsDirty = false;
-        if (Shader::LOG_SHADER)
+        if (0)
         {
             //LOGV("SHADER: UniformBlock: %s size %d\n", getBlockName().c_str(), getTotalSize());
             std::string data = toString().c_str();

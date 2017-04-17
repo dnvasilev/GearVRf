@@ -114,7 +114,7 @@ namespace gvr {
         vkRdata->createPipeline(shader,this);
         try
         {
-            shader->useShader();
+            shader->useShader(rdata->mesh());
         }
         catch (const std::string &error)
         {
@@ -174,7 +174,7 @@ namespace gvr {
             {
                 LOGE("Error detected in VulkanRenderer");
                 shader = shader_manager->findShader(std::string("GVRErrorShader"));
-                shader->useShader();
+                shader->useShader(rdata->mesh());
             }
             allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }

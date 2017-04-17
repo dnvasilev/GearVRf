@@ -55,7 +55,7 @@ public:
     virtual ~GLShader();
 
     void bindMesh(Mesh* mesh);
-    virtual bool useShader();
+    virtual bool useShader(Mesh*);
 
    /*
      * Returns the GL program ID for the native shader
@@ -94,7 +94,7 @@ public:
     void convertToGLShaders();
 
 protected:
-    void initialize();
+    void initialize(Mesh*);
 
 private:
     GLShader(const GLShader& shader);

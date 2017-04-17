@@ -58,7 +58,7 @@ public:
 
     virtual ~VulkanShader();
 
-    virtual bool useShader() { return true; }
+    virtual bool useShader(Mesh*) { return true; }
 
     std::vector<uint32_t>& getVkVertexShader()
     {

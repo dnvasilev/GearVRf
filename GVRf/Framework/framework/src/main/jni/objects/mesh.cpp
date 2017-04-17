@@ -667,6 +667,8 @@ namespace gvr {
             vaoID_ = ids.vaoID;
             triangle_vboID_ = ids.triangle_vboID;
             static_vboID_ = ids.static_vboID;
+            if(!vao_dirty_)
+                return  vaoID_;
         }
         else {
             glGenVertexArrays(1, &vaoID_);
@@ -700,7 +702,7 @@ namespace gvr {
             createBuffer(buffer, attrLength);
             glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * buffer.size(), &buffer[0],
                          GL_STATIC_DRAW);
-            //vao_dirty_ = false;
+            vao_dirty_ = false;
             checkGLError("Mesh:generateVAO update buffers");
         }
         for (std::vector<GLAttributeMapping>::iterator it = attrMapping.begin();
@@ -714,9 +716,9 @@ namespace gvr {
         checkGLError("Mesh:generateVAO enable attribs");
 
         // done generation
-        //glBindVertexArray(0);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         return vaoID_;
     }
 

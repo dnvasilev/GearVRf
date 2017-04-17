@@ -39,7 +39,7 @@ namespace gvr {
         std::string type;
         int size;
     };
-
+class Mesh;
 /**
  * Contains information about the vertex attributes, textures and
  * uniforms used by the shader source and the sources for the
@@ -128,7 +128,7 @@ public:
     void setShaderDirty(bool flag){
         shaderDirty = flag;
     }
-    virtual bool useShader() = 0;
+    virtual bool useShader(Mesh*) = 0;
     static int calcSize(std::string type);
     void forEach(const std::string& descriptor, ShaderVisitor& visitor);
     const std::unordered_map<std::string, std::string>& getTextures(){

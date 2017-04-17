@@ -141,10 +141,10 @@ void GLShader::convertToGLShaders(){
     modifyShader(fragmentShader_);
 
 }
-void GLShader::initialize()
+void GLShader::initialize(Mesh* mesh)
 {
 
-    convertToGLShaders();
+ //   convertToGLShaders();
     program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
     if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
                            && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
@@ -156,6 +156,7 @@ void GLShader::initialize()
     }
     vertexShader_.clear();
     fragmentShader_.clear();
+    bindMesh(mesh);
 }
 
 void GLShader::bindMesh(Mesh* mesh)
@@ -168,11 +169,11 @@ void GLShader::bindMesh(Mesh* mesh)
     }
 }
 
-bool GLShader::useShader()
+bool GLShader::useShader(Mesh* mesh)
 {
     if (nullptr == program_)
     {
-        initialize();
+        initialize(mesh);
     }
     GLint programID = getProgramId();
     if (programID <= 0)
