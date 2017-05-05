@@ -23,9 +23,6 @@
 #include "vulkan/vk_texture.h"
 
 #define ENABLE_TEXTURE
-
-#define UINT64_MAX 99999
-
 #define QUEUE_INDEX_MAX 99999
 #define VERTEX_BUFFER_BIND_ID 0
 std::string data_frag = std::string("") +

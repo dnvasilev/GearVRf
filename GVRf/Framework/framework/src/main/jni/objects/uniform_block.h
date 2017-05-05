@@ -386,7 +386,7 @@ public:
     {
         if ((mUniformData != NULL) && mOwnData)
         {
-            free(mUniformData);
+            delete [] mUniformData;
         }
         mUniformData = NULL;
     }
@@ -440,7 +440,7 @@ protected:
     {
         if (mUniformData == NULL)
         {
-            mUniformData = malloc(mTotalSize);
+            mUniformData = new char [mTotalSize];
             mOwnData = true;
         }
     }
@@ -481,7 +481,7 @@ protected:
     bool        mIsDirty;        // true if data in block has changed since last render
     std::string mDescriptor;     // descriptor with name, type and size of uniforms
     std::string mBlockName;      // name of the block in the shader
-    void*       mUniformData;    // -> data block with uniform values
+    char*       mUniformData;    // -> data block with uniform values
     int         mTotalSize;      // number of bytes in data block
     std::map<std::string, Uniform> mUniformMap;
 };
