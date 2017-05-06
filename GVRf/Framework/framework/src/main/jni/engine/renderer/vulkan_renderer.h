@@ -130,7 +130,7 @@ public:
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
                                  const std::string& fragmentShader);
     virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
-
+    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount) = 0;
 private:
     VulkanCore* vulkanCore_;
     void renderMesh(RenderState& rstate, RenderData* render_data){}

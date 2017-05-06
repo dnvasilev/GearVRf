@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <gl/gl_index_buffer.h>
 #include "glm/gtc/matrix_inverse.hpp"
 #include "gl/gl_material.h"
 #include "gl/gl_render_data.h"
@@ -129,6 +130,13 @@ namespace gvr
         return new GLShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor,
                             vertexShader, fragmentShader
         );
+    }
+
+    IndexBuffer* GLRenderer::createIndexBuffer(int bytesPerIndex, int icount)
+    {
+        IndexBuffer* ibuf = new GLIndexBuffer(bytesPerIndex, icount);
+        LOGV("Renderer::createIndexBuffer(%d, %d) = %p", bytesPerIndex, icount, ibuf);
+        return ibuf;
     }
 
     GLRenderer::GLRenderer() : transform_ubo_(nullptr)

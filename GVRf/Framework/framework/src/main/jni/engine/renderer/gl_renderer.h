@@ -83,7 +83,7 @@ public:
     void setRenderStates(RenderData* render_data, RenderState& rstate);
     Texture* createSharedTexture(int id);
     virtual RenderTexture* createRenderTextureArray(int width, int height, int layers);
-
+    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
                         RenderTexture* post_effect_render_texture_a,

@@ -23,6 +23,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <objects/index_buffer.h>
 
 #include "glm/glm.hpp"
 #include "batch.h"
@@ -130,6 +131,7 @@ public:
                                  const std::string& uniformDescriptor, const std::string& textureDescriptor,
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
                                  const std::string& fragmentShader) = 0;
+    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount) = 0;
      void updateTransforms(RenderState& rstate, UniformBlock* block, Transform* model);
      virtual void initializeStats();
      virtual void set_face_culling(int cull_face) = 0;
