@@ -192,7 +192,7 @@ public:
 
     bool hasUniform(const std::string& key) const
     {
-        return uniforms().hasUniform(key);
+        return uniforms().find(key) != NULL;
     }
 
     virtual int updateGPU(Renderer* renderer, Shader* shader)

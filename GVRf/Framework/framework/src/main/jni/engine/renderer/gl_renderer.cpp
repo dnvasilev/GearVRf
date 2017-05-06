@@ -673,10 +673,10 @@ namespace gvr
             shader = shader_manager->findShader(std::string("GVRErrorShader"));
             shader->useShader(render_data->mesh());
         }
-        int texIndex = material->bindToShader(shader);
+        int texIndex = material->bindToShader(shader, this);
         if (texIndex >= 0)
         {
-            transform_ubo->bindBuffer(shader);
+            transform_ubo->bindBuffer(shader, this);
             updateLights(rstate, shader, texIndex);
             rdata->render(shader, this);
         }
@@ -707,7 +707,7 @@ namespace gvr
             LOGE("Error detected in Renderer::renderWithShader; error : %s", error.c_str());
             return -1;
         }
-        int texIndex = material->bindToShader(shader);
+        int texIndex = material->bindToShader(shader, this);
         if (texIndex >= 0)
         {
             rdata->render(shader, this);

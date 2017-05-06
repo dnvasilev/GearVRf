@@ -50,7 +50,7 @@ namespace gvr
             return uniforms_;
         }
 
-        virtual int bindToShader(Shader* shader);
+        virtual int bindToShader(Shader* shader, Renderer* renderer);
 
     protected:
         GLUniformBlock uniforms_;

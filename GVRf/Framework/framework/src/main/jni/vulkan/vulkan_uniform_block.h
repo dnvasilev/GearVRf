@@ -55,6 +55,7 @@ namespace gvr {
         VulkanUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName);
 
         virtual bool updateGPU(Renderer*);
+        virtual bool bindBuffer(Shader*, Renderer*) { };
         virtual std::string makeShaderLayout();
 
         VulkanDescriptor* getDescriptor();

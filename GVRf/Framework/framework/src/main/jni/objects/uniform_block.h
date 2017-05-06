@@ -1,4 +1,3 @@
-
 /* Copyright 2015 Samsung Electronics Co., LTD
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +18,7 @@
 #define UNIFORMBLOCK_H_
 
 #include<unordered_map>
+#include "data_descriptor.h"
 #include "glm/glm.hpp"
 #include "util/gvr_log.h"
 #include <map>
@@ -47,41 +47,13 @@ class Renderer;
  * A uniform block is a renderer-dependent class which is implemented
  * differently depending on which underlying renderer GearVRf is using.
  *
+ * @see DataDescriptor
  * @see GLUniformBlock
  * @see VulkanUniformBlock
  */
-class UniformBlock
+class UniformBlock : public DataDescriptor
 {
-/*
- * Facilitates visiting the individual elements of a descriptor string.
- * Used to visit the textures and vertex attributes
- */
 public:
-    class UniformVisitor
-    {
-    protected:
-        UniformBlock& uniforms_;
-
-    public:
-        UniformVisitor(UniformBlock& u) : uniforms_(u) { };
-        virtual void visit(const std::string& key, const std::string& type, int size) = 0;
-    };
-
-protected:
-    /*
-     * Information kept for each uniform in the block.
-     */
-    struct Uniform
-    {
-        short Offset;       // offset in bytes from the top of the uniform block
-        short Size;         // byte size of uniform entry
-        char  IsSet;        // true if the entry has been set, else false
-        std::string Type;   // shader type "int", "float", "mat", "vec", "ivec"
-        std::string Name;   // name of the entry
-    };
-
-public:
-    UniformBlock();
     UniformBlock(const std::string& descriptor, int binding_point, const std::string& blockName);
 
     /**
@@ -92,87 +64,8 @@ public:
     {
         return mBindingPoint;
     }
-    /**
-     * Determine if a named uniform exists in this block.
-     * This function will return false for names which are
-     * in the descriptor but have not been given a value yet.
-     *
-     * @param name name of uniform to look for
-     * @returns true if uniform is in this block, false if not
-     */
-    bool hasUniform(std::string name) const
-    {
-        auto it = mUniformMap.find(name);
-        if (it == mUniformMap.end())
-        {
-            return false;
-        }
-        return (it->second).IsSet;
-    }
 
-    /*
-     * Get the number of bytes occupied by this uniform block.
-     * @return byte size of uniform block
-     */
-    int getTotalSize() const
-    {
-        return mTotalSize;
-    }
-
-    /**
-     * Get the uniform descriptor.
-     * The uniform descriptor defines the name, type and size
-     * of each uniform in the block. This descriptor
-     * should match the layout used by the shader this
-     * block is intended to work with.
-     * {@code
-     *  "float3 color, float opacity"
-     *  "float factor float power int2 offset"
-     * }
-     * @return uniform descriptor string
-     * @see setDescriptor
-     */
-    const std::string& getDescriptor() const
-    {
-        return mDescriptor;
-    }
-
-    /**
-     * Set the uniform descriptor.
-     * The uniform descriptor defines the name, type and size
-     * of each uniform in the block. Each entry has a type,
-     * size and name. Entries are separated by spaces but
-     * other delimiters (commas, semicolons) are permitted.
-     * {@code Sample strings:
-     *  "float4 diffuseColor, float specularExponent"
-     *  "int2 offset mat4 texMatrix"
-     *  }
-     * This descriptor should match the layout used by the shader this
-     * block is intended to work with. The unforms must have the
-     * same names, types and be in the same order as in the shader.
-     *
-     * @param descriptor string with uniform descriptor.
-     * @see getDescriptor
-     */
-    virtual void setDescriptor(const std::string& descriptor)
-    {
-        if (!mDescriptor.empty())
-        {
-            LOGE("UniformBlock: ERROR: descriptor cannot be changed once it is set\n");
-            return;
-        }
-        mDescriptor = descriptor;
-        parseDescriptor();
-    }
-
-    /**
-     * Visits each entry in the descriptor. Subclassing
-     * UniformVisitor allows you to call a function for
-     * each descriptor entry.
-     */
-    void forEach(const std::string& descriptor, UniformVisitor& visitor);
-
-    /**
+     /**
      * Get the name of the uniform block.
      * This name should be set by the caller to be the same
      * as the name used for the block in the shader.
@@ -376,11 +269,15 @@ public:
      */
     virtual bool getIntVec(const std::string& name, int* val, int n) const;
 
-    /*
-     * Get the number of bytes occupied by the named uniform.
-     * @param name string name of uniform whose size you want
+    /**
+     * Copy the data from the uniform block into the GPU.
      */
-    int getByteSize(const std::string& name) const;
+    virtual bool updateGPU(Renderer*) = 0;
+
+    /**
+     * Bind the uniform block to a shader
+     */
+    virtual bool bindBuffer(Shader*, Renderer*) = 0;
 
     virtual ~UniformBlock()
     {
@@ -404,33 +301,9 @@ public:
      */
     const void* getData() { return mUniformData; }
 
-    /*
-     * Determine if data in uniform block has changed since last render.
-     * @returns true if uniform block has been updated, else false.
-     */
-    bool IsDirty() const { return mIsDirty; }
-
-    /*
-     * Copy the data in the uniform block to the GPU
-     * if it has been changed since last render.
-     * @returns true if block was updated, false if it did not change
-     */
-    virtual bool updateGPU(Renderer*) = 0;
-
     virtual std::string makeShaderLayout();
 
 protected:
-
-    /**
-     * Parse the descriptor string to create the mUniformMap
-     * which contains the name, offset and size of all uniforms.
-     */
-    void parseDescriptor();
-
-    /**
-     * Calculate the byte size of the given type.
-     */
-    short calcSize(const std::string& type) const;
 
     /**
      * Constructs the data block containing the values
@@ -440,31 +313,10 @@ protected:
     {
         if (mUniformData == NULL)
         {
-            mUniformData = new char [mTotalSize];
+            mUniformData = new char[mTotalSize];
             mOwnData = true;
         }
     }
-
-    /**
-     * Mark this uniform block as dirty so it will
-     * be copied to the GPU next frame.
-     */
-    void markDirty()
-    {
-        mIsDirty = true;
-        //LOGV("SHADER: UniformBlock: %p %s DIRTY", this, getBlockName().c_str());
-    }
-
-    /**
-     * Look up the named uniform in the mUniformMap.
-     * This function fails if the uniform found does not
-     * have the same byte size as the input bytesize.
-     * @param name name of uniform to find.
-     * @param bytesize byte size of uniform.
-     * @return pointer to Uniform structure describing the uniform or NULL on failure
-     */
-    Uniform* getUniform(const std::string& name, int& bytesize);
-    const Uniform* getUniform(const std::string& name, int& bytesize) const;
 
     /**
      * Get a pointer to the value for the named uniform.
@@ -474,16 +326,11 @@ protected:
      */
     char* getData(const std::string& name, int& bytesize);
     const char* getData(const std::string& name, int& bytesize) const;
-    std::string makeShaderType(const std::string& type, int byteSize, int arraySize);
 
-    int         mBindingPoint;
+    int         mBindingPoint;   // shader binding point
     bool        mOwnData;        // true if this uniform owns its data block
-    bool        mIsDirty;        // true if data in block has changed since last render
-    std::string mDescriptor;     // descriptor with name, type and size of uniforms
     std::string mBlockName;      // name of the block in the shader
     char*       mUniformData;    // -> data block with uniform values
-    int         mTotalSize;      // number of bytes in data block
-    std::map<std::string, Uniform> mUniformMap;
 };
 
 }

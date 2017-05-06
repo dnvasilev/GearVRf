@@ -22,6 +22,7 @@ namespace gvr {
     VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName)
             : UniformBlock(descriptor, bindingPoint, blockName), vk_descriptor(nullptr)
     {
+        //parseDescriptor();
         vk_descriptor = new VulkanDescriptor();
     }
 

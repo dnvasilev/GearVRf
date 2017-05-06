@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "gl/gl_material.h"
+#include "gl/gl_shader.h"
 
 namespace gvr {
     GLUniformBlock::GLUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName) :
@@ -21,6 +22,7 @@ namespace gvr {
             GLOffset(0),
             GLBuffer(0)
     {
+        //parseDescriptor();
     }
 
     GLUniformBlock::~GLUniformBlock()
@@ -30,10 +32,6 @@ namespace gvr {
 
     bool GLUniformBlock::updateGPU(Renderer* unused)
     {
-        if (!mIsDirty)
-        {
-            return false;
-        }
         if (mBindingPoint < 0)
         {
             return false;
@@ -43,42 +41,39 @@ namespace gvr {
             glGenBuffers(1, &GLBuffer);
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
             glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
-            if (Shader::LOG_SHADER) LOGV("SHADER: UniformBlock: %p %s bound to #%d buffer = %d\n", this, getBlockName().c_str(), mBindingPoint, GLBuffer);
+            mIsDirty = true;
         }
-        else
+        if (mIsDirty)
         {
-            glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-        }
-        glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
-        glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
-        mIsDirty = false;
-        if (0)
-        {
-            //LOGV("SHADER: UniformBlock: %s size %d\n", getBlockName().c_str(), getTotalSize());
-            std::string data = toString().c_str();
-            const char* udata = data.c_str();
-            const char* blockname = getBlockName().c_str();
-            LOGD("SHADER: UniformBlock: UPDATE %p %s\n%s", this, blockname, udata);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
+            mIsDirty = false;
+            if (Shader::LOG_SHADER) LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName().c_str(), getTotalSize());
         }
         checkGLError("GLUniformBlock::updateGPU");
         return true;
     }
 
-    bool GLUniformBlock::bindBuffer(Shader* shader)
+    bool GLUniformBlock::bindBuffer(Shader* shader, Renderer* unused)
     {
         GLShader* glshader = static_cast<GLShader*>(shader);
         if (GLBuffer > 0)
         {
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-            GLBlockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
-            if (GLBlockIndex < 0)
+
+            // Do not uncomment below line: UBO is not per shader, so block indices will be different for different shader
+       //     if (GLBlockIndex < 0)
             {
-                LOGE("UniformBlock: ERROR: cannot find block named %s\n",
-                     getBlockName().c_str());
-                return false;
+                GLBlockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
+                if (GLBlockIndex < 0)
+                {
+                    LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName().c_str());
+                    return false;
+                }
             }
             glUniformBlockBinding(glshader->getProgramId(), GLBlockIndex, mBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
+            if (Shader::LOG_SHADER) LOGV("UniformBlock::bindBuffer %s bind at %d index = %d\n", getBlockName().c_str(), mBindingPoint, GLBlockIndex);
             checkGLError("GLUniformBlock::bindBuffer");
             return true;
         }
@@ -113,7 +108,7 @@ namespace gvr {
         // get indices of uniform variables in uniform block
         GLint uniformsIndices[numberOfUniformsInBlock];
         glGetActiveUniformBlockiv(programID, blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, uniformsIndices);
-        LOGD("UniformBlock: %s %d bytes\n", blockName, byteSize);
+        LOGV("UniformBlock: %s %d bytes\n", blockName, byteSize);
 
         // get parameters of all uniform variables in uniform block
         for (int uniformMember=0; uniformMember<numberOfUniformsInBlock; uniformMember++)

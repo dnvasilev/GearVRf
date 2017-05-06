@@ -43,7 +43,7 @@ public:
     /*
      * Bind the uniform buffer to the OpenGL shader
      */
-    bool bindBuffer(Shader*);
+    virtual bool bindBuffer(Shader*, Renderer*);
 
     virtual std::string makeShaderLayout();
 

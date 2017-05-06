@@ -14,50 +14,33 @@
  */
 #include "objects/uniform_block.h"
 #include "glm/gtc/type_ptr.hpp"
-#include <cctype>
 #include <sstream>
 #include "util/gvr_gl.h"
 
 namespace gvr
 {
-    class MakeLayout : public UniformBlock::UniformVisitor
-    {
-    private:
-        std::ostream& mStream;
-
-    public:
-        MakeLayout(UniformBlock& block, std::ostream& stream)
-                : UniformVisitor(block), mStream(stream) { }
-        void visit(const std::string& key, const std::string& type, int size);
-    };
-
-    void MakeLayout::visit(const std::string& name, const std::string& type, int size)
-    {
-        mStream << "   " << type << name << ";" << std::endl;
-    }
 
     UniformBlock::UniformBlock(const std::string &descriptor, int bindingPoint, const std::string& blockName) :
-            mTotalSize(0),
-            mIsDirty(false),
+            DataDescriptor(descriptor),
             mBlockName(blockName),
+            mOwnData(false),
             mBindingPoint(bindingPoint),
             mUniformData(NULL)
     {
-        mOwnData = false;
-        if (!descriptor.empty())
+        if (mTotalSize > 0)
         {
-            LOGD("UniformBlock: %p %s descriptor %s", this, blockName.c_str(), descriptor.c_str());
-            setDescriptor(descriptor);
+            mTotalSize = (mTotalSize + 15) & ~0x0F;
+            mUniformData = new char[mTotalSize];
+            memset(mUniformData, 0, mTotalSize);
+            mOwnData = true;
+            LOGV("UniformBlock: allocating uniform block %s of %d  bytes", blockName.c_str(), mTotalSize);
+        }
+        else
+        {
+            LOGE("UniformBlock: ERROR: no uniform block allocated\n");
         }
     }
 
-    UniformBlock::UniformBlock() :
-            mTotalSize(0),
-            mIsDirty(false),
-            mUniformData(NULL)
-    {
-        mOwnData = false;
-    }
 
     bool UniformBlock::setInt(const std::string &name, int val)
     {
@@ -79,7 +62,7 @@ namespace gvr
         if (data != NULL)
         {
             *((float *) data) = val;
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -88,12 +71,11 @@ namespace gvr
     bool UniformBlock::setFloatVec(const std::string &name, const float *val, int n)
     {
         int bytesize = n * sizeof(float);
-        int actual_size = bytesize;
         char *data = getData(name, bytesize);
         if (data != NULL)
         {
-            memcpy(data, val, actual_size);
-            markDirty();
+            memcpy(data, val, bytesize);
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -106,7 +88,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -120,7 +102,7 @@ namespace gvr
         {
             data[0] = val.x;
             data[1] = val.y;
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -135,7 +117,7 @@ namespace gvr
             data[0] = val.x;
             data[1] = val.y;
             data[2] = val.z;
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -151,7 +133,7 @@ namespace gvr
             data[1] = val.y;
             data[2] = val.z;
             data[3] = val.w;
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -165,7 +147,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, mtxdata, bytesize);
-            markDirty();
+            mIsDirty = true;
             return true;
         }
         return false;
@@ -260,258 +242,31 @@ namespace gvr
         return false;
     }
 
-    void UniformBlock::forEach(const std::string& descriptor, UniformVisitor& visitor)
+
+    const char* UniformBlock::getData(const std::string &name, int &bytesize) const
     {
-        const char* p = descriptor.c_str();
-        const char* type_start;
-        int type_size;
-        const char* name_start;
-        int name_size;
-
-        while (*p)
-        {
-            while (std::isspace(*p) || std::ispunct(*p))
-                ++p;
-            type_start = p;
-            if (*p == 0)
-                break;
-            while (std::isalnum(*p))
-                ++p;
-            type_size = p - type_start;
-            if (type_size == 0)
-            {
-                break;
-            }
-            std::string type(type_start, type_size);
-            while (std::isspace(*p))
-                ++p;
-            name_start = p;
-            while (std::isalnum(*p) || (*p == '_'))
-                ++p;
-            name_size = p - name_start;
-            if (name_size == 0)
-            {
-                break;
-            }
-            std::string name(name_start, name_size);
-            visitor.visit(name, type, calcSize(type));
-        }
-    }
-
-    void  UniformBlock::parseDescriptor()
-    {
-        LOGD("UniformBlock: CREATE %p %s", this, mDescriptor.c_str());
-        const char *p = mDescriptor.c_str();
-        const char *type_start;
-        int type_size;
-        const char *name_start;
-        int name_size;
-        short offset = 0;
-
-        mTotalSize = 0;
-        while (*p)
-        {
-            while (std::isspace(*p) || *p == ';' || *p == ',')
-                ++p;
-            type_start = p;
-            if (*p == 0)
-                break;
-            while (std::isalnum(*p))
-                ++p;
-            type_size = p - type_start;
-            if (type_size == 0)
-            {
-                LOGE("UniformBlock: SYNTAX ERROR: expecting data type\n");
-                break;
-            }
-            std::string type(type_start, type_size);
-
-            while (std::isspace(*p))
-                ++p;
-            name_start = p;
-            while (std::isalnum(*p) || (*p == '_'))
-                ++p;
-            name_size = p - name_start;
-
-            // check if it is array
-            int array_size = 1;
-
-            if ((*p == '['))
-            {
-                array_size = 0;
-                ++p;
-                while (std::isdigit(*p))
-                {
-                    array_size = array_size * 10 + (*p - '0');
-                    ++p;
-                }
-                ++p;
-            }
-            if (name_size == 0)
-            {
-                LOGE("UniformBlock: SYNTAX ERROR: expecting uniform name\n");
-                break;
-            }
-            Uniform uniform;
-            std::string name(name_start, name_size);
-            short byteSize = calcSize(type);
-
-            uniform.Type = makeShaderType(type, byteSize, array_size);
-            byteSize *= array_size;
-            uniform.IsSet = false;
-            uniform.Name = name;
-            uniform.Offset = offset;
-            uniform.Size = byteSize;
-
-            if (byteSize == 0)
-                continue;
-            if ((offset + byteSize - (offset & ~0xF)) > 4 * sizeof(float))
-            {
-                offset = offset + 15 & ~0x0F;
-            }
-            std::pair<std::string, Uniform> pair(name, uniform);
-            std::pair<std::map<std::string, Uniform>::iterator, bool> ret = mUniformMap.insert(pair);
-            if (!ret.second)
-            {
-                LOGE("UniformBlock: ERROR: element %s specified twice\n", name.c_str());
-                continue;
-            }
-            LOGV("UniformBlock: %p %s offset = %d size = %d\n", this, name.c_str(), uniform.Offset,
-                 uniform.Size);
-            offset += uniform.Size;
-            mTotalSize = uniform.Offset + uniform.Size;
-        }
-        if (mTotalSize > 0)
-        {
-            mTotalSize = (mTotalSize + 15) & ~0x0F;
-            mUniformData = new char[mTotalSize];
-            memset(mUniformData, 0, mTotalSize);
-            mOwnData = true;
-        }
-        else
-        {
-            LOGE("UniformBlock: ERROR: no uniform block allocated\n");
-        }
-    }
-
-    std::string UniformBlock::makeShaderType(const std::string& type, int byteSize, int arraySize)
-    {
-        std::ostringstream stream;
-
-        if ((byteSize > 4) && (byteSize <= 16))
-        {
-            if (type[0] == 'f')
-            {
-                stream << "vec" << (byteSize / 4);
-            }
-            else if (type[0] == 'i')
-            {
-                stream << "vec" << (byteSize / 4);
-            }
-            else
-            {
-                stream << type;
-            }
-        }
-        else
-        {
-            stream << type;
-        }
-        if (arraySize > 1)
-        {
-            stream << "[" << arraySize << "]";
-        }
-        return stream.str();
-    }
-
-    short UniformBlock::calcSize(const std::string &type) const
-    {
-        if (type == "float") return sizeof(float);
-        if (type == "float3") return 3 * sizeof(float);
-        if (type == "float4") return 4 * sizeof(float);
-        if (type == "float2") return 2 * sizeof(float);
-        if (type == "int") return sizeof(int);
-        if (type == "int2") return 2 * sizeof(int);
-        if (type == "int3") return 3 * sizeof(int);
-        if (type == "int4") return 4 * sizeof(int);
-        if (type == "float2") return 2 * sizeof(int);
-        if (type == "mat4") return 16 * sizeof(float);
-        if (type == "mat3") return 12 * sizeof(float);
-        LOGE("UniformBlock: SYNTAX ERROR: unknown type %s\n", type.c_str());
-        return 0;
-    }
-
-    UniformBlock::Uniform *UniformBlock::getUniform(const std::string &name, int &bytesize)
-    {
-        auto it = mUniformMap.find(name);
-        if (it == mUniformMap.end())
-        {
-            LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
-            return NULL;
-        }
-        Uniform &u = it->second;
-        if (u.Size < bytesize)
-        {
-            LOGE("ERROR: UniformBlock %s is %d bytes, should be %d bytes\n",
-                 name.c_str(), bytesize, u.Size);
-            return NULL;
-        }
-        bytesize = u.Size;
-        LOGV("SHADER: UniformBlock %s offset %d bytes,\n", name.c_str(),
-             u.Offset);
-        return &u;
-    }
-
-    int UniformBlock::getByteSize(const std::string &name) const
-    {
-        auto it = mUniformMap.find(name);
-        if (it == mUniformMap.end())
-        {
-            return 0;
-        }
-        const Uniform &u = it->second;
-        return u.Size;
-    }
-
-    const UniformBlock::Uniform *UniformBlock::getUniform(const std::string &name,
-                                                          int &bytesize) const
-    {
-        auto it = mUniformMap.find(name);
-        if (it == mUniformMap.end())
-        {
-            LOGE("ERROR: UniformBlock element %s not found\n", name.c_str());
-            return NULL;
-        }
-        const Uniform &u = it->second;
-        if (u.Size < bytesize)
-        {
-            LOGE("ERROR: UniformBlock const element %s is %d bytes, should be %d bytes\n",
-                 name.c_str(), bytesize, u.Size);
-            return NULL;
-        }
-        bytesize = u.Size;
-        return &u;
-    }
-
-    const char *UniformBlock::getData(const std::string &name, int &bytesize) const
-    {
-        const Uniform *u = getUniform(name, bytesize);
+        const DataEntry* u = find(name);
         if (u == NULL)
             return NULL;
-        char *data = (char *) mUniformData;
+        char* data = (char *) mUniformData;
+        if (data == NULL)
+            return NULL;
         data += u->Offset;
+        bytesize = u->Size;
         return data;
     }
 
-    char *UniformBlock::getData(const std::string &name, int &bytesize)
+    char* UniformBlock::getData(const std::string &name, int &bytesize)
     {
-        Uniform *u = getUniform(name, bytesize);
+        DataEntry* u = find(name);
         if (u == NULL)
             return NULL;
+        char* data = (char *) mUniformData;
 
-        char *data = (char *) mUniformData;
-
+        if (data == NULL)
+            return NULL;
         data += u->Offset;
+        bytesize = u->Size;
         u->IsSet = true;
         return data;
     }
@@ -520,8 +275,10 @@ namespace gvr
     {
         std::ostringstream stream;
         stream << "uniform " << getBlockName() << "{" << std::endl;
-        MakeLayout makeLayout(*this, stream);
-        forEach(getDescriptor(), makeLayout);
+        DataDescriptor::forEach([&stream](const std::string& name, const std::string& type, int size) mutable
+        {
+            stream << "   " << type << name << ";" << std::endl;
+        });
         stream << "}" << std::endl;
         return stream.str();
     }
@@ -529,17 +286,14 @@ namespace gvr
     std::string UniformBlock::toString()
     {
         std::ostringstream os;
-        char *data = (char *) mUniformData;
-        for (auto it = mUniformMap.begin(); it != mUniformMap.end(); ++it)
+        forEachEntry([this, &os](const DataEntry& e) mutable
         {
-            std::pair<std::string, Uniform> p = (*it);
-            Uniform *u = &(p.second);
-            os << p.first << ":" << u->Offset;
-            for (int i = 0; i < u->Size / sizeof(float); i++)
+            os << e.Name << ":" << e.Offset;
+            for (int i = 0; i < e.Size / sizeof(float); i++)
             {
-                char *d = data + u->Offset;
+                char *d = ((char*) mUniformData) + e.Offset;
                 os << " ";
-                if (p.first[0] == 'i')
+                if (e.Name[0] == 'i')
                 {
                     os << *(((int *) d) + i);
                 }
@@ -549,7 +303,8 @@ namespace gvr
                 }
             }
             os << ';' << std::endl;
-        }
+        });
         return os.str();
     }
 }
+

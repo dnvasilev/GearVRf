@@ -38,7 +38,7 @@ namespace gvr
             mesh_->setBoneLoc(a_bone_indices, a_bone_weights);
             mesh_->generateBoneArrayBuffers(programId);
             bones_ubo->updateGPU(renderer);
-            bones_ubo->bindBuffer(shader);
+            bones_ubo->bindBuffer(shader, renderer);
         }
         if (Shader::LOG_SHADER) LOGV("SHADER: binding vertex arrays to program %d %p", programId, this);
         if (mesh_->indices().size() > 0)

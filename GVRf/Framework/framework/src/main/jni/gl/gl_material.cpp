@@ -28,13 +28,13 @@ namespace gvr
         virtual void visit(const std::string& key, const std::string& type, int size);
     };
 
-    int GLMaterial::bindToShader(Shader *shader)
+    int GLMaterial::bindToShader(Shader *shader, Renderer* renderer)
     {
         int texIndex = bindTextures(shader);
         if (texIndex >= 0)
         {
            // std::string s = uniforms_.toString();
-            uniforms_.bindBuffer(shader);
+            uniforms_.bindBuffer(shader, renderer);
         }
         return texIndex;
     }
@@ -56,7 +56,6 @@ namespace gvr
             loc = glGetUniformLocation(glshader->getProgramId(), key.c_str());
             if (loc < 0)
             {
-                LOGW("texture is not present in shader");
                 TexIndex = -1;
                 return;
             }
