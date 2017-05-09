@@ -59,6 +59,7 @@ RenderTarget::RenderTarget()
     mRenderState.material_override = NULL;
 }
 
+
 RenderTarget::~RenderTarget()
 {
     if (mRenderTexture)

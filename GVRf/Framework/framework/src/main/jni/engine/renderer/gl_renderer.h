@@ -82,7 +82,6 @@ public:
     void restoreRenderStates(RenderData* render_data);
     void setRenderStates(RenderData* render_data, RenderState& rstate);
     Texture* createSharedTexture(int id);
-    virtual RenderTexture* createRenderTextureArray(int width, int height, int layers);
     virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
@@ -111,6 +110,7 @@ public:
     virtual UniformBlock* createUniformBlock(const std::string& desc, int binding, const std::string& name);
     virtual Image* createImage(int type, int format);
     virtual Texture* createTexture(int target = GL_TEXTURE_2D);
+    virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                int jcolor_format, int jdepth_format, bool resolve_depth,
                                                const TextureParameters* texture_parameters);

@@ -42,7 +42,6 @@ class RenderTarget : public Component
 {
 public:
     RenderTarget(RenderTexture*);
-    RenderTarget(int width, int height, GLTexture* tex);
     RenderTarget();
     ~RenderTarget();
 

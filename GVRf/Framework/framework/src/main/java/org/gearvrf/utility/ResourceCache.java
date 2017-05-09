@@ -23,7 +23,6 @@ import org.gearvrf.GVRHybridObject;
 import org.gearvrf.GVRAndroidResource.Callback;
 import org.gearvrf.GVRAndroidResource.CancelableCallback;
 import org.gearvrf.GVRImage;
-import org.gearvrf.GVRTexture;
 
 /**
  * Basic cache-by-resource-description.

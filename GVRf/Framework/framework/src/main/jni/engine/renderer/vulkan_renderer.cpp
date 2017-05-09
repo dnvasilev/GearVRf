@@ -17,6 +17,7 @@
  * Renders a scene, a screen.
  ***************************************************************************/
 
+#include <vulkan/vulkan_index_buffer.h>
 #include "renderer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -77,6 +78,10 @@ namespace gvr {
         return new VulkanShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader);
     }
 
+    IndexBuffer* VulkanRenderer::createIndexBuffer(int bytesPerIndex, int icount)
+    {
+        return new VulkanIndexBuffer(bytesPerIndex, icount);
+    }
 
     int VulkanRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* rdata, ShaderData* shaderData)
     {

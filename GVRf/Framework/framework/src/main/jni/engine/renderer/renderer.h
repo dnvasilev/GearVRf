@@ -126,7 +126,7 @@ public:
      virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                 int jcolor_format, int jdepth_format, bool resolve_depth,
                                                 const TextureParameters* texture_parameters) = 0;
-     virtual RenderTexture* createRenderTextureArray(int width, int height, int layers) = 0;
+    virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers) = 0;
      virtual Shader* createShader(int id, const std::string& signature,
                                  const std::string& uniformDescriptor, const std::string& textureDescriptor,
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
@@ -170,7 +170,7 @@ public:
                                 ShaderManager* shader_manager);
     virtual void restoreRenderStates(RenderData* render_data) = 0;
     virtual void setRenderStates(RenderData* render_data, RenderState& rstate) = 0;
-    virtual Texture* createSharedTexture( int id) =0;
+    virtual Texture* createSharedTexture( int id) = 0;
     virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData) = 0;
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,

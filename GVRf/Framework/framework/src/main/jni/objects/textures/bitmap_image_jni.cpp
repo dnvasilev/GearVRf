@@ -26,10 +26,10 @@
 
 namespace gvr
 {
-extern "C" {
+    extern "C" {
     JNIEXPORT jlong JNICALL
     Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv *env, jobject obj,
-             int imageType, int pixelFormat);
+                                                   int imageType, int pixelFormat);
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeBitmapImage_setFileName(JNIEnv *env, jobject obj,
@@ -40,80 +40,80 @@ extern "C" {
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeBitmapImage_updateFromMemory(JNIEnv *env, jobject obj,
-              jlong jtexture, jint width,
-              jint height, jbyteArray jdata);
+                                                        jlong jtexture, jint width,
+                                                        jint height, jbyteArray jdata);
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeBitmapImage_updateCompressed(JNIEnv *env, jobject obj,
-             jlong jtexture, jint width, int height, jint imageSize,
-             jbyteArray jdata, jint levels, jintArray offset);
+                                                        jlong jtexture, jint width, int height, jint imageSize,
+                                                        jbyteArray jdata, jint levels, jintArray offset);
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeBitmapImage_updateFromBitmap(JNIEnv *env, jobject obj,
-             jlong jtexture, jobject jbitmap);
-}
+                                                        jlong jtexture, jobject jbitmap);
+    }
 
-JNIEXPORT jlong JNICALL
-Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv *env, jobject obj, jint type, jint format)
-{
-    Image *image = Renderer::getInstance()->createImage(type, format);
-    jlong result = reinterpret_cast<jlong>(image);
-    return result;
-}
+    JNIEXPORT jlong JNICALL
+    Java_org_gearvrf_NativeBitmapImage_constructor(JNIEnv *env, jobject obj, jint type, jint format)
+    {
+        Image *image = Renderer::getInstance()->createImage(type, format);
+        jlong result = reinterpret_cast<jlong>(image);
+        return result;
+    }
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeBitmapImage_updateFromMemory(JNIEnv *env, jobject obj,
-                                                    jlong jtexture, jint width, jint height,
-                                                    jbyteArray jdata)
-{
-    jobject keep = env->NewLocalRef(jdata);
-    BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
-    texture->update(env, width, height, jdata);
-    env->DeleteLocalRef(keep);
-}
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeBitmapImage_updateFromMemory(JNIEnv *env, jobject obj,
+                                                        jlong jtexture, jint width, jint height,
+                                                        jbyteArray jdata)
+    {
+        jobject keep = env->NewLocalRef(jdata);
+        BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
+        texture->update(env, width, height, jdata);
+        env->DeleteLocalRef(keep);
+    }
 
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeBitmapImage_updateFromBitmap(JNIEnv *env, jobject obj,
-                                                    jlong jtexture, jobject jbitmap)
-{
-    BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
-    texture->update(env, jbitmap);
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeBitmapImage_updateFromBitmap(JNIEnv *env, jobject obj,
+                                                        jlong jtexture, jobject jbitmap)
+    {
+        BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
+        texture->update(env, jbitmap);
 
-}
+    }
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeBitmapImage_updateCompressed(JNIEnv *env, jobject obj,
-                                                    jlong jtexture, jint width, jint height, jint imageSize,
-                                                    jbyteArray jdata, jint levels, jintArray joffsets)
-{
-    LOGV("updateCompressed: data = %p, offsets = %p", jdata, joffsets);
-    jobject keep1 = env->NewLocalRef(jdata);
-    jobject keep2 = env->NewLocalRef(joffsets);
-    BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
-    jintArray array = static_cast<jintArray>(env->NewLocalRef(joffsets));
-    int* offsets = env->GetIntArrayElements(array, 0);
-    texture->update(env, width, height, imageSize, jdata, levels, offsets);
-    env->ReleaseIntArrayElements(array, offsets, 0);
-    env->DeleteLocalRef(keep1);
-    env->DeleteLocalRef(keep2);
-}
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeBitmapImage_updateCompressed(JNIEnv *env, jobject obj,
+                                                        jlong jtexture, jint width, jint height, jint imageSize,
+                                                        jbyteArray jdata, jint levels, jintArray joffsets)
+    {
+        LOGV("updateCompressed: data = %p, offsets = %p", jdata, joffsets);
+        jobject keep1 = env->NewLocalRef(jdata);
+        jobject keep2 = env->NewLocalRef(joffsets);
+        BitmapImage *texture = reinterpret_cast<BitmapImage *>(jtexture);
+        jintArray array = static_cast<jintArray>(env->NewLocalRef(joffsets));
+        int* offsets = env->GetIntArrayElements(array, 0);
+        texture->update(env, width, height, imageSize, jdata, levels, offsets);
+        env->ReleaseIntArrayElements(array, offsets, 0);
+        env->DeleteLocalRef(keep1);
+        env->DeleteLocalRef(keep2);
+    }
 
-JNIEXPORT void JNICALL
-Java_org_gearvrf_NativeBitmapImage_setFileName(JNIEnv *env, jobject obj,
-                                               jlong jtexture, jstring jfile)
-{
-    BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
-    const char* char_name = env->GetStringUTFChars(jfile, 0);
-    bmap->setFileName(char_name);
-    env->ReleaseStringUTFChars(jfile, char_name);
-}
+    JNIEXPORT void JNICALL
+    Java_org_gearvrf_NativeBitmapImage_setFileName(JNIEnv *env, jobject obj,
+                                                   jlong jtexture, jstring jfile)
+    {
+        BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
+        const char* char_name = env->GetStringUTFChars(jfile, 0);
+        bmap->setFileName(char_name);
+        env->ReleaseStringUTFChars(jfile, char_name);
+    }
 
-JNIEXPORT jstring JNICALL
-Java_org_gearvrf_NativeBitmapImage_getFileName(JNIEnv *env, jobject obj, jlong jtexture)
-{
-    BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
-    const char* fname = bmap->getFileName();
-    return env->NewStringUTF(fname);
-}
+    JNIEXPORT jstring JNICALL
+    Java_org_gearvrf_NativeBitmapImage_getFileName(JNIEnv *env, jobject obj, jlong jtexture)
+    {
+        BitmapImage* bmap = reinterpret_cast<BitmapImage *>(jtexture);
+        const char* fname = bmap->getFileName();
+        return env->NewStringUTF(fname);
+    }
 }

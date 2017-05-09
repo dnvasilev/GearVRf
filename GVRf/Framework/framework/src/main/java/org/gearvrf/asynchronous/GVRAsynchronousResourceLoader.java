@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.gearvrf.GVRCompressedTexture;
-import org.gearvrf.GVRImage;
-import org.gearvrf.IAssetEvents;
 import org.gearvrf.GVRAndroidResource;
 import org.gearvrf.GVRAndroidResource.BitmapTextureCallback;
 import org.gearvrf.GVRAndroidResource.CancelableCallback;
@@ -40,6 +38,7 @@ import org.gearvrf.GVRCompressedCubemapTexture;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRCubemapTexture;
 import org.gearvrf.GVRHybridObject;
+import org.gearvrf.GVRImage;
 import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRRenderData;
 import org.gearvrf.GVRTexture;

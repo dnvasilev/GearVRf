@@ -35,7 +35,7 @@ public class GVRBitmapTexture extends GVRImage
 {
     /**
      * Constructs a texture using a pre-existing {@link Bitmap}.
-     * 
+     *
      * @param gvrContext
      *            Current {@link GVRContext}
      * @param bitmap
@@ -56,7 +56,7 @@ public class GVRBitmapTexture extends GVRImage
     /**
      * Constructs a texture by loading a bitmap from a PNG file in (or under)
      * the {@code assets} directory.
-     * 
+     *
      * @param gvrContext
      *            Current {@link GVRContext}
      * @param assetFile
@@ -75,9 +75,9 @@ public class GVRBitmapTexture extends GVRImage
         setBitmap(bitmap);
     }
 
-     /**
+    /**
      * Create a new, grayscale texture, from an array of luminance bytes.
-     * 
+     *
      * @param gvrContext
      *            Current {@link GVRContext}
      * @param width

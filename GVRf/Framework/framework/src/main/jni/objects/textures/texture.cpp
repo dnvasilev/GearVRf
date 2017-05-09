@@ -29,7 +29,7 @@ class VkBitmapImage;
 
 Texture::Texture(int type)
         : HybridObject(),
-          mTexParamsDirty(true),
+          mTexParamsDirty(false),
           mType(type),
           mImage(NULL),
           mJava(NULL),
@@ -70,7 +70,6 @@ void Texture::setImage(Image* image)
         clearData(getCurrentEnv(mJava));
     }
     mImage = image;
-    LOGV("Texture::setImage %p %s", this, image->getFileName());
 }
 
 void Texture::setImage(JNIEnv* env, jobject javaImage, Image* image)
@@ -87,7 +86,7 @@ void Texture::setImage(JNIEnv* env, jobject javaImage, Image* image)
     {
         mImage->texParamsChanged(getTexParams());
     }
-    LOGV("Texture::setImage %p %s", this, image->getFileName());
+    LOGV("Texture::setImage");
 }
 
 void Texture::updateTextureParameters(const int* texture_parameters, int n)

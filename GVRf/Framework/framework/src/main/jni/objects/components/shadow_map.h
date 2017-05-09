@@ -22,7 +22,6 @@
 
 namespace gvr {
 class GLFrameBuffer;
-class ShaderData;
 
     class ShadowMap : public RenderTarget
     {
@@ -35,7 +34,7 @@ class ShaderData;
 
     protected:
         int     mLayerIndex;
-        bool    fboInit_ = false;
+        bool    mFBOInit = false;
     };
 }
 #endif

@@ -29,40 +29,31 @@ namespace gvr {
 class RenderTexture : public Texture
 {
 public:
-    RenderTexture(int sample_count = 0)
-    : Texture(TextureType::TEXTURE_2D),
-      mSampleCount(sample_count),
-      readback_started_(false),
-      mUseStencil(false),
-      mBackColor{0, 0, 0, 1}
+    explicit RenderTexture(int sample_count = 0)
+            : Texture(TextureType::TEXTURE_2D),
+              mSampleCount(sample_count),
+              mUseStencil(false),
+              mBackColor{ 0, 0, 0, 1.0f},
+              readback_started_(false)
     { }
 
-    RenderTexture(Texture::TextureType textype, int sample_count = 0)
-    : Texture(textype),
-      mSampleCount(sample_count),
-      readback_started_(false),
+    RenderTexture(Image* image)
+    : Texture(image->getType()),
+      mSampleCount(1),
       mUseStencil(false),
-      mBackColor{0, 0, 0, 1}
-    { }
+      mBackColor{ 0, 0, 0, 1.0f},
+      readback_started_(false)
+    {
+        setImage(image);
+    }
 
     virtual ~RenderTexture() { }
     virtual int width() const { mImage->getWidth(); }
     virtual int height() const { return mImage->getHeight(); }
     virtual unsigned int getFrameBufferId() const = 0;
-    virtual unsigned int getDepthBufferId() const = 0;
     virtual void bind() = 0;
     virtual void beginRendering() = 0;
     virtual void endRendering() = 0;
-
-    void setBackgroundColor(float r, float g, float b)
-    {
-        mBackColor[0] = r;
-        mBackColor[1] = g;
-        mBackColor[2] = b;
-        mBackColor[3] = 1.0f;
-    }
-
-    void useStencil(bool useFlag)   { mUseStencil = useFlag; }
 
     // Start to read back texture in the background. It can be optionally called before
     // readRenderResult() to read pixels asynchronously. This function returns immediately.
@@ -72,6 +63,14 @@ public:
     // it returns, the pixels have been copied to PBO and then to the client memory.
     virtual bool readRenderResult(unsigned int *readback_buffer, long capacity) = 0;
 
+    void useStencil(bool useFlag) { mUseStencil = useFlag; }
+    void setBackgroundColor(float r, float g, float b)
+    {
+        mBackColor[0] = r;
+        mBackColor[1] = g;
+        mBackColor[2] = b;
+        mBackColor[3] = 1.0f;
+    }
 private:
     RenderTexture(const RenderTexture&);
     RenderTexture(RenderTexture&&);
@@ -79,8 +78,8 @@ private:
     RenderTexture& operator=(RenderTexture&&);
 
 protected:
-    bool    mUseStencil;
     float   mBackColor[4];
+    bool    mUseStencil;
     int     mSampleCount;
     bool    readback_started_;  // set by startReadBack()
 };

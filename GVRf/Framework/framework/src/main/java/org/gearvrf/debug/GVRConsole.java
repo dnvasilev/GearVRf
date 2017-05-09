@@ -17,15 +17,12 @@ package org.gearvrf.debug;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.gearvrf.GVRBitmapTexture;
 import org.gearvrf.GVRCamera;
 import org.gearvrf.GVRCameraRig;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRImage;
-import org.gearvrf.GVRPostEffectShaderManager;
 import org.gearvrf.GVRScene;
 import org.gearvrf.GVRShader;
 import org.gearvrf.GVRShaderData;
@@ -38,7 +35,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import org.gearvrf.R;
+
 import org.gearvrf.utility.TextFile;
 
 /**

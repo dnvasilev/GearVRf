@@ -29,14 +29,13 @@
 #include "util/gvr_gl.h"
 
 namespace gvr {
+class GLRenderImage;
 
 class GLRenderTexture : public RenderTexture
 {
 public:
-    GLRenderTexture(int width, int height);
-    GLRenderTexture(int width, int height, Image* image);
-    GLRenderTexture(int width, int height, int sample_count);
-    GLRenderTexture(int width, int height, int sample_count,
+    GLRenderTexture(int width, int height, int sample_count, int layers);
+    explicit GLRenderTexture(int width, int height, int sample_count,
             int jcolor_format, int jdepth_format, bool resolve_depth,
             const TextureParameters* texture_parameters);
 
@@ -46,20 +45,17 @@ public:
     virtual int width() const { return mImage->getWidth(); }
     virtual int height() const { return mImage->getHeight(); }
 
-    virtual unsigned int getDepthBufferId() const
-    {
-        return renderTexture_gl_render_buffer_->id();
-    }
-
-    virtual unsigned int getFrameBufferId() const
-    {
+    virtual unsigned int getFrameBufferId() const {
         return renderTexture_gl_frame_buffer_->id();
     }
 
-    virtual void bind();
+    virtual void bind() {
+        glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_frame_buffer_->id());
+    }
 
     virtual void beginRendering();
     virtual void endRendering();
+    virtual bool isReady();
 
     // Start to read back texture in the background. It can be optionally called before
     // readRenderResult() to read pixels asynchronously. This function returns immediately.
@@ -68,6 +64,8 @@ public:
     // Copy data in pixel buffer to client memory. This function is synchronous. When
     // it returns, the pixels have been copied to PBO and then to the client memory.
     virtual bool readRenderResult(unsigned int *readback_buffer, long capacity);
+    bool bindFrameBufferToLayer(int layerIndex);
+    bool bindTexture(int gl_location, int texIndex);
 
 private:
     GLRenderTexture(const GLRenderTexture&);

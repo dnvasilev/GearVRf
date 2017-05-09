@@ -66,7 +66,6 @@ int GLBitmapImage::updateFromBitmap(JNIEnv *env, int target, jobject bitmap)
         glTexImage2D(target, 0, internalFormat, info.width, info.height, 0, pixelFormat,
                      dataFormat, pixels);
         AndroidBitmap_unlockPixels(env, bitmap);
-        glGenerateMipmap(target);
         return internalFormat;
     }
     return 0;
@@ -84,13 +83,13 @@ void GLBitmapImage::update(int texid)
     {
         updateFromBitmap(texid);
         clearData(getCurrentEnv(mJava));
-        LOGV("Texture: GLBitmapImage::update(%d, bitmap) %s", texid, getFileName());
+        LOGV("Texture: GLBitmapImage::update(%d, bitmap)", texid);
     }
     else if (mData != NULL)
     {
         updateFromMemory(texid);
         clearData(getCurrentEnv(mJava));
-        LOGV("Texture: GLBitmapImage::update(%d, byteArray) %s", texid, getFileName());
+        LOGV("Texture: GLBitmapImage::update(%d, byteArray)", texid);
     }
 }
 

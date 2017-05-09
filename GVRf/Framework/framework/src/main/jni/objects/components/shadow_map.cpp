@@ -18,53 +18,47 @@
 
 namespace gvr {
 
-ShadowMap::ShadowMap(ShaderData* mtl)
-: RenderTarget(nullptr),
-  mLayerIndex(-1)
-{
-    mRenderState.material_override = mtl;
-}
-
-ShadowMap::~ShadowMap()
-{
-    if (mLayerIndex > 0)
+    ShadowMap::ShadowMap(ShaderData* mtl)
+            : RenderTarget(nullptr),
+              mLayerIndex(-1)
     {
-        mRenderTexture = nullptr;
+        mRenderState.material_override = mtl;
     }
-}
 
-void ShadowMap::setLayerIndex(int layerIndex)
-{
-    mLayerIndex = layerIndex;
-}
-
-void ShadowMap::bindTexture(int loc, int texIndex)
-{
-    Image* image = mRenderTexture->getImage();
-
-    if (image)
+    ShadowMap::~ShadowMap()
     {
-        GLRenderImageArray* texArray = static_cast<GLRenderImageArray*>(image);
-        texArray->bindTexture(loc, texIndex);
-    }
-}
-
-void  ShadowMap::beginRendering()
-{
-    Image* image = mRenderTexture->getImage();
-
-    if (image && (mLayerIndex >= 0))
-    {
-        GLRenderImageArray* texArray = static_cast<GLRenderImageArray*>(image);
-        if(!fboInit_) {
-            mRenderTexture->bind();
-            texArray->bindFrameBuffer(mLayerIndex);
-            fboInit_ = true;
+        if (mLayerIndex > 0)
+        {
+            mRenderTexture = nullptr;
         }
     }
-    RenderTarget::beginRendering();
-    mRenderState.render_mask = 1;
-    mRenderState.shadow_map = true;
-}
+
+    void ShadowMap::setLayerIndex(int layerIndex)
+    {
+        mLayerIndex = layerIndex;
+    }
+
+    void ShadowMap::bindTexture(int loc, int texIndex)
+    {
+        GLRenderTexture* rtex = static_cast<GLRenderTexture*>(mRenderTexture);
+
+        if (rtex)
+        {
+            rtex->bindTexture(loc, texIndex);
+        }
+    }
+
+    void  ShadowMap::beginRendering()
+    {
+        GLRenderTexture* rtex = static_cast<GLRenderTexture*>(mRenderTexture);
+
+        if (rtex && (mLayerIndex >= 0))
+        {
+            rtex->bindFrameBufferToLayer(mLayerIndex);
+        }
+        RenderTarget::beginRendering();
+        mRenderState.render_mask = 1;
+        mRenderState.shadow_map = true;
+    }
 
 }

@@ -21,6 +21,7 @@
 #include <vector>
 #include "objects/hybrid_object.h"
 #include "util/gvr_log.h"
+#include "gl/gl_headers.h"  // for GL_TEXTURE_xxx
 
 namespace gvr {
 class Texture;
@@ -43,7 +44,8 @@ public:
         NONE = 0,
         BITMAP = 1,
         CUBEMAP,
-        FLOAT_BITMAP
+        FLOAT_BITMAP,
+        ARRAY
     };
 
     enum ImageState
@@ -57,7 +59,7 @@ public:
 
     Image() :
             HybridObject(), mState(UNINITIALIZED), mType(NONE), mFormat(0),
-            mWidth(0), mHeight(0), mImageSize(0), mUpdateLock(),
+            mWidth(0), mHeight(0), mDepth(1), mImageSize(0), mUpdateLock(),
             mLevels(0)
     {
         mFileName[0] = 0;
@@ -65,7 +67,7 @@ public:
 
     Image(ImageType type, int format) :
             HybridObject(), mState(UNINITIALIZED), mType(type), mFormat(format),
-            mWidth(0), mHeight(0), mImageSize(0), mUpdateLock(),
+            mWidth(0), mHeight(0), mDepth(1), mImageSize(0), mUpdateLock(),
             mLevels(0)
     {
         mFileName[0] = 0;
@@ -73,7 +75,7 @@ public:
 
     Image(ImageType type, short width, short height, int imagesize, int format, short levels) :
             HybridObject(), mType(type), mState(UNINITIALIZED), mUpdateLock(),
-            mWidth(width), mHeight(height), mImageSize(imagesize),
+            mWidth(width), mHeight(height), mDepth(1), mImageSize(imagesize),
             mFormat(format), mLevels(levels)
     {
         mFileName[0] = 0;
@@ -86,9 +88,12 @@ public:
     bool hasData() const { return mState == HAS_DATA; }
     short getWidth() const { return mWidth; }
     short getHeight() const { return mHeight; }
+    short getDepth() const { return mDepth; }
     short getLevels() const { return mLevels; }
     short getType() const { return mType; }
     int getFormat() const { return mFormat; }
+    const char* getFileName() const  { return mFileName; }
+
     void setFileName(const char* fname)
     {
         int len = strlen(fname);
@@ -98,8 +103,6 @@ public:
         }
         strncpy(mFileName, fname, len);
     }
-
-    const char* getFileName() const  { return mFileName; }
 
     int getDataOffset(int level)
     {
@@ -151,7 +154,6 @@ protected:
         mState = HAS_DATA;
         LOGD("Texture: UPDATE_COMPLETE %s", getFileName());
     }
-
     virtual void update(int texid) { }
 
     std::mutex mUpdateLock;
@@ -159,6 +161,7 @@ protected:
     short   mLevels;
     short   mWidth;
     short   mHeight;
+    short   mDepth;
     short   mState;
     int     mImageSize;
     int     mFormat;

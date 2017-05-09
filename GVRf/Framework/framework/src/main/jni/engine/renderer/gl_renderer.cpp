@@ -102,14 +102,13 @@ namespace gvr
                                                    bool resolve_depth,
                                                    const TextureParameters *texture_parameters)
     {
-        RenderTexture *tex = new GLRenderTexture(width, height, sample_count);
+        RenderTexture *tex = new GLRenderTexture(width, height, sample_count, 1);
         return tex;
     }
 
-    RenderTexture* GLRenderer::createRenderTextureArray(int width, int height, int layers)
+    RenderTexture* GLRenderer::createRenderTexture(int width, int height, int sample_count, int layers)
     {
-        GLRenderImage* imageArray = new GLRenderImageArray(width, height, layers);
-        RenderTexture* tex = new GLRenderTexture(width, height, imageArray);
+        RenderTexture* tex = new GLRenderTexture(width, height, sample_count, layers);
         return tex;
     }
 
@@ -444,6 +443,7 @@ namespace gvr
         }
     }
 
+
     /**
      * Generate shadow maps for all the lights that cast shadows.
      * The scene is rendered from the viewpoint of the light using a
@@ -723,30 +723,36 @@ namespace gvr
         return texIndex;
     }
 
-    void GLRenderer::updateLights(RenderState &rstate, Shader* shader, int texIndex)
+    void GLRenderer::updateLights(RenderState& rstate, Shader* shader, int texIndex)
     {
         const std::vector<Light*>& lightlist = rstate.scene->getLightList();
         ShadowMap* shadowMap = nullptr;
 
-        for (auto it = lightlist.begin(); it != lightlist.end(); ++it)
+        for (auto it = lightlist.begin();
+             it != lightlist.end();
+             ++it)
         {
             Light* light = (*it);
             if (light != NULL)
             {
                 light->render(shader);
                 ShadowMap* sm = light->getShadowMap();
-                if (sm) shadowMap = sm;
+                if (sm != nullptr)
+                {
+                    shadowMap = sm;
+                }
             }
         }
         if (shadowMap)
         {
             GLShader* glshader = static_cast<GLShader*>(shader);
-            int program = glshader->getProgramId();
-            int loc = glGetUniformLocation(program, "u_shadow_maps");
-
-            shadowMap->bindTexture(loc, texIndex);
+            int loc = glGetUniformLocation(glshader->getProgramId(), "u_shadow_maps");
+            if (loc >= 0)
+            {
+                shadowMap->bindTexture(loc, texIndex);
+            }
         }
-        checkGLError("Shader::render");
+        checkGLError("GLRenderer::updateLights");
     }
 }
 

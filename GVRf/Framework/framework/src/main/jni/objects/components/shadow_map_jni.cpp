@@ -1,5 +1,4 @@
 #include "objects/components/shadow_map.h"
-#include "objects/shader_data.h"
 
 #include "util/gvr_jni.h"
 #include "util/gvr_log.h"

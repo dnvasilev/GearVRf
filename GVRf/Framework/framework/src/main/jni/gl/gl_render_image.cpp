@@ -23,35 +23,24 @@
 #include "gl_headers.h"
 
 namespace gvr {
-GLRenderImage::GLRenderImage(int width, int height)
-        : GLImage(GL_TEXTURE_2D)
+
+
+GLRenderImage::GLRenderImage(int width, int height, int layers)
+        : GLImage((layers > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D)
 {
     mWidth = width;
     mHeight = height;
-    mType = Image::ImageType::BITMAP;
-    updateGPU();
-    glBindTexture(mGLTarget, id());
-    glTexImage2D(mGLTarget, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindTexture(mGLTarget, 0);
+    mDepth = layers;
+    mType = (layers > 1) ? Image::ImageType::ARRAY : Image::ImageType::BITMAP;
 }
 
-
-GLRenderImage::GLRenderImage(int width, int height, GLenum gltarget)
-    : GLImage(gltarget)
-{
-    mWidth = width;
-    mHeight = height;
-    mType = Image::ImageType::BITMAP;
-}
-
-GLRenderImage::GLRenderImage(int width, int height,
-    int jcolor_format, int jdepth_format,
-    const TextureParameters* texparams)
+GLRenderImage::GLRenderImage(int width, int height, int color_format, const TextureParameters* texparams)
     : GLImage(GL_TEXTURE_2D)
 {
     GLenum target = GLImage::getTarget();
     mWidth = width;
     mHeight = height;
+    mDepth = 1;
     mType = Image::ImageType::BITMAP;
     if (texparams)
     {
@@ -59,31 +48,60 @@ GLRenderImage::GLRenderImage(int width, int height,
     }
     updateGPU();
 
-    switch (jcolor_format) {
-    case ColorFormat::COLOR_565:
+    switch (color_format)
+    {
+        case ColorFormat::COLOR_565:
         glTexImage2D(target, 0, GL_RGB, width, height, 0, GL_RGB,
                 GL_UNSIGNED_SHORT_5_6_5, 0);
         break;
-    case ColorFormat::COLOR_5551:
+
+        case ColorFormat::COLOR_5551:
         glTexImage2D(target, 0, GL_RGB5_A1, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_SHORT_5_5_5_1, 0);
-        break;
-    case ColorFormat::COLOR_4444:
+        break
+                ;
+        case ColorFormat::COLOR_4444:
         glTexImage2D(target, 0, GL_RGBA, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_SHORT_4_4_4_4, 0);
         break;
-    case ColorFormat::COLOR_8888:
+
+        case ColorFormat::COLOR_8888:
         glTexImage2D(target, 0, GL_RGBA8, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_BYTE, 0);
         break;
-    case ColorFormat::COLOR_8888_sRGB:
+
+        case ColorFormat::COLOR_8888_sRGB:
         glTexImage2D(target, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_BYTE, 0);
         break;
-    default:
+
+        default:
         break;
     }
 }
+
+GLuint GLRenderImage::createTexture()
+{
+    GLuint texid = GLImage::createTexture();
+    glBindTexture(mGLTarget, texid);
+    if (getDepth() > 1)
+    {
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
+                     getWidth(), getHeight(), getDepth(),
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    }
+    else
+    {
+        glTexImage2D(mGLTarget, 0, GL_RGBA8,
+                     getWidth(), getHeight(),
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    }
+    glBindTexture(mGLTarget, 0);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    checkGLError("GLRenderImage::createTexture");
+    return texid;
+}
+
 
 void GLRenderImage::setupReadback(GLuint buffer)
 {
@@ -160,21 +178,19 @@ bool GLRenderImageArray::bindFrameBuffer(int layerIndex)
         switch (fboStatus)
         {
             case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
-            LOGE("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-            break;
+                LOGE("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+                break;
 
             case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            LOGE("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-            break;
+                LOGE("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+                break;
 
             case GL_FRAMEBUFFER_UNSUPPORTED:
-            LOGE("GL_FRAMEBUFFER_UNSUPPORTED");
-            break;
+                LOGE("GL_FRAMEBUFFER_UNSUPPORTED");
+                break;
         }
         return false;
     }
     return true;
 }
-
-
 }

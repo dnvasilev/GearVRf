@@ -32,11 +32,8 @@ namespace gvr {
 class GLRenderImage : public GLImage, public Image
 {
 public:
-    explicit GLRenderImage(int width, int height, GLenum gltarget);
-    explicit GLRenderImage(int width, int height);
-    GLRenderImage(int width, int height,
-            int jcolor_format, int jdepth_format,
-            const TextureParameters* texture_parameters);
+    explicit GLRenderImage(int width, int height, int layers = 1);
+    explicit GLRenderImage(int width, int height, int color_format, const TextureParameters* texture_parameters);
 
     virtual int getId() { return mId; }
 
@@ -53,21 +50,15 @@ public:
 
     void setupReadback(GLuint buffer);
 
+protected:
+    virtual GLuint createTexture();
+
 private:
     GLRenderImage(const GLRenderImage&);
     GLRenderImage(GLRenderImage&&);
     GLRenderImage& operator=(const GLRenderImage&);
     GLRenderImage& operator=(GLRenderImage&&);
-
-    void generateRenderTextureNoMultiSampling(int jdepth_format,GLenum depth_format, int width, int height);
-    void generateRenderTextureEXT(int sample_count,int jdepth_format,GLenum depth_format, int width, int height);
-    void generateRenderTexture(int sample_count, int jdepth_format, GLenum depth_format, int width,
-            int height, int jcolor_format);
-    void invalidateFrameBuffer(GLenum target, bool is_fbo, const bool color_buffer, const bool depth_buffer);
-    void initialize();
-
 };
-
 
 class GLRenderImageArray : public GLRenderImage
 {
@@ -76,14 +67,18 @@ public:
     virtual void beginRendering();
     bool bindFrameBuffer(int layerIndex);
     bool bindTexture(int gl_location, int texIndex);
-    void genFramebuffer(){
-            glGenFramebuffers(1, &fboId_);
+    void genFramebuffer()
+    {
+        glGenFramebuffers(1, &fboId_);
     }
-    GLuint getFboId(){
-        if(fboId_ == 0)
+
+    GLuint getFboId()
+    {
+        if (fboId_ == 0)
             genFramebuffer();
         return fboId_;
     }
+
 protected:
     virtual GLuint  createTexture();
     int     mNumLayers;

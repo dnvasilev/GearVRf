@@ -12,8 +12,9 @@ repositories {
 }
 
 android {
+    publishNonDefault !gradle.getStartParameter().taskNames.contains('uploadArchives')
     compileSdkVersion 21
-    buildToolsVersion '24.0.3'
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         minSdkVersion 19
@@ -85,5 +86,9 @@ tasks.whenTaskAdded { task ->
         task.finalizedBy(copyJarToBin)
     } else if (task.name == 'bundleRelease') {
         task.finalizedBy(copyJarToBin)
+    } else if (task.name == 'externalNativeBuildRelease') {
+        task.dependsOn ":framework:externalNativeBuildRelease"
+    } else if (task.name == 'externalNativeBuildDebug') {
+        task.dependsOn ":framework:externalNativeBuildDebug"
     }
 }
