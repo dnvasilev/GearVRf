@@ -34,7 +34,7 @@ class GLRenderImage;
 class GLRenderTexture : public RenderTexture
 {
 public:
-    GLRenderTexture(int width, int height, int sample_count, int layers);
+    explicit GLRenderTexture(int width, int height, int sample_count, int layers, int depth_format);
     explicit GLRenderTexture(int width, int height, int sample_count,
             int jcolor_format, int jdepth_format, bool resolve_depth,
             const TextureParameters* texture_parameters);
@@ -64,7 +64,7 @@ public:
     // Copy data in pixel buffer to client memory. This function is synchronous. When
     // it returns, the pixels have been copied to PBO and then to the client memory.
     virtual bool readRenderResult(unsigned int *readback_buffer, long capacity);
-    bool bindFrameBufferToLayer(int layerIndex);
+    void bindFrameBufferToLayer(int layerIndex);
     bool bindTexture(int gl_location, int texIndex);
 
 private:
@@ -74,6 +74,7 @@ private:
     GLRenderTexture& operator=(GLRenderTexture&&);
 
     void generateRenderTextureNoMultiSampling(int jdepth_format,GLenum depth_format, int width, int height);
+    void generateRenderTextureLayer(GLenum depth_format, int width, int height);
     void generateRenderTextureEXT(int sample_count,int jdepth_format,GLenum depth_format, int width, int height);
     void generateRenderTexture(int sample_count, int jdepth_format, GLenum depth_format, int width,
             int height, int jcolor_format);
@@ -81,6 +82,8 @@ private:
     void initialize();
 
 private:
+    int layer_index_;
+    GLenum depth_format_;
     GLRenderBuffer* renderTexture_gl_render_buffer_ = nullptr;// This is actually depth buffer.
     GLFrameBuffer* renderTexture_gl_frame_buffer_ = nullptr;
     GLFrameBuffer* renderTexture_gl_resolve_buffer_ = nullptr;

@@ -38,8 +38,8 @@ namespace gvr {
 
         auto it = dirty_.find(program);
 
-        if (it != dirty_.end() && !it->second)
-            return;
+        //if (it != dirty_.end() && !it->second)
+        //    return;
         if (lightID_.empty())
         {
             return;

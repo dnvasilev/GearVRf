@@ -36,6 +36,12 @@ namespace gvr {
     void ShadowMap::setLayerIndex(int layerIndex)
     {
         mLayerIndex = layerIndex;
+        GLRenderTexture* rtex = static_cast<GLRenderTexture*>(mRenderTexture);
+
+        if (rtex)
+        {
+            rtex->bindFrameBufferToLayer(mLayerIndex);
+        }
     }
 
     void ShadowMap::bindTexture(int loc, int texIndex)
@@ -50,12 +56,6 @@ namespace gvr {
 
     void  ShadowMap::beginRendering()
     {
-        GLRenderTexture* rtex = static_cast<GLRenderTexture*>(mRenderTexture);
-
-        if (rtex && (mLayerIndex >= 0))
-        {
-            rtex->bindFrameBufferToLayer(mLayerIndex);
-        }
         RenderTarget::beginRendering();
         mRenderState.render_mask = 1;
         mRenderState.shadow_map = true;

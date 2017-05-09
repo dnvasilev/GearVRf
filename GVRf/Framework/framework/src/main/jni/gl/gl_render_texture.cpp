@@ -24,14 +24,33 @@
 
 namespace gvr {
 
-GLRenderTexture::GLRenderTexture(int width, int height, int sample_count, int layers) :
+GLRenderTexture::GLRenderTexture(int width, int height, int sample_count, int layers, int depth_format) :
         RenderTexture(sample_count),
         renderTexture_gl_render_buffer_(nullptr),
         renderTexture_gl_frame_buffer_(nullptr),
         renderTexture_gl_resolve_buffer_(nullptr),
-        renderTexture_gl_color_buffer_(nullptr)
+        renderTexture_gl_color_buffer_(nullptr),
+        layer_index_(0)
 {
     mImage = new GLRenderImage(width, height, layers);
+    switch (depth_format)
+    {
+        case DepthFormat::DEPTH_0:
+        depth_format_ = 0;
+        break;
+
+        case DepthFormat::DEPTH_24:
+        depth_format_ = GL_DEPTH_COMPONENT24_OES;
+        break;
+
+        case DepthFormat::DEPTH_24_STENCIL_8:
+        depth_format_ = GL_DEPTH24_STENCIL8_OES;
+        break;
+
+        default:
+        depth_format_ = GL_DEPTH_COMPONENT16;
+        break;
+    }
 }
 
 
@@ -42,39 +61,49 @@ GLRenderTexture::GLRenderTexture(int width, int height, int sample_count,
           renderTexture_gl_render_buffer_(nullptr),
           renderTexture_gl_frame_buffer_(new GLFrameBuffer()),
           renderTexture_gl_resolve_buffer_(nullptr),
-          renderTexture_gl_color_buffer_(nullptr)
+          renderTexture_gl_color_buffer_(nullptr),
+          layer_index_(0)
 {
     GLRenderImage* colorbuffer = new GLRenderImage(width, height);
+    GLenum depth_format;
+
     mImage = colorbuffer;
     if (texparams)
     {
         mImage->texParamsChanged(mTexParams);
     }
     initialize();
-    GLenum depth_format;
-
-    switch (jdepth_format) {
-    case DepthFormat::DEPTH_24:
+    switch (jdepth_format)
+    {
+        case DepthFormat::DEPTH_24:
         depth_format = GL_DEPTH_COMPONENT24_OES;
         break;
-    case DepthFormat::DEPTH_24_STENCIL_8:
+
+        case DepthFormat::DEPTH_24_STENCIL_8:
         depth_format = GL_DEPTH24_STENCIL8_OES;
         break;
-    default:
+
+        default:
         depth_format = GL_DEPTH_COMPONENT16;
         break;
     }
-    if (sample_count <= 1) {
-        generateRenderTextureNoMultiSampling(jdepth_format, depth_format, width,
-                height);
-    } else if (resolve_depth) {
-        generateRenderTexture(sample_count, jdepth_format, depth_format, width,
-                height, jcolor_format);
-    } else {
-        generateRenderTextureEXT(sample_count, jdepth_format, depth_format,
-                width, height);
+    if (sample_count <= 1)
+    {
+        generateRenderTextureNoMultiSampling(jdepth_format, depth_format,
+                                             width, height);
     }
-    if (jdepth_format != DepthFormat::DEPTH_0) {
+    else if (resolve_depth)
+    {
+        generateRenderTexture(sample_count, jdepth_format, depth_format,
+                              width, height, jcolor_format);
+    }
+    else
+    {
+        generateRenderTextureEXT(sample_count, jdepth_format,
+                                 depth_format,width, height);
+    }
+    if (jdepth_format != DepthFormat::DEPTH_0)
+    {
         GLenum attachment = DepthFormat::DEPTH_24_STENCIL_8 == jdepth_format ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderTexture_gl_render_buffer_->id());
     }
@@ -84,14 +113,16 @@ GLRenderTexture::GLRenderTexture(int width, int height, int sample_count,
     glClearColor(0, 1, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (resolve_depth && sample_count > 1) {
+    if (resolve_depth && sample_count > 1)
+    {
         delete renderTexture_gl_resolve_buffer_;
         renderTexture_gl_resolve_buffer_ = new GLFrameBuffer();
         glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_resolve_buffer_->id());
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                colorbuffer->getTarget(), colorbuffer->getId(), 0);
+                               colorbuffer->getTarget(), colorbuffer->getId(), 0);
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+        {
             LOGE("resolve FBO %i is not complete: 0x%x",
                  renderTexture_gl_resolve_buffer_->id(), status);
         }
@@ -121,31 +152,14 @@ bool GLRenderTexture::isReady()
         return false;
     }
     GLRenderImage* colorbuffer = static_cast<GLRenderImage*>(mImage);
+    int width = colorbuffer->getWidth();
+    int height = colorbuffer->getHeight();
+
     if (renderTexture_gl_frame_buffer_ == NULL)
     {
         renderTexture_gl_frame_buffer_ = new GLFrameBuffer();
-    }
-    if (colorbuffer->getDepth() == 1)
-    {
-        if (renderTexture_gl_render_buffer_ == NULL)
-        {
-            renderTexture_gl_render_buffer_ = new GLRenderBuffer();
-        }
-        int fbid = getFrameBufferId();
-        int rbid = renderTexture_gl_render_buffer_->id();
-
-        glBindRenderbuffer(GL_RENDERBUFFER, rbid);
-        MSAA::glRenderbufferStorageMultisampleIMG(GL_RENDERBUFFER, mSampleCount,
-                                                  GL_DEPTH_COMPONENT16, width(), height());
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        checkGLError("RenderTexture::isReady depth buffer");
-        glBindFramebuffer(GL_FRAMEBUFFER, fbid);
-        MSAA::glFramebufferTexture2DMultisample(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                                colorbuffer->getTarget(), colorbuffer->getId(),
-                                                0, mSampleCount);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                  GL_RENDERBUFFER, rbid);
-        checkGLError("RenderTexture::isReady color buffer");
+        generateRenderTextureLayer(depth_format_, width, height);
+        checkGLError("RenderTexture::isReady generateRenderTextureLayer");
     }
     return true;
 }
@@ -170,6 +184,43 @@ void GLRenderTexture::generateRenderTextureNoMultiSampling(int jdepth_format,
     GLRenderImage* image = static_cast<GLRenderImage*>(mImage);
     glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_frame_buffer_->id());
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, image->getTarget(), image->getId(), 0);
+}
+
+void GLRenderTexture::generateRenderTextureLayer(GLenum depth_format, int width, int height)
+{
+    if (depth_format_)
+    {
+        renderTexture_gl_render_buffer_ = new GLRenderBuffer();
+        glBindRenderbuffer(GL_RENDERBUFFER, renderTexture_gl_render_buffer_->id());
+        glRenderbufferStorage(GL_RENDERBUFFER, depth_format, width, height);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
+    GLRenderImage* image = static_cast<GLRenderImage*>(mImage);
+    glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_frame_buffer_->id());
+    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, image->getId(), 0, layer_index_);
+    checkGLError("RenderTexture::generateRenderTextureLayer");
+    int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if ((fboStatus == GL_FRAMEBUFFER_COMPLETE) && depth_format_)
+    {
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, depth_format_, GL_RENDERBUFFER,
+                                  renderTexture_gl_render_buffer_->id());
+        return;
+    }
+    LOGE("RenderTexture::generateRenderTextureLayer Could not bind framebuffer: %d", fboStatus);
+    switch (fboStatus)
+    {
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
+        LOGE("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+        break;
+
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+        LOGE("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+        break;
+
+        case GL_FRAMEBUFFER_UNSUPPORTED:
+        LOGE("GL_FRAMEBUFFER_UNSUPPORTED");
+        break;
+    }
 }
 
 void GLRenderTexture::generateRenderTextureEXT(int sample_count,
@@ -238,12 +289,12 @@ void GLRenderTexture::beginRendering()
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    invalidateFrameBuffer(GL_FRAMEBUFFER, true, true, true);
+    invalidateFrameBuffer(GL_FRAMEBUFFER, true, true, renderTexture_gl_render_buffer_ != NULL);
     if ((mBackColor[0] + mBackColor[1] + mBackColor[2] + mUseStencil) != 0)
     {
         int mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
         glClearColor(mBackColor[0], mBackColor[1], mBackColor[2], mBackColor[3]);
-        if (mUseStencil)
+        if (mUseStencil && (depth_format_ == GL_DEPTH24_STENCIL8_OES))
         {
             mask |= GL_STENCIL_BUFFER_BIT;
             glStencilMask(~0);
@@ -330,39 +381,9 @@ bool GLRenderTexture::readRenderResult(uint32_t *readback_buffer, long capacity)
  * Create the framebuffer and layered texture if necessary.
  * This function must be called from the GL thread.
  */
-bool GLRenderTexture::bindFrameBufferToLayer(int layerIndex)
+void GLRenderTexture::bindFrameBufferToLayer(int layerIndex)
 {
-    if (!isReady())
-    {
-        return false;
-    }
-    int texid = mImage->getId();
-    glBindTexture(static_cast<GLRenderImage*>(mImage)->getTarget(), 0);
-    checkGLError("RenderTexture::bindFrameBufferToLayer 1");
-    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                              texid, 0, layerIndex);
-    checkGLError("RenderTexture::bindFrameBufferToLayer 2");
-    int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-    {
-        LOGE("RenderTexture::bindFrameBufferToLayer Could not bind framebuffer: %d", fboStatus);
-        switch (fboStatus)
-        {
-            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
-            LOGE("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-            break;
-
-            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            LOGE("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-            break;
-
-            case GL_FRAMEBUFFER_UNSUPPORTED:
-            LOGE("GL_FRAMEBUFFER_UNSUPPORTED");
-            break;
-        }
-        return false;
-    }
-    return true;
+    layer_index_ = layerIndex;
 }
 
 bool GLRenderTexture::bindTexture(int gl_location, int texIndex)
@@ -371,7 +392,6 @@ bool GLRenderTexture::bindTexture(int gl_location, int texIndex)
 
     if (image && (gl_location >= 0))
     {
-        image->updateGPU();
         glActiveTexture(GL_TEXTURE0 + texIndex);
         glBindTexture(image->getTarget(), getId());
         glPixelStorei(GL_PACK_ALIGNMENT, 1);

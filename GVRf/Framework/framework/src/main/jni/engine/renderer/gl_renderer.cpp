@@ -100,15 +100,16 @@ namespace gvr
     RenderTexture* GLRenderer::createRenderTexture(int width, int height, int sample_count,
                                                    int jcolor_format, int jdepth_format,
                                                    bool resolve_depth,
-                                                   const TextureParameters *texture_parameters)
+                                                   const TextureParameters *texparams)
     {
-        RenderTexture *tex = new GLRenderTexture(width, height, sample_count, 1);
+        RenderTexture *tex = new GLRenderTexture(width, height, sample_count, jcolor_format, jdepth_format,
+                                                 resolve_depth, texparams);
         return tex;
     }
 
     RenderTexture* GLRenderer::createRenderTexture(int width, int height, int sample_count, int layers)
     {
-        RenderTexture* tex = new GLRenderTexture(width, height, sample_count, layers);
+        RenderTexture* tex = new GLRenderTexture(width, height, sample_count, layers, DepthFormat::DEPTH_0);
         return tex;
     }
 

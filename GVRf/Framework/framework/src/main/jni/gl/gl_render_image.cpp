@@ -58,8 +58,8 @@ GLRenderImage::GLRenderImage(int width, int height, int color_format, const Text
         case ColorFormat::COLOR_5551:
         glTexImage2D(target, 0, GL_RGB5_A1, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_SHORT_5_5_5_1, 0);
-        break
-                ;
+        break;
+
         case ColorFormat::COLOR_4444:
         glTexImage2D(target, 0, GL_RGBA, width, height, 0, GL_RGBA,
                 GL_UNSIGNED_SHORT_4_4_4_4, 0);
@@ -84,7 +84,7 @@ GLuint GLRenderImage::createTexture()
 {
     GLuint texid = GLImage::createTexture();
     glBindTexture(mGLTarget, texid);
-    if (getDepth() > 1)
+    if (mGLTarget == GL_TEXTURE_2D_ARRAY)
     {
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
                      getWidth(), getHeight(), getDepth(),
@@ -97,7 +97,6 @@ GLuint GLRenderImage::createTexture()
                      0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     }
     glBindTexture(mGLTarget, 0);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     checkGLError("GLRenderImage::createTexture");
     return texid;
 }
@@ -112,85 +111,5 @@ void GLRenderImage::setupReadback(GLuint buffer)
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
 }
 
-/*
- * Create a GLRenderImageArray with a specified number of layers.
- * This is a GL layered textured. Its creation is postponed
- * until bindFrameBuffer is called on the GL thread.
- * The GLRenderImageArray constructor may be called from any thread.
- */
-GLRenderImageArray::GLRenderImageArray(int width, int height, int numLayers)
-        : GLRenderImage(width, height, GL_TEXTURE_2D_ARRAY),
-          mNumLayers(numLayers)
-{
-}
 
-GLuint  GLRenderImageArray::createTexture()
-{
-    GLuint texId = GLRenderImage::createTexture();
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texId);
-    //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_RGB8, width,height,depth,0,GL_RGB, GL_UNSIGNED_BYTE,NULL);
-    //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_R16F, width,height,depth,0,GL_RED, GL_HALF_FLOAT,NULL);  // does not work for S6 edge
-    //   glTexImage3D(GL_TEXTURE_2D_ARRAY,0,GL_RGB10_A2, width,height,depth,0,GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV,NULL);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, getWidth(), getHeight(), mNumLayers, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, NULL);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-    return texId;
-}
-
-void GLRenderImageArray::beginRendering()
-{
-    const GLenum attachments[3] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT  };
-
-    glViewport(0, 0, getWidth(), getHeight());
-    glScissor(0, 0, getWidth(), getHeight());
-    glInvalidateFramebuffer(GL_FRAMEBUFFER, 3, attachments);
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
-
-
-bool GLRenderImageArray::bindTexture(int gl_location, int texIndex)
-{
-    if (gl_location >= 0)
-    {
-        glActiveTexture(GL_TEXTURE0 + texIndex);
-        glBindTexture(getTarget(), getId());
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glUniform1i(gl_location, texIndex);
-    }
-}
-
-/*
- * Bind the framebuffer to the specified layer of the texture array.
- * Create the framebuffer and layered texture if necessary.
- * This function must be called from the GL thread.
- */
-bool GLRenderImageArray::bindFrameBuffer(int layerIndex)
-{
-    int texId = getId();
-    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                              texId, 0, layerIndex);
-    checkGLError("RenderTextureArray::bindFrameBuffer");
-    int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-    {
-        LOGE("RenderTextureArray::bindFrameBuffer Could not bind framebuffer: %d", fboStatus);
-        switch (fboStatus)
-        {
-            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
-                LOGE("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-                break;
-
-            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                LOGE("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-                break;
-
-            case GL_FRAMEBUFFER_UNSUPPORTED:
-                LOGE("GL_FRAMEBUFFER_UNSUPPORTED");
-                break;
-        }
-        return false;
-    }
-    return true;
-}
 }

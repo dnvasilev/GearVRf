@@ -60,29 +60,5 @@ private:
     GLRenderImage& operator=(GLRenderImage&&);
 };
 
-class GLRenderImageArray : public GLRenderImage
-{
-public:
-    GLRenderImageArray(int width, int height, int numLayers);
-    virtual void beginRendering();
-    bool bindFrameBuffer(int layerIndex);
-    bool bindTexture(int gl_location, int texIndex);
-    void genFramebuffer()
-    {
-        glGenFramebuffers(1, &fboId_);
-    }
-
-    GLuint getFboId()
-    {
-        if (fboId_ == 0)
-            genFramebuffer();
-        return fboId_;
-    }
-
-protected:
-    virtual GLuint  createTexture();
-    int     mNumLayers;
-    GLuint fboId_ = 0;
-};
 }
 #endif
