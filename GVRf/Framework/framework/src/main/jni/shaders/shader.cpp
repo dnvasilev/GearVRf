@@ -36,14 +36,16 @@ Shader::Shader(int id,
       vertexDescriptor_(vertexDescriptor),
       vertexShader_(vertex_shader),
       fragmentShader_(fragment_shader),
-      shaderDirty(true)  {
-
-    if(vertex_shader.find("Transform_ubo") == std::string::npos && fragment_shader.find("Transform_ubo") == std::string::npos )
+      shaderDirty(true)
+{
+    if (vertex_shader.find("Transform_ubo") == std::string::npos && fragment_shader.find("Transform_ubo") == std::string::npos )
         transformUboPresent = false;
-
 }
-void Shader::parseDescriptor(const std::string& descriptor){
-    if(textures_.size() != 0){
+
+void Shader::parseDescriptor(const std::string& descriptor)
+{
+    if(textures_.size() != 0)
+    {
         return;
     }
 

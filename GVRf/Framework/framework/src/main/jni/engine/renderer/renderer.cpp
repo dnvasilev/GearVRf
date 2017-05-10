@@ -151,12 +151,20 @@ void Renderer::cull(Scene *scene, Camera *camera,
             || camera->owner_object()->transform() == nullptr) {
         return;
     }
+    int nlights = scene->getLightList().size();
+
+    if (nlights != numLights)
+    {
+        numLights = nlights;
+        scene->bindShaders();
+    }
     cullFromCamera(scene, camera, shader_manager);
 
     // Note: this needs to be scaled to sort on N states
     state_sort();
 
-    if(do_batching && !gRenderer->isVulkanInstace()){
+    if (do_batching && !gRenderer->isVulkanInstace())
+    {
         batch_manager->batchSetup(render_data_vector);
     }
 }

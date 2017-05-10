@@ -47,7 +47,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            if (Shader::LOG_SHADER) LOGD("SHADER: findShader %s -> %d", sig.c_str(), shader->getShaderID());
+            if (Shader::LOG_SHADER) LOGV("SHADER: findShader %s -> %d", sig.c_str(), shader->getShaderID());
             return shader;
         }
         else
@@ -64,7 +64,7 @@ namespace gvr {
         {
             Shader* shader = it->second;
             const std::string& sig = shader->signature();
-            if (Shader::LOG_SHADER) LOGD("SHADER: getShader %d -> %s", id, sig.c_str());
+            if (Shader::LOG_SHADER) LOGV("SHADER: getShader %d -> %s", id, sig.c_str());
             return shader;
         }
         else

@@ -131,11 +131,13 @@ public:
     virtual bool useShader(Mesh*) = 0;
     static int calcSize(std::string type);
     void forEach(const std::string& descriptor, ShaderVisitor& visitor);
-    const std::unordered_map<std::string, std::string>& getTextures(){
+    const std::unordered_map<std::string, std::string>& getTextures()
+    {
         return textures_;
     }
     void parseDescriptor(const std::string& descriptor);
-    int getNumberOfTextures(){
+    int getNumberOfTextures()
+    {
         return textures_.size();
     }
 private:

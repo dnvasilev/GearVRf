@@ -84,8 +84,6 @@ struct RenderState {
     ShaderUniformsPerObject uniforms;
     ShaderManager*          shader_manager;
     bool                    shadow_map;
-    Shader*                 depth_shader;
-
 };
 
 class Renderer {

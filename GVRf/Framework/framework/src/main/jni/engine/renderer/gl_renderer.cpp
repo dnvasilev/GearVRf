@@ -178,7 +178,6 @@ namespace gvr
         rstate.scene = scene;
         rstate.render_mask = camera->render_mask();
         rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
-        rstate.depth_shader = NULL;
 
         std::vector<ShaderData *> post_effects = camera->post_effect_data();
 
@@ -287,11 +286,6 @@ namespace gvr
         {
             saveRenderTexture->useStencil(useStencilBuffer_);
             renderTarget->beginRendering();
-
-            if(renderTarget->getRenderState().shadow_map){
-                std::string shader_sig = "GVRDepthShader";
-                rstate.depth_shader = rstate.shader_manager->findShader(shader_sig);
-            }
             for (auto it = render_data_vector.begin();
                  it != render_data_vector.end();
                  ++it)
@@ -617,18 +611,19 @@ namespace gvr
 
     void GLRenderer::renderMesh(RenderState &rstate, RenderData *render_data)
     {
+        ShaderData* curr_material = rstate.material_override;
+        Shader* shader = curr_material ? rstate.shader_manager->getShader(curr_material->getNativeShader()) : nullptr;
         for (int curr_pass = 0; curr_pass < render_data->pass_count(); ++curr_pass)
         {
             numberTriangles += render_data->mesh()->getNumTriangles();
             numberDrawCalls++;
 
             set_face_culling(render_data->pass(curr_pass)->cull_face());
-            ShaderData *curr_material = rstate.material_override;
-            Shader *shader = rstate.depth_shader;
-            if (shader == nullptr)
-                shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
-            if (curr_material == nullptr)
+            if (rstate.material_override == nullptr)
+            {
                 curr_material = render_data->pass(curr_pass)->material();
+                shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
+            }
             if (curr_material != nullptr)
             {
                 GL(renderMaterialShader(rstate, render_data, curr_material, shader));

@@ -196,15 +196,31 @@ public class GVRDirectLight extends GVRLightBase
      */
     public void setCastShadow(boolean enableFlag)
     {
-        super.setCastShadow(enableFlag);
-        if (enableFlag && (getOwnerObject() != null))
+        GVRSceneObject owner = getOwnerObject();
+
+        if (owner != null)
         {
             GVRShadowMap shadowMap = (GVRShadowMap) getComponent(GVRRenderTarget.getComponentType());
-            if ((shadowMap != null) && (shadowMap.getCamera() == null))
+            if (enableFlag)
             {
-                shadowMap.addOrthoShadowCamera(getGVRContext().getMainScene().getMainCameraRig().getCenterCamera());
+                if (shadowMap != null)
+                {
+                    shadowMap.setEnable(true);
+                }
+                else
+                {
+                    GVRCamera shadowCam = GVRShadowMap.makeOrthoShadowCamera(
+                            getGVRContext().getMainScene().getMainCameraRig().getCenterCamera());
+                    shadowMap = new GVRShadowMap(getGVRContext(), shadowCam);
+                    owner.attachComponent(shadowMap);
+                }
+            }
+            else if (shadowMap != null)
+            {
+                shadowMap.setEnable(false);
             }
         }
+        mCastShadow = enableFlag;
     }
 
     /**
@@ -216,13 +232,9 @@ public class GVRDirectLight extends GVRLightBase
     public void onDrawFrame(float frameTime)
     {
         if (!isEnabled() || (getFloat("enabled") <= 0.0f) || (owner == null)) { return; }
-        float[] odir = getVec3("world_direction");
         boolean changed = false;
         Matrix4f worldmtx = owner.getTransform().getModelMatrix4f();
 
-        mOldDir.x = odir[0];
-        mOldDir.y = odir[1];
-        mOldDir.z = odir[2];
         mNewDir.x = 0.0f;
         mNewDir.y = 0.0f;
         mNewDir.z = -1.0f;

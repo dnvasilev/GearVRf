@@ -17,6 +17,24 @@ package org.gearvrf;
 
 import static org.gearvrf.utility.Assert.*;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.gearvrf.GVRSceneObject;
+import org.gearvrf.utility.ImageUtils;
+import org.gearvrf.utility.ResourceCache;
+import org.gearvrf.utility.Threads;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -93,7 +111,6 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
         return NativeLight.getComponentType();
     }
 
-
     /**
      * Enable or disable shadow casting by this light.
      *
@@ -116,29 +133,10 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
      */
     public void setCastShadow(boolean enableFlag)
     {
-        GVRSceneObject owner = getOwnerObject();
-
-        if (owner != null)
+        if (enableFlag)
         {
-            GVRShadowMap shadowMap = (GVRShadowMap) getComponent(GVRRenderTarget.getComponentType());
-            if (enableFlag)
-            {
-                if (shadowMap != null)
-                {
-                    shadowMap.setEnable(true);
-                }
-                else
-                {
-                    shadowMap = new GVRShadowMap(getGVRContext());
-                    owner.attachComponent(shadowMap);
-                }
-            }
-            else if (shadowMap != null)
-            {
-                shadowMap.setEnable(false);
-            }
+            throw new UnsupportedOperationException("This light cannot cast shadows");
         }
-        mCastShadow = enableFlag;
     }
     
     /**
@@ -196,7 +194,8 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
      * Note that shadow_near and shadow_far will be deprecated in the next release.
      * The proper way to change the near and far planes of the shadow map
      * camera is to call {@link GVRShadowMap#getCamera } and then call
-     * @{link GVRCamera#setNearClippingPlane} and @{link GVRCamera#setFarClippingPlane}.
+     * {@link GVRPerspectiveCamera#setNearClippingDistance(float)} and
+     * {@link GVRPerspectiveCamera#setFarClippingDistance(float)}}.
      * @return shadow map material
      */
     public static GVRMaterial getShadowMaterial(GVRContext ctx)
