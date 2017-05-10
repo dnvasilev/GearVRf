@@ -189,7 +189,7 @@ namespace gvr
     {
         for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
         {
-            if (it->Name == name)
+            if (it->IsSet && (it->Name == name))
             {
                 return &(*it);
             }

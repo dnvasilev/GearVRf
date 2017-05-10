@@ -130,7 +130,7 @@ public:
 
         if (state == UPDATE_PENDING) status = "UPDATE_PENDING";
         if (state == HAS_DATA) status = "HAS_DATA";
-        LOGD("Texture: Image::checkForUpdate %p %d %s %s", this, texid, fname, status);
+        LOGV("Texture: Image::checkForUpdate %p %d %s %s", this, texid, fname, status);
         if (texid && updatePending())
         {
             std::lock_guard<std::mutex> lock(mUpdateLock);
