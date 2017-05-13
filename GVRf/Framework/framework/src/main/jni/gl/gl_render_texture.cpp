@@ -188,7 +188,7 @@ void GLRenderTexture::generateRenderTextureNoMultiSampling(int jdepth_format,
 
 void GLRenderTexture::generateRenderTextureLayer(GLenum depth_format, int width, int height)
 {
-    if (depth_format_)
+    if (depth_format_ && (renderTexture_gl_render_buffer_ == nullptr))
     {
         renderTexture_gl_render_buffer_ = new GLRenderBuffer();
         glBindRenderbuffer(GL_RENDERBUFFER, renderTexture_gl_render_buffer_->id());
@@ -284,6 +284,10 @@ void GLRenderTexture::beginRendering()
     const int height = mImage->getHeight();
 
     bind();
+    if (mImage->getDepth() > 1)
+    {
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mImage->getId(), 0, layer_index_);
+    }
     glViewport(0, 0, width, height);
     glScissor(0, 0, width, height);
     glDepthMask(GL_TRUE);
@@ -392,6 +396,7 @@ bool GLRenderTexture::bindTexture(int gl_location, int texIndex)
 
     if (image && (gl_location >= 0))
     {
+        LOGV("RenderTexture::bindTexture loc=%d texindex=%d", gl_location, texIndex);
         glActiveTexture(GL_TEXTURE0 + texIndex);
         glBindTexture(image->getTarget(), getId());
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
