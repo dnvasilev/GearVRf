@@ -42,9 +42,8 @@ namespace gvr
     int GLMaterial::bindTextures(Shader *shader)
     {
         MaterialShaderVisitor visitor(shader, this);
-        shader->forEach(shader->getTextureDescriptor(), visitor);
+        shader->forEachTexture(visitor);
         return visitor.TexIndex;
-
     }
 
     void MaterialShaderVisitor::visit(const std::string& key, const std::string& type, int size)
@@ -57,6 +56,7 @@ namespace gvr
             if (loc < 0)
             {
                 TexIndex = -1;
+                LOGD("Material::bindTextures %s not found in shader", key.c_str());
                 return;
             }
         }
@@ -68,6 +68,7 @@ namespace gvr
             glActiveTexture(GL_TEXTURE0 + TexIndex);
             glBindTexture(image->getTarget(), image->getId());
             glUniform1i(loc, TexIndex);
+            LOGD("Texture: bind %s tex index = %d loc = %d", key.c_str(), TexIndex, loc);
             checkGLError("Material::bindTextures");
             ++TexIndex;
         }

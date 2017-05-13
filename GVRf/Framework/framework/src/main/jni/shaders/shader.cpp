@@ -40,15 +40,11 @@ Shader::Shader(int id,
 {
     if (vertex_shader.find("Transform_ubo") == std::string::npos && fragment_shader.find("Transform_ubo") == std::string::npos )
         transformUboPresent = false;
+    parseDescriptor(textureDescriptor_);
 }
 
 void Shader::parseDescriptor(const std::string& descriptor)
 {
-    if(textures_.size() != 0)
-    {
-        return;
-    }
-
     const char *p = descriptor.c_str();
     const char *type_start;
     int type_size;
@@ -83,13 +79,18 @@ void Shader::parseDescriptor(const std::string& descriptor)
         textures_[name] = type;
     }
 }
+
+void Shader::forEachTexture(ShaderVisitor& visitor)
+{
+    for (auto it: textures_)
+    {
+        LOGV("Shader::visit %s %s", it.first.c_str(), it.second.c_str());
+        visitor.visit(it.first, it.second, calcSize(it.second));
+    }
+}
+
 void Shader::forEach(const std::string& descriptor, ShaderVisitor& visitor)
 {
-    if(textures_.size() != 0){
-        for(auto it: textures_)
-            visitor.visit(it.first, it.second, calcSize(it.second));
-        return;
-    }
     const char *p = descriptor.c_str();
     const char *type_start;
     int type_size;
@@ -121,7 +122,6 @@ void Shader::forEach(const std::string& descriptor, ShaderVisitor& visitor)
             break;
         }
         std::string name(name_start, name_size);
-        textures_[name] = type;
         visitor.visit(name, type, calcSize(type));
     }
 }

@@ -105,16 +105,18 @@ public:
     {
         return vertexDescriptor_;
     }
+
     /*
-    *  returns the vertex attributes string
-    */
+     *  returns the vertex attributes string
+     */
     const std::string& getTextureDescriptor() const
     {
         return textureDescriptor_;
     }
+
     /*
- *  returns the vertex attributes string
- */
+     *  returns the vertex attributes string
+     */
     const std::string& getUniformDescriptor() const
     {
         return uniformDescriptor_;
@@ -131,6 +133,7 @@ public:
     virtual bool useShader(Mesh*) = 0;
     static int calcSize(std::string type);
     void forEach(const std::string& descriptor, ShaderVisitor& visitor);
+    void forEachTexture(ShaderVisitor& visitor);
     const std::unordered_map<std::string, std::string>& getTextures()
     {
         return textures_;
