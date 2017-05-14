@@ -89,6 +89,7 @@ public:
     bool hasTexture(const std::string& key) const;
     bool hasUniform(const std::string& key) const;
     virtual int updateGPU(Renderer* renderer);
+    u_int32_t getNumTextures() { return textures_.size(); }
     virtual UniformBlock&   uniforms() = 0;
     virtual const UniformBlock& uniforms() const = 0;
 
