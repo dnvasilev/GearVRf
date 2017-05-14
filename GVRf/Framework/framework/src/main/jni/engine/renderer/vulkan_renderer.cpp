@@ -18,6 +18,7 @@
  ***************************************************************************/
 
 #include <vulkan/vulkan_index_buffer.h>
+#include <vulkan/vulkan_vertex_buffer.h>
 #include "renderer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -76,6 +77,11 @@ namespace gvr {
                                      const std::string& fragmentShader)
     {
         return new VulkanShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader);
+    }
+
+    VertexBuffer* VulkanRenderer::createVertexBuffer(const std::string& desc, int vcount)
+    {
+        return new VulkanVertexBuffer(desc, vcount);
     }
 
     IndexBuffer* VulkanRenderer::createIndexBuffer(int bytesPerIndex, int icount)

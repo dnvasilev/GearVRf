@@ -83,6 +83,8 @@ public:
     void setRenderStates(RenderData* render_data, RenderState& rstate);
     Texture* createSharedTexture(int id);
     virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
+    virtual VertexBuffer* createVertexBuffer(const std::string& descriptor, int vcount);
+
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
                         RenderTexture* post_effect_render_texture_a,

@@ -1,0 +1,235 @@
+/* Copyright 2015 Samsung Electronics Co., LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gearvrf;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.channels.IllegalBlockingModeException;
+
+/**
+ * Describes an interleaved vertex buffer containing vertex data for a mesh.
+ *
+ * Usually each vertex may have a positions, normal and texture coordinate.
+ * Skinned mesh vertices will also have bone weights and indices.
+ * If the mesh uses a normal map for lighting, it will have tangents
+ * and bitangents as well. These vertex components correspond to vertex
+ * attributes in the OpenGL vertex shader.
+ */
+public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
+{
+    private static final String TAG = GVRIndexBuffer.class.getSimpleName();
+    private String mDescriptor;
+
+    public GVRIndexBuffer(GVRContext gvrContext, int bytesPerIndex, int vertexCount)
+    {
+        super(gvrContext, NativeIndexBuffer.ctor(bytesPerIndex, vertexCount));
+    }
+
+    public CharBuffer asCharBuffer()
+    {
+        int n = getIndexCount();
+        if (getIndexSize() != 2)
+        {
+            throw new UnsupportedOperationException("Cannot convert integer indices to char array");
+        }
+        if (n <= 0)
+        {
+            return null;
+        }
+        CharBuffer data = ByteBuffer.allocateDirect(2 * n).asCharBuffer();
+        if (!NativeIndexBuffer.getShortVec(getNative(), data))
+        {
+            throw new IllegalArgumentException("Cannot convert integer indices to char buffer of size " + n);
+        }
+        return data;
+    }
+
+    public IntBuffer asIntBuffer()
+    {
+        int n = getIndexCount();
+        if (getIndexSize() != 4)
+        {
+            throw new UnsupportedOperationException("Cannot convert short indices to int array");
+        }
+        if (n <= 0)
+        {
+            return null;
+        }
+        IntBuffer data = ByteBuffer.allocateDirect(4 * n).asIntBuffer();
+        if (!NativeIndexBuffer.getIntVec(getNative(), data))
+        {
+            throw new IllegalArgumentException("Cannot convert short indices to int buffer of size " + n);
+        }
+        return data;
+    }
+
+    public int[] asIntArray()
+    {
+        return asIntBuffer().array();
+    }
+
+    public char[] asCharArray()
+    {
+        return asCharBuffer().array();
+    }
+
+    /**
+     * Updates the indices in the index buffer from a Java char array.
+     * All of the entries of the input char array are copied into
+     * the storage for the index buffer. The new indices must be the
+     * same size as the old indices - the index buffer size cannot be changed.
+     * @param data char array containing the new values
+     * @throws IllegalArgumentException if char array is wrong size
+     */
+    public void setShortVec(char[] data)
+    {
+        if (data == null)
+        {
+            throw new IllegalArgumentException("Input data for indices cannot be null");
+        }
+        if (getIndexSize() != 2)
+        {
+            throw new UnsupportedOperationException("Cannot update integer indices with char array");
+        }
+        if (!NativeIndexBuffer.setShortVecArray(getNative(), data))
+        {
+            throw new UnsupportedOperationException("Input array is wrong size");
+        }
+    }
+
+    /**
+     * Updates the indices in the index buffer from a Java CharBuffer.
+     * All of the entries of the input buffer are copied into
+     * the storage for the index buffer. The new indices must be the
+     * same size as the old indices - the index buffer size cannot be changed.
+     * @param data CharBuffer containing the new values
+     * @throws IllegalArgumentException if char array is wrong size
+     */
+    public void setShortVec(CharBuffer data)
+    {
+        if (data == null)
+        {
+            throw new IllegalArgumentException("Input data for indices cannot be null");
+        }
+        if (getIndexSize() != 2)
+        {
+            throw new UnsupportedOperationException("Cannot update integer indices with char array");
+        }
+        if (data.isDirect())
+        {
+            if (!NativeIndexBuffer.setShortVec(getNative(), data))
+            {
+                throw new UnsupportedOperationException("Input buffer is wrong size");
+            }
+        }
+        else if (data.hasArray())
+        {
+            if (!NativeIndexBuffer.setShortVecArray(getNative(), data.array()))
+            {
+                throw new UnsupportedOperationException("Input buffer is wrong size");
+            }
+        }
+        throw new UnsupportedOperationException("CharBuffer type not supported");
+    }
+
+    /**
+     * Updates the indices in the index buffer from a Java int array.
+     * All of the entries of the input int array are copied into
+     * the storage for the index buffer. The new indices must be the
+     * same size as the old indices - the index buffer size cannot be changed.
+     * @param data char array containing the new values
+     * @throws IllegalArgumentException if int array is wrong size
+     */
+    public void setIntVec(int[] data)
+    {
+        if (data == null)
+        {
+            throw new IllegalArgumentException("Input data for indices cannot be null");
+        }
+        if (getIndexSize() != 4)
+        {
+            throw new UnsupportedOperationException("Cannot update short indices with int array");
+        }
+        if (!NativeIndexBuffer.setIntVecArray(getNative(), data))
+        {
+            throw new UnsupportedOperationException("Input array is wrong size");
+        }
+    }
+
+    /**
+     * Updates the indices in the index buffer from a Java IntBuffer.
+     * All of the entries of the input int buffer are copied into
+     * the storage for the index buffer. The new indices must be the
+     * same size as the old indices - the index buffer size cannot be changed.
+     * @param data char array containing the new values
+     * @throws IllegalArgumentException if int buffer is wrong size
+     */
+    public void setIntVec(IntBuffer data)
+    {
+        if (data == null)
+        {
+            throw new IllegalArgumentException("Input buffer for indices cannot be null");
+        }
+        if (getIndexSize() != 4)
+        {
+            throw new UnsupportedOperationException("Cannot update integer indices with short array");
+        }
+        if (!NativeIndexBuffer.setIntVec(getNative(), data))
+        {
+            throw new UnsupportedOperationException("Input array is wrong size");
+        }
+    }
+
+    public int getIndexCount()
+    {
+        return NativeIndexBuffer.getIndexCount(getNative());
+    }
+
+    public int getIndexSize()
+    {
+        return NativeIndexBuffer.getIndexSize(getNative());
+    }
+
+
+    @Override
+    public void prettyPrint(StringBuffer sb, int indent) {
+        Integer n = getIndexCount();
+        sb.append(n.toString() + " indices");
+        sb.append(System.lineSeparator());
+    }
+}
+
+class NativeIndexBuffer {
+    static native long ctor(int bytesPerIndex, int vertexCount);
+
+    static native int getIndexCount(long vbuf);
+
+    static native int getIndexSize(long vbuf);
+
+    static native boolean getIntVec(long vbuf, IntBuffer data);
+
+    static native boolean setIntVec(long vbuf, IntBuffer data);
+
+    static native boolean setIntVecArray(long vbuf, int[] data);
+
+    static native boolean getShortVec(long vbuf, CharBuffer data);
+
+    static native boolean setShortVec(long vbuf, CharBuffer data);
+
+    static native boolean setShortVecArray(long vbuf, char[] data);
+}

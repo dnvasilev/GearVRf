@@ -14,6 +14,7 @@
  */
 
 #include <gl/gl_index_buffer.h>
+#include <gl/gl_vertex_buffer.h>
 #include "glm/gtc/matrix_inverse.hpp"
 #include "gl/gl_material.h"
 #include "gl/gl_render_data.h"
@@ -129,6 +130,11 @@ namespace gvr
     {
         return new GLShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor,
                             vertexShader, fragmentShader);
+    }
+
+    VertexBuffer* GLRenderer::createVertexBuffer(const std::string& desc, int vcount)
+    {
+        return new GLVertexBuffer(desc, vcount);
     }
 
     IndexBuffer* GLRenderer::createIndexBuffer(int bytesPerIndex, int icount)
