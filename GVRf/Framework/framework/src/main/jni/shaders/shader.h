@@ -26,20 +26,15 @@
 #include <string>
 #include <mutex>
 #include <vector>
-#include "unordered_map"
+#include <objects/mesh.h>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
 #include "objects/uniform_block.h"
 
 namespace gvr {
-    struct uniformDefination
-    {
-        std::string type;
-        int size;
-    };
 class Mesh;
+
 /**
  * Contains information about the vertex attributes, textures and
  * uniforms used by the shader source and the sources for the
@@ -51,20 +46,6 @@ class Shader
 {
 public:
     static const bool LOG_SHADER;
-
-/*
- * Facilitates visiting the individual elements of a descriptor string.
- * Used to visit the textures and vertex attributes
- */
-    class ShaderVisitor
-    {
-    protected:
-        Shader* shader_;
-
-    public:
-        ShaderVisitor(Shader* shader) : shader_(shader) { };
-        virtual void visit(const std::string& key, const std::string& type, int size) = 0;
-    };
 
 /*
  * Creates a native shader description.
@@ -99,28 +80,27 @@ public:
     int getShaderID() const { return id_; }
 
     /*
-     *  returns the vertex attributes string
+     *  returns the vertex attributes descriptor
      */
-    const std::string& getVertexDescriptor() const
+    DataDescriptor& getVertexDescriptor()
     {
-        return vertexDescriptor_;
+        return mVertexDesc;
+    }
+    /*
+    *  returns the string containing the texture descriptor
+    */
+    const std::string& getTextureDescriptor()
+    {
+        return mTextures;
+    }
+    /*
+     *  returns the uniform descriptor
+     */
+    DataDescriptor& getUniformDescriptor()
+    {
+        return mUniformDesc;
     }
 
-    /*
-     *  returns the vertex attributes string
-     */
-    const std::string& getTextureDescriptor() const
-    {
-        return textureDescriptor_;
-    }
-
-    /*
-     *  returns the vertex attributes string
-     */
-    const std::string& getUniformDescriptor() const
-    {
-        return uniformDescriptor_;
-    }
     bool isTransformUboPresent(){
         return transformUboPresent;
     }
@@ -132,17 +112,7 @@ public:
     }
     virtual bool useShader(Mesh*) = 0;
     static int calcSize(std::string type);
-    void forEach(const std::string& descriptor, ShaderVisitor& visitor);
-    void forEachTexture(ShaderVisitor& visitor);
-    const std::unordered_map<std::string, std::string>& getTextures()
-    {
-        return textures_;
-    }
-    void parseDescriptor(const std::string& descriptor);
-    int getNumberOfTextures()
-    {
-        return textures_.size();
-    }
+
 private:
     Shader(const Shader& shader);
     Shader(Shader&& shader);
@@ -150,14 +120,12 @@ private:
     Shader& operator=(Shader&& shader);
 
 protected:
-    std::unordered_map<std::string,uniformDefination> nameTypeMap;
     std::string signature_;
     std::string vertexShader_;
     std::string fragmentShader_;
-    std::string vertexDescriptor_;
-    std::string textureDescriptor_;
-    std::string uniformDescriptor_;
-    std::unordered_map<std::string, std::string> textures_;
+    DataDescriptor mUniformDesc;
+    std::string mTextures;
+    DataDescriptor mVertexDesc;
     int id_;
     bool shaderDirty = true;
     bool transformUboPresent = true;

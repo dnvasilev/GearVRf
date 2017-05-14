@@ -128,8 +128,7 @@ namespace gvr
                                      const std::string &fragmentShader)
     {
         return new GLShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor,
-                            vertexShader, fragmentShader
-        );
+                            vertexShader, fragmentShader);
     }
 
     IndexBuffer* GLRenderer::createIndexBuffer(int bytesPerIndex, int icount)
@@ -644,7 +643,7 @@ namespace gvr
             LOGE("SHADER: shader not ready %s %p", owner->name().c_str(), render_data);
             return;
         }
-        if (material->updateGPU(this, shader) < 0)
+        if (material->updateGPU(this) < 0)
         {
             LOGE("SHADER: Texture: textures not ready %s", owner->name().c_str());
             return;
@@ -697,7 +696,7 @@ namespace gvr
             return 0;
         }
         GLRenderData* rdata = static_cast<GLRenderData*>(renderData);
-        if (material->updateGPU(this, shader) < 0)
+        if (material->updateGPU(this) < 0)
         {
             return 0;
         }

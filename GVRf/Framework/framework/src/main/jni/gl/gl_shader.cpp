@@ -19,53 +19,12 @@
 
 #include "gl/gl_shader.h"
 #include "objects/mesh.h"
+#include "gl/gl_material.h"
 #include "engine/renderer/renderer.h"
 
 namespace gvr {
-    class AttributeLocation : public Shader::ShaderVisitor
-    {
-    private:
-        Mesh*   mesh_;
-    public:
-        AttributeLocation(Shader* shader, Mesh* mesh) : ShaderVisitor(shader), mesh_(mesh) { }
-        void visit(const std::string& key, const std::string& type, int size);
-    };
 
-    void AttributeLocation::visit(const std::string& key, const std::string& type, int size)
-    {
-        GLShader* shader = reinterpret_cast<GLShader*>(shader_);
-        int loc = shader->getLocation(key);
-        if (loc < 0)
-        {
-            loc = glGetAttribLocation(shader->getProgramId(), key.c_str());
-            if (loc >= 0)
-            {
-                shader->setLocation(key, loc);
-              //  if (Shader::LOG_SHADER) LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
-                switch (size)
-                {
-                    case 1:
-                    mesh_->setVertexAttribLocF(loc, key);
-                    break;
-
-                    case 2:
-                    mesh_->setVertexAttribLocV2(loc, key);
-                    break;
-
-                    case 3:
-                    mesh_->setVertexAttribLocV3(loc, key);
-                    break;
-
-                    case 4:
-                    mesh_->setVertexAttribLocV4(loc, key);
-                    break;
-                }
-            }
-        }
-    }
-
-
-GLShader::GLShader(int id,
+    GLShader::GLShader(int id,
                const std::string& signature,
                const std::string& uniformDescriptor,
                const std::string& textureDescriptor,
@@ -164,8 +123,37 @@ void GLShader::bindMesh(Mesh* mesh)
     if (LOG_SHADER) LOGD("SHADER: getting attribute locations");
     {
         std::lock_guard<std::mutex> lock(attributeVariablesLock_);
-        AttributeLocation avisit(this, mesh);
-        forEach(vertexDescriptor_, avisit);
+        getVertexDescriptor().forEachEntry([this, mesh](const DataDescriptor::DataEntry& entry) mutable
+        {
+           int loc = getLocation(entry.Name);
+           if (loc < 0)
+           {
+               loc = glGetAttribLocation(getProgramId(), entry.Name.c_str());
+               if (loc >= 0)
+               {
+                   setLocation(entry.Name, loc);
+                   //  if (Shader::LOG_SHADER) LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
+                   switch (entry.Size / sizeof(float))
+                   {
+                       case 1:
+                       mesh->setVertexAttribLocF(loc, entry.Name);
+                       break;
+
+                       case 2:
+                       mesh->setVertexAttribLocV2(loc, entry.Name);
+                       break;
+
+                       case 3:
+                       mesh->setVertexAttribLocV3(loc, entry.Name);
+                       break;
+
+                       case 4:
+                       mesh->setVertexAttribLocV4(loc, entry.Name);
+                       break;
+                   }
+               }
+           }
+        });
     }
 }
 
@@ -186,4 +174,42 @@ bool GLShader::useShader(Mesh* mesh)
     return true;
 }
 
+int GLShader::bindTextures(GLMaterial* material)
+{
+    int texIndex = 0;
+    bool fail = false;
+    int ntex = material->getNumTextures();
+
+    mTextureLocs.resize(ntex, -1);
+    material->forEachTexture([this, fail, texIndex, material](const std::string& texname, Texture* tex) mutable
+    {
+         int loc = mTextureLocs[texIndex];
+         if (mTextures.find(texname) <= 0)
+         {
+             LOGV("SHADER: program %d texture %s not used by shader", getProgramId(), texname.c_str());
+             return;
+         }
+         if (loc == -1)
+         {
+             loc = glGetUniformLocation(getProgramId(), texname.c_str());
+             if (loc >= 0)
+             {
+                 mTextureLocs[texIndex] = loc;
+                 LOGV("SHADER: program %d texture %s loc %d", getProgramId(), texname.c_str(), loc);
+             }
+             else
+             {
+                 fail = true;
+                 LOGE("SHADER: texture %s has no location in shader %d", texname.c_str(), getProgramId());
+                 return;
+             }
+         }
+         material->bindTexture(tex, texIndex++, loc);
+    });
+    if (!fail)
+    {
+        return texIndex;
+    }
+    return -1;
+}
 } /* namespace gvr */

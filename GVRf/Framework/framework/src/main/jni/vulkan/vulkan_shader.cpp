@@ -18,7 +18,7 @@
  ***************************************************************************/
 
 #include "vulkan/vulkan_shader.h"
-#include "objects/shader_data.h"
+#include "vulkan/vulkan_material.h"
 #include "engine/renderer/vulkan_renderer.h"
 #include <shaderc/shaderc.h>
 #include <shaderc/shaderc.hpp>
@@ -39,6 +39,67 @@ void VulkanShader::initialize(Mesh* mesh)
 {
 }
 
+int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index)
+{
+    if (getUniformDescriptor().getNumEntries() > 0)
+    {
+        VkDescriptorSetLayoutBinding &material_uniformBinding = vkMtl.getVulkanUniforms().getDescriptor()->getLayoutBinding();
+        samplerBinding.push_back(material_uniformBinding);
+        index++;
+    }
+    vkMtl.forEachTexture([this, samplerBinding, index](const std::string& texname, Texture* t) mutable
+    {
+        if (mTextures.find(texname) <= 0)
+        {
+            return;
+        }
+        VkDescriptorSetLayoutBinding layoutBinding;
+        layoutBinding.binding = index++;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        layoutBinding.pImmutableSamplers = nullptr;
+        samplerBinding.push_back(layoutBinding);
+    });
+    return index;
+}
+
+int VulkanShader::bindTextures(VulkanMaterial& material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet)
+{
+    int texIndex = 0;
+    bool fail = false;
+    std::vector<VkDescriptorImageInfo> info;
+    u_int32_t index = 0;
+    std::vector<VkDescriptorImageInfo>& descriptorImageInfo = info;
+
+    material.forEachTexture([this, index, writes, descriptorImageInfo, descriptorSet](const std::string& texname, Texture* t) mutable
+    {
+        VkTexture *tex = static_cast<VkTexture *>(t);
+        if (mTextures.find(texname) <= 0)
+        {
+            return;
+        }
+        descriptorImageInfo[index].sampler = tex->getVkSampler();
+        descriptorImageInfo[index].imageView = tex->getVkImageView();
+        descriptorImageInfo[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        VkWriteDescriptorSet write;
+        memset(&write, 0, sizeof(write));
+
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstBinding = index;
+        write.dstSet = descriptorSet;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &descriptorImageInfo[index];
+        writes.push_back(write);
+        index++;
+    });
+    if (!fail)
+    {
+        return texIndex;
+    }
+    return -1;
+}
 
 VulkanShader::~VulkanShader() { }
 

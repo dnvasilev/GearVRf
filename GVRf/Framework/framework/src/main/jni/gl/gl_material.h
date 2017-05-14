@@ -14,16 +14,13 @@
  */
 
 
-#ifndef FRAMEWORK_GL_UNIFORM_BLOCK_H
-#define FRAMEWORK_GL_UNIFORM_BLOCK_H
+#ifndef FRAMEWORK_GL_MATERIAL_H
+#define FRAMEWORK_GL_MATERIAL_H
+
+#include <string>
 
 #include "objects/shader_data.h"
-#include "glm/glm.hpp"
-#include "util/gvr_log.h"
 #include "gl/gl_uniform_block.h"
-#include "gl_image.h"
-#include "gl_imagetex.h"
-#include "gl/gl_shader.h"
 
 namespace gvr
 {
@@ -35,9 +32,11 @@ namespace gvr
     class GLMaterial : public ShaderData
     {
     public:
-        GLMaterial(const std::string &descriptor) : ShaderData(descriptor),
-                                                    uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
+        GLMaterial(const std::string& descriptor)
+        : ShaderData(descriptor),
+          uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
         {
+
         }
 
         virtual UniformBlock& uniforms()
@@ -50,7 +49,19 @@ namespace gvr
             return uniforms_;
         }
 
+        int getNumUniforms() const
+        {
+            return uniforms_.getNumEntries();
+        }
+
         virtual int bindToShader(Shader* shader, Renderer* renderer);
+
+        void forEachEntry(std::function< void(const DataDescriptor::DataEntry&) > func)
+        {
+            return uniforms_.forEachEntry(func);
+        }
+
+        bool bindTexture(Texture* tex, int texIndex, int loc);
 
     protected:
         GLUniformBlock uniforms_;
@@ -59,4 +70,4 @@ namespace gvr
     };
 }
 
-#endif //FRAMEWORK_GL_UNIFORM_BLOCK_H
+#endif //FRAMEWORK_GL_MATERIAL_H
