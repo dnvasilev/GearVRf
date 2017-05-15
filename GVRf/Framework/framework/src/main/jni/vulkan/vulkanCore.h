@@ -84,7 +84,7 @@ namespace gvr {
 
         void initCmdBuffer(VkCommandBufferLevel level,VkCommandBuffer& cmdBuffer);
 
-        bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, VulkanData& vkdata, VulkanMaterial& vkmtl, UniformBlock* transformUBO, Shader* shader);
+        bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, VulkanData& vkdata, VulkanMaterial& vkmtl, UniformBlock& transformUBO, Shader* shader);
 
 
         void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors,
@@ -193,8 +193,7 @@ namespace gvr {
         VkSwapchainKHR m_swapchain;
         GVR_VK_SwapchainBuffer *m_swapchainBuffers;
         GVR_VK_SwapchainBuffer *outputImage;
-        std::vector<VkCommandBuffer*> swapChainCmdBuffer;
-        std::vector<vkImage*> swapChainImages;
+
         uint32_t m_swapchainCurrentIdx;
         uint32_t m_height;
         uint32_t m_width;
@@ -206,7 +205,6 @@ namespace gvr {
         VkCommandPool m_commandPool;
         VkCommandPool m_commandPoolTrans;
         GVR_VK_DepthBuffer *m_depthBuffers;
-        std::vector<vkImage*> depthImages;
         GVR_VK_Vertices m_vertices;
 
         VkDescriptorSetLayout m_descriptorLayout;

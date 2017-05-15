@@ -589,7 +589,7 @@ namespace gvr
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
                 //Delete the generated bounding box mesh
-                bounding_box_mesh->cleanUp();
+                delete bounding_box_mesh;
                 delete bbox_material;
                 delete pass;
                 delete bounding_box_render_data;
@@ -616,19 +616,19 @@ namespace gvr
 
     void GLRenderer::renderMesh(RenderState &rstate, RenderData *render_data)
     {
-        ShaderData* curr_material = rstate.material_override;
-        Shader* shader = curr_material ? rstate.shader_manager->getShader(curr_material->getNativeShader()) : nullptr;
+        Mesh* mesh = render_data->mesh();
         for (int curr_pass = 0; curr_pass < render_data->pass_count(); ++curr_pass)
         {
-            numberTriangles += render_data->mesh()->getNumTriangles();
+            numberTriangles += mesh->getIndexCount();
             numberDrawCalls++;
 
             set_face_culling(render_data->pass(curr_pass)->cull_face());
-            if (rstate.material_override == nullptr)
-            {
-                curr_material = render_data->pass(curr_pass)->material();
+            ShaderData *curr_material = rstate.material_override;
+            Shader *shader = rstate.depth_shader;
+            if (shader == nullptr)
                 shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
-            }
+            if (curr_material == nullptr)
+                curr_material = render_data->pass(curr_pass)->material();
             if (curr_material != nullptr)
             {
                 GL(renderMaterialShader(rstate, render_data, curr_material, shader));

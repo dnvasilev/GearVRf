@@ -55,7 +55,6 @@ public:
             const std::string& fragmentShader);
     virtual ~GLShader();
 
-    void bindMesh(Mesh* mesh);
     virtual bool useShader(Mesh*);
 
    /*

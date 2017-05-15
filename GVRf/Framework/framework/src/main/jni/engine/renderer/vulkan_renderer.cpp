@@ -106,7 +106,7 @@ namespace gvr {
         }
 
         VulkanRenderData* vkRdata = static_cast<VulkanRenderData*>(rdata);
-        VulkanUniformBlock& transformUBO = vkRdata->getTransformUbo();
+        UniformBlock& transformUBO = vkRdata->getTransformUbo();
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
 
         vkRdata->generateVbos(shader->signature(),this);
@@ -120,7 +120,7 @@ namespace gvr {
 
             // if texture or binding, material is changed, call this
             if(vkRdata->isDirty(0xFFFF))
-                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, &transformUBO, shader);
+                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, transformUBO, shader);
         }
         vkRdata->createPipeline(shader,this);
         try
