@@ -569,7 +569,7 @@ void VulkanCore::InitLayoutRenderData(VulkanMaterial& vkMtl, VulkanData& vkdata)
 void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanData &vkdata, Shader *shader) {
 
     const std::string &textureDescriptor = shader->getTextureDescriptor();
-    const std::string &uniformDescriptor = shader->getUniformDescriptor();
+    const DataDescriptor& uniformDescriptor = shader->getUniformDescriptor();
     bool transformUboPresent = shader->isTransformUboPresent();
 
     if (!shader->isShaderDirty()) {
@@ -577,7 +577,7 @@ void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanData &vkdata,
         return;
     }
 
-    if (textureDescriptor.empty() && uniformDescriptor.empty() && !transformUboPresent) {
+    if (textureDescriptor.empty() && (uniformDescriptor.getNumEntries() == 0) && !transformUboPresent) {
         return;
     }
 
@@ -590,26 +590,14 @@ void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanData &vkdata,
         index++;
     }
 
-    if (!uniformDescriptor.empty()) {
+    if (uniformDescriptor.getNumEntries() > 0) {
         VkDescriptorSetLayoutBinding &material_uniformBinding = vkMtl.getVulkanUniforms().getDescriptor()->getLayoutBinding();
         uniformAndSamplerBinding.push_back(material_uniformBinding);
         index++;
     }
     VulkanShader* vk_shader = reinterpret_cast<VulkanShader*>(shader);
-    vk_shader->parseDescriptor(textureDescriptor);
-    int no_textures = vk_shader->getNumberOfTextures();
 
-    // Texture bindings
-        for (u_int32_t i = 0; i < no_textures; i++) {
-            VkDescriptorSetLayoutBinding layoutBinding;
-            layoutBinding.binding = index++;
-            layoutBinding.descriptorCount = 1;
-            layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-            layoutBinding.pImmutableSamplers = nullptr;
-            uniformAndSamplerBinding.push_back(layoutBinding);
-        }
-
+    index = vk_shader->makeLayout(vkMtl, uniformAndSamplerBinding, index);
 
     VkDescriptorSetLayout &descriptorLayout = reinterpret_cast<VulkanShader *>(shader)->getDescriptorLayout();
     //   VkDescriptorSetLayout &descriptorLayout =vkdata.getDescriptorLayout();
@@ -1354,15 +1342,15 @@ bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer *renderer, Vulkan
                                                 Shader *shader) {
 
     const std::string &textureDescriptor = shader->getTextureDescriptor();
-    const std::string &uniformDescriptor = shader->getUniformDescriptor();
+    const DataDescriptor& uniformDescriptor = shader->getUniformDescriptor();
     bool transformUboPresent = shader->isTransformUboPresent();
 
-    if (textureDescriptor.empty() && uniformDescriptor.empty() && !transformUboPresent) {
+    if (textureDescriptor.empty() && (uniformDescriptor.getNumEntries() == 0) && !transformUboPresent) {
         vkdata.setDescriptorSetNull(true);
         return true;
     }
     VulkanShader* vkShader = reinterpret_cast<VulkanShader*>(shader);
-    int numberOfTextures = vkShader->getNumberOfTextures();
+    int numberOfTextures = vkmtl.getNumTextures();
     std::vector<VkDescriptorPoolSize> poolSize;      //(2 + numberOfTextures);
 
     VkDescriptorPoolSize pool = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
@@ -1370,7 +1358,7 @@ bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer *renderer, Vulkan
     if (transformUboPresent)
         poolSize.push_back(pool);
 
-    if (!uniformDescriptor.empty())
+    if (!uniformDescriptor.getNumEntries() > 0)
         poolSize.push_back(pool);
 
     pool = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
@@ -1415,40 +1403,11 @@ bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer *renderer, Vulkan
     if (transformUboPresent)
         writes.push_back(transform_desc);
 
-    if (!uniformDescriptor.empty())
+    if (!uniformDescriptor.getNumEntries() > 0)
         writes.push_back(mat_desc);
 
     // Texture
-
-    const std::unordered_map<std::string, std::string>& textures =   vkShader->getTextures();
-    if (!textureDescriptor.empty()) {
-        std::vector<VkDescriptorImageInfo> descriptorImageInfo(numberOfTextures);
-        const std::map<std::string, Texture *> &mat_textures = vkmtl.getAllTextures();
-        u_int32_t index = 0;
-
-        for (auto it = textures.begin(); it != textures.end(); ++it) {
-            VkTexture *tex = static_cast<VkTexture *>(mat_textures.find(it->first)->second);
-            if (tex == NULL) {
-                LOGV("ShaderData::areTexturesReady %s is null", it->first.c_str());
-                return -1;
-            }
-
-            descriptorImageInfo[index].sampler = tex->getVkSampler();
-            descriptorImageInfo[index].imageView = tex->getVkImageView();
-            descriptorImageInfo[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            VkWriteDescriptorSet write;
-            memset(&write, 0, sizeof(write));
-
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write.dstBinding = index;
-            write.dstSet = descriptorSet;
-            write.descriptorCount = 1;
-            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            write.pImageInfo = &descriptorImageInfo[index];
-            writes.push_back(write);
-            index++;
-        }
-    }
+    vkShader->bindTextures(vkmtl, writes, descriptorSet);
     vkUpdateDescriptorSets(m_device, writes.size(), writes.data(), 0, nullptr);
     LOGI("Vulkan after update descriptor");
     return true;

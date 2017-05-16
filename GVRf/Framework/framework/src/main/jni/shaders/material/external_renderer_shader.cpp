@@ -2,6 +2,7 @@
  * installable external renderer
  ***************************************************************************/
 
+#include <contrib/glm/gtc/type_ptr.hpp>
 #include "external_renderer_shader.h"
 
 #include "glm/gtc/matrix_transform.hpp"

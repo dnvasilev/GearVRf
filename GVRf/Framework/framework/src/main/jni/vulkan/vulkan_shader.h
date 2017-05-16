@@ -89,6 +89,8 @@ public:
         return m_descriptorLayout;
     }
     void  convertToVkShaders();
+    int makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index);
+    int bindTextures(VulkanMaterial& material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet);
 private:
     VkDescriptorSetLayout m_pipelineLayout;
     VkDescriptorSetLayout m_descriptorLayout;
@@ -97,7 +99,6 @@ private:
     VulkanShader(VulkanShader&& shader);
     VulkanShader& operator=(const VulkanShader& shader);
     VulkanShader& operator=(VulkanShader&& shader);
-    std::unordered_map<std::string,uniformDefination> nameTypeMap;
     std::vector<uint32_t> compiledVS;
     std::vector<uint32_t> compiledFS;
 

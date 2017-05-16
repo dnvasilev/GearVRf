@@ -21,6 +21,7 @@
 
 namespace gvr {
     class Mesh;
+    class GLMaterial;
 
 /**
  * Contains information about the vertex attributes, textures and
@@ -92,6 +93,7 @@ public:
         locations_[key] = loc;
     }
     void convertToGLShaders();
+    int bindTextures(GLMaterial* material);
 
 protected:
     void initialize(Mesh*);
@@ -105,6 +107,7 @@ private:
     GLProgram* program_;
     std::mutex attributeVariablesLock_;
     std::map<std::string, int> locations_;
+    std::vector<int> mTextureLocs;
 };
 
 }

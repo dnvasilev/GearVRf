@@ -23,7 +23,6 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
-#include <objects/index_buffer.h>
 
 #include "glm/glm.hpp"
 #include "batch.h"
@@ -49,8 +48,11 @@ class BitmapImage;
 class CubemapImage;
 class CompressedImage;
 class FloatImage;
-class Shader;
+class VertexBuffer;
+class IndexBuffer;
 class UniformBlock;
+class Image;
+class Texture;
 
 /*
  * These uniforms are commonly used in shaders.
@@ -84,6 +86,7 @@ struct RenderState {
     ShaderUniformsPerObject uniforms;
     ShaderManager*          shader_manager;
     bool                    shadow_map;
+    Shader*                 depth_shader;
 };
 
 class Renderer {
@@ -125,11 +128,12 @@ public:
                                                 int jcolor_format, int jdepth_format, bool resolve_depth,
                                                 const TextureParameters* texture_parameters) = 0;
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers) = 0;
-     virtual Shader* createShader(int id, const std::string& signature,
+    virtual Shader* createShader(int id, const std::string& signature,
                                  const std::string& uniformDescriptor, const std::string& textureDescriptor,
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
                                  const std::string& fragmentShader) = 0;
-    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount) = 0;
+     virtual VertexBuffer* createVertexBuffer(const std::string& descriptor, int vcount) = 0;
+     virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount) = 0;
      void updateTransforms(RenderState& rstate, UniformBlock* block, Transform* model);
      virtual void initializeStats();
      virtual void set_face_culling(int cull_face) = 0;
@@ -168,19 +172,21 @@ public:
                                 ShaderManager* shader_manager);
     virtual void restoreRenderStates(RenderData* render_data) = 0;
     virtual void setRenderStates(RenderData* render_data, RenderState& rstate) = 0;
-    virtual Texture* createSharedTexture( int id) = 0;
+    virtual Texture* createSharedTexture(int id) = 0;
     virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData) = 0;
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
                         RenderTexture* post_effect_render_texture_a,
                         RenderTexture* post_effect_render_texture_b) = 0;
     virtual void makeShadowMaps(Scene* scene, ShaderManager* shader_manager) = 0;
+    virtual void occlusion_cull(RenderState& rstate, std::vector<SceneObject*>& scene_objects) = 0;
 private:
     static bool isVulkan_;
     virtual void build_frustum(float frustum[6][4], const float *vp_matrix);
     virtual void frustum_cull(glm::vec3 camera_position, SceneObject *object,
             float frustum[6][4], std::vector<SceneObject*>& scene_objects,
             bool continue_cull, int planeMask);
+
     Renderer(const Renderer& render_engine);
     Renderer(Renderer&& render_engine);
     Renderer& operator=(const Renderer& render_engine);
@@ -198,7 +204,6 @@ protected:
     virtual void state_sort();
     virtual void renderMesh(RenderState& rstate, RenderData* render_data) = 0;
     virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, Shader* shader) = 0;
-    virtual void occlusion_cull(RenderState& rstate, std::vector<SceneObject*>& scene_objects) = 0;
     void addRenderData(RenderData *render_data, Scene* scene);
     virtual bool occlusion_cull_init(Scene* scene, std::vector<SceneObject*>& scene_objects);
 

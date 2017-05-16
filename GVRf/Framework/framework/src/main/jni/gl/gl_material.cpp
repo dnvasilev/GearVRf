@@ -14,23 +14,16 @@
  */
 
 #include "gl/gl_material.h"
+#include "gl/gl_shader.h"
+#include "gl/gl_imagetex.h"
 
 namespace gvr
 {
 
-    class MaterialShaderVisitor : public Shader::ShaderVisitor
-    {
-    public:
-        bool TexIndex;
-        ShaderData* Material;
-
-        MaterialShaderVisitor(Shader* shader, ShaderData* mtl) : Shader::ShaderVisitor(shader), TexIndex(0), Material(mtl) {  };
-        virtual void visit(const std::string& key, const std::string& type, int size);
-    };
-
     int GLMaterial::bindToShader(Shader *shader, Renderer* renderer)
     {
-        int texIndex = bindTextures(shader);
+        GLShader* glshader = static_cast<GLShader*>(shader);
+        int texIndex = glshader->bindTextures(this);
         if (texIndex >= 0)
         {
            // std::string s = uniforms_.toString();
@@ -39,39 +32,21 @@ namespace gvr
         return texIndex;
     }
 
-    int GLMaterial::bindTextures(Shader *shader)
+    bool GLMaterial::bindTexture(Texture* tex, int texIndex, int loc)
     {
-        MaterialShaderVisitor visitor(shader, this);
-        shader->forEach(shader->getTextureDescriptor(), visitor);
-        return visitor.TexIndex;
-
-    }
-
-    void MaterialShaderVisitor::visit(const std::string& key, const std::string& type, int size)
-    {
-        GLShader* glshader = (GLShader*) shader_;
-        int loc = glshader->getLocation(key);
-        if (loc < 0)
-        {
-            loc = glGetUniformLocation(glshader->getProgramId(), key.c_str());
-            if (loc < 0)
-            {
-                TexIndex = -1;
-                return;
-            }
-        }
-        Texture* tex = Material->getTexture(key);
         if (tex && tex->getImage())
         {
             GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
+            int texid = image->getId();
 
-            glActiveTexture(GL_TEXTURE0 + TexIndex);
-            glBindTexture(image->getTarget(), image->getId());
-            glUniform1i(loc, TexIndex);
-            checkGLError("Material::bindTextures");
-            ++TexIndex;
+            LOGV("GLMaterial::bindTexture index=%d loc=%d id=%d", texIndex, loc, texid);
+            glActiveTexture(GL_TEXTURE0 + texIndex);
+            glBindTexture(image->getTarget(), texid);
+            glUniform1i(loc, texIndex);
+            checkGLError("Material::bindTexture");
+            return true;
         }
+        return false;
     }
-
 }
 

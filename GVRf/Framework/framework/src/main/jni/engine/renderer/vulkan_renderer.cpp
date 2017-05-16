@@ -18,6 +18,7 @@
  ***************************************************************************/
 
 #include <vulkan/vulkan_index_buffer.h>
+#include <vulkan/vulkan_vertex_buffer.h>
 #include "renderer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -78,6 +79,11 @@ namespace gvr {
         return new VulkanShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader);
     }
 
+    VertexBuffer* VulkanRenderer::createVertexBuffer(const std::string& desc, int vcount)
+    {
+        return new VulkanVertexBuffer(desc, vcount);
+    }
+
     IndexBuffer* VulkanRenderer::createIndexBuffer(int bytesPerIndex, int icount)
     {
         return new VulkanIndexBuffer(bytesPerIndex, icount);
@@ -92,7 +98,7 @@ namespace gvr {
             LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
             return 0;
         }
-        int status = shaderData->updateGPU(this, shader);
+        int status = shaderData->updateGPU(this);
         if (status < 0)
         {
             LOGE("SHADER: textures not ready %s", rdata->owner_object()->name().c_str());

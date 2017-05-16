@@ -17,6 +17,7 @@
  * Renders a scene, a screen.
  ***************************************************************************/
 
+#include <contrib/glm/gtc/type_ptr.hpp>
 #include "renderer.h"
 #include "objects/scene.h"
 

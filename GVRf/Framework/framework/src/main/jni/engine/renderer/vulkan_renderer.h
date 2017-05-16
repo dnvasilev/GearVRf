@@ -63,6 +63,7 @@ protected:
 
 public:
     Texture* createSharedTexture( int id) {};
+
     VulkanRenderer() : vulkanCore_(nullptr) {
         vulkanCore_ = VulkanCore::getInstance();
     }
@@ -124,13 +125,13 @@ public:
                                                int jcolor_format, int jdepth_format, bool resolve_depth,
                                                const TextureParameters* texture_parameters);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers) { }
-
+    virtual VertexBuffer* createVertexBuffer(const std::string& desc, int vcount);
+    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
     virtual Shader* createShader(int id, const std::string& signature,
                                  const std::string& uniformDescriptor, const std::string& textureDescriptor,
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
                                  const std::string& fragmentShader);
     virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
-    virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
 private:
     VulkanCore* vulkanCore_;
     void renderMesh(RenderState& rstate, RenderData* render_data){}

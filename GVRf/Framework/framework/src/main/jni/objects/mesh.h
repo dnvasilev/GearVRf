@@ -40,6 +40,8 @@
 #include "objects/bounding_volume.h"
 #include "objects/vertex_bone_data.h"
 #include "vulkan/vulkan_headers.h"
+#include "helpers.h"
+
 namespace gvr {
 struct GLAttributeMapping {
     std::string     data_type;
