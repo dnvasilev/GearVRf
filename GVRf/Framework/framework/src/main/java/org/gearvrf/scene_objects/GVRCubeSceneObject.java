@@ -589,7 +589,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -713,7 +713,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -775,7 +775,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);
@@ -889,7 +889,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 texCoords[6] = s1; 
                 texCoords[7] = t0;
                 
-                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                subMeshes[index] = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 subMeshes[index].setVertices(vertices);
                 subMeshes[index].setNormals(normals);
                 subMeshes[index].setTexCoords(texCoords);

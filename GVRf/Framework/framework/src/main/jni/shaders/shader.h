@@ -110,7 +110,7 @@ public:
     void setShaderDirty(bool flag){
         shaderDirty = flag;
     }
-    virtual bool useShader(Mesh*) = 0;
+    virtual bool useShader() = 0;
     static int calcSize(std::string type);
 
 private:

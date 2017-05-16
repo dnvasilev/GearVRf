@@ -20,7 +20,7 @@
 namespace gvr
 {
 
-    int GLMaterial::bindToShader(Shader *shader, Renderer* renderer)
+    int GLMaterial::bindToShader(Shader* shader, Renderer* renderer)
     {
         GLShader* glshader = static_cast<GLShader*>(shader);
         int texIndex = glshader->bindTextures(this);
@@ -32,18 +32,18 @@ namespace gvr
         return texIndex;
     }
 
-    bool GLMaterial::bindTexture(Texture* tex, int texIndex, int loc)
+    bool GLMaterial::bindTexture(Texture* tex, int texUnit, int loc)
     {
         if (tex && tex->getImage())
         {
             GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
             int texid = image->getId();
 
-            LOGV("GLMaterial::bindTexture index=%d loc=%d id=%d", texIndex, loc, texid);
-            glActiveTexture(GL_TEXTURE0 + texIndex);
+            LOGV("ShaderData::bindTexture index=%d loc=%d id=%d", texUnit, loc, texid);
+            glActiveTexture(GL_TEXTURE0 + texUnit);
             glBindTexture(image->getTarget(), texid);
-            glUniform1i(loc, texIndex);
-            checkGLError("Material::bindTexture");
+            glUniform1i(loc, texUnit);
+            checkGLError("GLMaterial::bindTexture");
             return true;
         }
         return false;

@@ -49,7 +49,7 @@ namespace gvr
         if (data != NULL)
         {
             *((int *) data) = val;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -62,7 +62,7 @@ namespace gvr
         if (data != NULL)
         {
             *((float *) data) = val;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -75,7 +75,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -88,7 +88,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, val, bytesize);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -102,7 +102,7 @@ namespace gvr
         {
             data[0] = val.x;
             data[1] = val.y;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -117,7 +117,7 @@ namespace gvr
             data[0] = val.x;
             data[1] = val.y;
             data[2] = val.z;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -133,7 +133,7 @@ namespace gvr
             data[1] = val.y;
             data[2] = val.z;
             data[3] = val.w;
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -147,7 +147,7 @@ namespace gvr
         if (data != NULL)
         {
             memcpy(data, mtxdata, bytesize);
-            mIsDirty = true;
+            markDirty();
             return true;
         }
         return false;

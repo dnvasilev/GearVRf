@@ -29,12 +29,12 @@ void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
     getTransformUbo().bindBuffer(shader, renderer);
     if (uniform_dirty)
     {
-        const VulkanVertexBuffer* vbuf = reinterpret_cast<const VulkanVertexBuffer*>(mesh()->getVertexBuffer());
+        VulkanVertexBuffer* vbuf = reinterpret_cast<VulkanVertexBuffer*>(mesh()->getVertexBuffer());
         GVR_VK_Vertices& vkverts = *(vbuf->getVKVertices());
         ShaderData* mtl = material(0);
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(mtl);
         vkcore->InitLayoutRenderData(*vkmtl, getVkData(), shader);
-        mesh()->bindBuffers(shader, renderer);
+        vbuf->bindToShader(shader, mesh_->getIndexBuffer());
         vkcore->InitDescriptorSetForRenderData(vkrender, getVkData(), *vkmtl, getTransformUbo(), shader);
         vkcore->InitPipelineForRenderData(vkverts, this, vkshader->getVkVertexShader(), vkshader->getVkFragmentShader());
         uniform_dirty = false;

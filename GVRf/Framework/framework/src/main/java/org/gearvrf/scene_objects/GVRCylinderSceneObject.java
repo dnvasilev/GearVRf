@@ -561,7 +561,7 @@ public class GVRCylinderSceneObject extends GVRSceneObject {
     private void generateCylinderObject(GVRContext gvrContext, CylinderParams params) {
         generateCylinder(params);
 
-        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
         GVRMaterial material = params.Material;
         
         if (material == null)
@@ -868,7 +868,7 @@ public class GVRCylinderSceneObject extends GVRSceneObject {
 
         createCap(radius, height, sliceNumber, normalDirection, facingOut);
 
-        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
         mesh.setVertices(vertices);
         mesh.setNormals(normals);
         mesh.setTexCoords(texCoords);
@@ -896,7 +896,7 @@ public class GVRCylinderSceneObject extends GVRSceneObject {
 
         createBody(params);
 
-        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
         mesh.setVertices(vertices);
         mesh.setNormals(normals);
         mesh.setTexCoords(texCoords);
@@ -1047,7 +1047,7 @@ public class GVRCylinderSceneObject extends GVRSceneObject {
 
             sliceCounter++;
             if (sliceCounter == slicePerSegment) {
-                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 mesh.setVertices(vertices);
                 mesh.setNormals(normals);
                 mesh.setTexCoords(texCoords);
@@ -1226,7 +1226,7 @@ public class GVRCylinderSceneObject extends GVRSceneObject {
                     }
                 }
 
-                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 mesh.setVertices(vertices);
                 mesh.setNormals(normals);
                 mesh.setTexCoords(texCoords);

@@ -28,7 +28,6 @@ import org.gearvrf.utility.TextFile;
  */
 public class GVRColorShader extends GVRShader
 {
-
     public GVRColorShader(GVRContext gvrContext)
     {
         super("float3 u_color", "", "float3 a_position", 300);

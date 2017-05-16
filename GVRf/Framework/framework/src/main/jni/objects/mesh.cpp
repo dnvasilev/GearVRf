@@ -20,7 +20,9 @@
 namespace gvr
 {
 
-    Mesh::Mesh(const std::string &descriptor) : mVertices(nullptr), mIndices(nullptr),
+    Mesh::Mesh(const std::string &descriptor) : mVertices(nullptr),
+                                                mIndices(nullptr),
+                                                have_bounding_volume_(false),
                                                 vertexBoneData_(nullptr)
     {
         mVertices = Renderer::getInstance()->createVertexBuffer(descriptor, 0);
@@ -28,6 +30,7 @@ namespace gvr
 
     Mesh::Mesh(VertexBuffer& vbuf)
     : mVertices(&vbuf), mIndices(nullptr),
+      have_bounding_volume_(false),
       vertexBoneData_(nullptr)
     {
     }
@@ -71,7 +74,7 @@ namespace gvr
 
     void Mesh::getTransformedBoundingBoxInfo(glm::mat4 *Mat, float *transformed_bounding_box)
     {
-        if (have_bounding_volume_ == false)
+        if (!have_bounding_volume_)
         {
             getBoundingVolume();
         }
@@ -275,18 +278,6 @@ namespace gvr
             func(i / 3, V1, V2, V3);
         }
     }
-
-    bool Mesh::bindBuffers(Shader *shader, Renderer *renderer)
-    {
-        if (!mVertices || !mVertices->bindBuffer(shader, renderer))
-        {
-            return false;
-        }
-        if (mIndices && !mIndices->bindBuffer(shader, renderer))
-        {
-            return false;
-        }
-     }
 
     bool Mesh::updateGPU(Renderer *renderer)
     {

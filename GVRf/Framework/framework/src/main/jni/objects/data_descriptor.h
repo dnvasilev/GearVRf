@@ -139,7 +139,7 @@ public:
      * @returns true if data has been updated, else false.
      */
     bool isDirty() const { return mIsDirty; }
-
+    virtual void markDirty() { mIsDirty = true; }
     virtual std::string makeShaderType(const std::string& type, int byteSize, int arraySize);
 
 protected:

@@ -551,7 +551,7 @@ public abstract class GVRContext implements IEventReceiver {
      */
     @SuppressWarnings("deprecation")
     public GVRMesh createQuad(float width, float height) {
-        GVRMesh mesh = new GVRMesh(this, "float3 a_position float3 a_normal float2 a_texcoord");
+        GVRMesh mesh = new GVRMesh(this, "float3 a_position float2 a_texcoord float3 a_normal ");
 
         float[] vertices = { width * -0.5f, height * 0.5f, 0.0f, width * -0.5f,
                 height * -0.5f, 0.0f, width * 0.5f, height * 0.5f, 0.0f,

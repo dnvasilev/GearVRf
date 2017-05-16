@@ -26,14 +26,14 @@ namespace gvr
         int         vertexCount = mesh_->getVertexCount();
         int         mode = draw_mode();
 
-        mesh_->bindBuffers(shader, renderer);
+        mesh_->getVertexBuffer()->bindToShader(shader, mesh_->getIndexBuffer());
         if (mesh_->hasBones() && bones_ubo_)
         {
             GLUniformBlock* glbones = static_cast<GLUniformBlock*>(bones_ubo_);
             glbones->bindBuffer(shader, renderer);
         }
-        if (Shader::LOG_SHADER) LOGV("SHADER: binding vertex arrays to program %d %p %d vertices, %d indices mode = %d",
-                                     programId, this, vertexCount, indexCount, mode);
+        if (Shader::LOG_SHADER) LOGV("RenderData::render binding vertex arrays to program %d %p %d vertices, %d indices",
+                                     programId, this, vertexCount, indexCount);
         switch (mesh_->getIndexSize())
         {
             case 2:

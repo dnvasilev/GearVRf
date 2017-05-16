@@ -15,7 +15,8 @@
 
 
 namespace gvr {
-    class GlDelete;
+    class IndexBuffer;
+    class Shader;
 
  /**
   * Interleaved vertex storage for OpenGL
@@ -28,12 +29,10 @@ namespace gvr {
         GLVertexBuffer(const std::string& layout_desc, int vertexCount);
         virtual ~GLVertexBuffer();
 
-        virtual bool    bindBuffer(Shader*, Renderer*);
         virtual bool    updateGPU(Renderer*);
+        virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf);
 
     protected:
-        void            bindToShader(DataDescriptor& desc, GLuint programId);
-
         GLuint          mVBufferID;
         GLuint          mVArrayID;
         GLuint          mProgramID;

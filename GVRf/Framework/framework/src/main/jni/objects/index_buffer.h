@@ -86,7 +86,7 @@ namespace gvr {
         */
         bool    getShortVec(unsigned short* dest, int destSize) const;
 
-        virtual bool    bindBuffer(Shader*, Renderer*) = 0;
+        virtual bool    bindBuffer(Shader*) = 0;
         virtual bool    updateGPU(Renderer*) = 0;
 
     protected:

@@ -18,12 +18,9 @@
 namespace gvr {
     GLUniformBlock::GLUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName) :
             UniformBlock(descriptor, bindingPoint, blockName),
-            GLBlockIndex(-1),
             GLOffset(0),
             GLBuffer(0)
-    {
-        //parseDescriptor();
-    }
+    { }
 
     GLUniformBlock::~GLUniformBlock()
     {
@@ -59,21 +56,17 @@ namespace gvr {
         GLShader* glshader = static_cast<GLShader*>(shader);
         if (GLBuffer > 0)
         {
+            GLuint blockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
 
-            // Do not uncomment below line: UBO is not per shader, so block indices will be different for different shader
-       //     if (GLBlockIndex < 0)
+            if (blockIndex < 0)
             {
-                GLBlockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
-                if (GLBlockIndex < 0)
-                {
-                    LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName().c_str());
-                    return false;
-                }
+                LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName().c_str());
+                return false;
             }
-            glUniformBlockBinding(glshader->getProgramId(), GLBlockIndex, mBindingPoint);
+            glUniformBlockBinding(glshader->getProgramId(), blockIndex, mBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
-            if (Shader::LOG_SHADER) LOGV("UniformBlock::bindBuffer %s bind at %d index = %d\n", getBlockName().c_str(), mBindingPoint, GLBlockIndex);
+            if (Shader::LOG_SHADER) LOGV("UniformBlock::bindBuffer %s bind at %d index = %d\n", getBlockName().c_str(), mBindingPoint, blockIndex);
             checkGLError("GLUniformBlock::bindBuffer");
             return true;
         }

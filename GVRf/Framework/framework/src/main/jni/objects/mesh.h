@@ -46,18 +46,10 @@ namespace gvr {
         Mesh(VertexBuffer& vbuf);
         virtual ~Mesh() { }
 
-        bool hasAttribute(const std::string& key) const
-        {
-            return mVertices->isSet(key);
-        }
-
         VertexBuffer* getVertexBuffer() const { return mVertices; }
         IndexBuffer* getIndexBuffer() const { return mIndices; }
         void setVertexBuffer(VertexBuffer* vbuf) { mVertices = vbuf; }
-        void setIndexBuffer(IndexBuffer* ibuf)
-        {
-            mIndices = ibuf;
-        }
+        void setIndexBuffer(IndexBuffer* ibuf) { mIndices = ibuf; }
         bool setVertices(const float* vertices, int nelems);
         bool getVertices(float* vertices, int nelems);
         bool setNormals(const float* normals, int nelems);
@@ -109,7 +101,6 @@ namespace gvr {
         {
             return vertexBoneData_;
         }
-        virtual bool bindBuffers(Shader* shader, Renderer* renderer);
         virtual bool updateGPU(Renderer*);
         void add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
         void dirty(DIRTY_BITS bit);

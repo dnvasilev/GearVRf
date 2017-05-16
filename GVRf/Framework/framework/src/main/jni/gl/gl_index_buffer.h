@@ -27,7 +27,7 @@ namespace gvr {
         GLIndexBuffer(int bytesPerIndex, int vertexCount);
         virtual ~GLIndexBuffer();
 
-        virtual bool    bindBuffer(Shader*, Renderer*);
+        virtual bool    bindBuffer(Shader*);
         virtual bool    updateGPU(Renderer* renderer);
 
     protected:

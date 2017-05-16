@@ -61,7 +61,7 @@ namespace gvr
             return uniforms_.forEachEntry(func);
         }
 
-        bool bindTexture(Texture* tex, int texIndex, int loc);
+        bool bindTexture(Texture* tex, int texUnit, int loc);
 
     protected:
         GLUniformBlock uniforms_;
