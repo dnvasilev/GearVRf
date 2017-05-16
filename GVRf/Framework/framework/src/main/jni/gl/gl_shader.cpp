@@ -18,7 +18,6 @@
  ***************************************************************************/
 
 #include "gl/gl_shader.h"
-#include "objects/mesh.h"
 #include "gl/gl_material.h"
 #include "engine/renderer/renderer.h"
 
@@ -98,7 +97,7 @@ void modifyShader(std::string& shader)
 
 void GLShader::convertToGLShaders()
 {
-    if(vertexShader_.find("#version 400")==std::string::npos)
+    if (vertexShader_.find("#version 400") == std::string::npos)
         return;
     modifyShader(vertexShader_);
     modifyShader(fragmentShader_);

@@ -60,8 +60,8 @@ class Texture;
  */
 struct ShaderUniformsPerObject {
     glm::mat4   u_model;        // Model matrix
-    glm::mat4   u_view;         // View matrix
     glm::mat4   u_proj;         // projection matrix
+    glm::mat4   u_view;         // View matrix
     glm::mat4   u_view_[2];     // for multiview
     glm::mat4   u_view_inv;     // inverse of View matrix
     glm::mat4   u_view_inv_[2]; // inverse of View matrix

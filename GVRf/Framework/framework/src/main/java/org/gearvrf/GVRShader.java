@@ -17,6 +17,8 @@ package org.gearvrf;
 import static android.opengl.GLES20.GL_EXTENSIONS;
 import static android.opengl.GLES20.glGetString;
 
+import java.lang.reflect.Method;
+import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,11 +62,27 @@ public class GVRShader
     protected Integer mGLSLVersion = 100;
     protected boolean mHasVariants = false;
     protected boolean mUsesLights = false;
+    protected boolean mUsesTransformBuffer = true;
     protected String mUniformDescriptor;
     protected String mVertexDescriptor;
     protected String mTextureDescriptor;
     protected Map<String, String> mShaderSegments;
-
+    protected static String sTransformUBOCode = "layout (std140) uniform Transform_ubo {\n"
+            + " #ifdef HAS_MULTIVIEW\n"
+            + "     mat4 u_view_[2];\n"
+            + "     mat4 u_mvp_[2];\n"
+            + "     mat4 u_mv_[2];\n"
+            + "     mat4 u_mv_it_[2];\n"
+            + " #else\n"
+            + "     mat4 u_view;\n"
+            + "     mat4 u_mvp;\n"
+            + "     mat4 u_mv;\n"
+            + "     mat4 u_mv_it;\n"
+            + " #endif\n"
+            + "     mat4 u_model;\n"
+            + "     mat4 u_view_i;\n"
+            + "     float u_right;\n"
+            + "};";
 
     /**
      * Construct a shader using GLSL version 100.
@@ -122,6 +140,14 @@ public class GVRShader
      */
     public boolean hasVariants() { return mHasVariants; }
 
+    /**
+     * Check if this shader template uses the transform uniform buffer.
+     *
+     * If a shader template declares it uses the transform uniform buffer,
+     * GearVRF will bind a uniform buffer "Transform_ubo" containing
+     * all the matrices computed by GearVRF for the shader.
+     */
+    public boolean usesTransformBuffer() { return mUsesTransformBuffer; }
 
     /**
      * Check if this shader template uses light sources.
@@ -212,6 +238,28 @@ public class GVRShader
      */
     protected void setMaterialDefaults(GVRShaderData material) { }
 
+    private int addShader(GVRShaderManager shaderManager, String signature)
+    {
+        int nativeShader = shaderManager.getShader(signature);
+        if (nativeShader == 0)
+        {
+            StringBuilder vertexShaderSource = new StringBuilder();
+            StringBuilder fragmentShaderSource = new StringBuilder();
+            if (mGLSLVersion > 100)
+            {
+                vertexShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+                fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+            }
+            vertexShaderSource.append(getSegment("VertexTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode));
+            fragmentShaderSource.append(getSegment("FragmentTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode));
+            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,
+                                                   mVertexDescriptor, vertexShaderSource.toString(),
+                                                   fragmentShaderSource.toString());
+            bindCalcMatrixMethod(shaderManager, nativeShader);
+        }
+        return nativeShader;
+    }
+
     /**
      * Select the specific vertex and fragment shader to use.
      *
@@ -232,22 +280,7 @@ public class GVRShader
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
         synchronized (shaderManager)
         {
-            int nativeShader = shaderManager.getShader(signature);
-            if (nativeShader == 0)
-            {
-                String vertexShaderSource = "";
-                String fragmentShaderSource = "";
-                if (mGLSLVersion > 100)
-                {
-                    vertexShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                    fragmentShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                }
-                vertexShaderSource += getSegment("VertexTemplate");
-                fragmentShaderSource += getSegment("FragmentTemplate");
-                nativeShader = context.getMaterialShaderManager().
-                        addShader(signature, mUniformDescriptor, mTextureDescriptor,
-                                  mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
-            }
+            int nativeShader = addShader(shaderManager, signature);
             if (nativeShader > 0)
             {
                 rdata.setShader(nativeShader);
@@ -276,21 +309,7 @@ public class GVRShader
 
         synchronized (shaderManager)
         {
-            int nativeShader = shaderManager.getShader(signature);
-            if (nativeShader == 0)
-            {
-                String vertexShaderSource = "";
-                String fragmentShaderSource = "";
-                if (mGLSLVersion > 100)
-                {
-                    vertexShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                    fragmentShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                }
-                vertexShaderSource += getSegment("VertexTemplate");
-                fragmentShaderSource += getSegment("FragmentTemplate");
-                nativeShader = context.getMaterialShaderManager().addShader(signature,
-                        mUniformDescriptor, mTextureDescriptor, mVertexDescriptor, vertexShaderSource, fragmentShaderSource);
-            }
+            int nativeShader = addShader(shaderManager, signature);
             return nativeShader;
         }
     }
@@ -333,6 +352,7 @@ public class GVRShader
                                                        mUniformDescriptor, mTextureDescriptor,
                                                        mVertexDescriptor, vertexShaderSource,
                                                        fragmentShaderSource);
+                bindCalcMatrixMethod(shaderManager, nativeShader);
             }
             return nativeShader;
         }
@@ -369,5 +389,34 @@ public class GVRShader
         mShaderSegments.put(segmentName, shaderSource);
         if (shaderSource == null)
             throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
+    }
+
+    boolean isImplemented(String methodName, Class<?> ...paramTypes)
+    {
+        try
+        {
+            Class<? extends Object> clazz = getClass();
+            String name1 = clazz.getSimpleName();
+            Method method = clazz.getMethod(methodName, paramTypes);
+            Class<? extends Object> declClazz = method.getDeclaringClass();
+            String name2 = declClazz.getSimpleName();
+            return declClazz.equals(clazz);
+        }
+        catch (SecurityException e)
+        {
+            return false;
+        }
+        catch (NoSuchMethodException e)
+        {
+            return false;
+        }
+    }
+
+    void bindCalcMatrixMethod(GVRShaderManager shaderManager, int nativeShader)
+    {
+        if (isImplemented("calcMatrix", FloatBuffer.class, FloatBuffer.class))
+        {
+            NativeShaderManager.bindCalcMatrix(shaderManager.getNative(), nativeShader, getClass());
+        }
     }
 }

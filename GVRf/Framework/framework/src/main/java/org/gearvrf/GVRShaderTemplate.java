@@ -319,17 +319,20 @@ public class GVRShaderTemplate extends GVRShader
     private String generateShaderVariant(String type, HashMap<String, Integer> definedNames, GVRLightBase[] lightlist, Map<String, LightClass> lightClasses, GVRShaderData material)
     {
         String template = getSegment(type + "Template");
-        String defines = "";
+        StringBuilder shaderSource = new StringBuilder();
 
         if (template == null)
         {
-            throw new IllegalArgumentException(
-                type + "Template segment missing - cannot make shader");
+            throw new IllegalArgumentException(type + "Template segment missing - cannot make shader");
         }
-        String combinedSource = template;
+        String combinedSource = template.replace("$TRANSFORM_UBO", sTransformUBOCode);
         boolean useLights = (lightlist != null) && (lightlist.length > 0);
         String lightShaderSource = "";
 
+        if (mGLSLVersion > 100)
+        {
+            shaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+        }
         if (definedNames.containsKey("LIGHTSOURCES") &&
             definedNames.get("LIGHTSOURCES") == 0)
         {
@@ -345,7 +348,7 @@ public class GVRShaderTemplate extends GVRShader
             {
                 lightShaderSource = generateLightFragmentShader(lightlist, lightClasses);
             }
-            defines += "#define HAS_LIGHTSOURCES 1\n";
+            shaderSource.append("#define HAS_LIGHTSOURCES 1\n");
         }
 
         for (Map.Entry<String, String> entry : mShaderSegments.entrySet())
@@ -358,7 +361,7 @@ public class GVRShaderTemplate extends GVRShader
                     segmentSource = "";
                 if (!definedNames.containsKey(key) ||
                     (definedNames.get(key) != 0)) {
-                    defines += "#define HAS_" + key + " 1;\n";
+                    shaderSource.append("#define HAS_" + key + " 1;\n");
                 }
                 combinedSource = combinedSource.replace("@" + key, segmentSource);
             }
@@ -370,20 +373,17 @@ public class GVRShaderTemplate extends GVRShader
             String texcoordSource = assignTexcoords(material);
             if (texcoordSource.length() > 0)
             {
-                defines += "#define HAS_TEXCOORDS 1\n";
+                shaderSource.append("#define HAS_TEXCOORDS 1\n");
             }
             combinedSource = combinedSource.replace("@TEXCOORDS", texcoordSource);
         }
         for (Map.Entry<String, Integer> entry : definedNames.entrySet())
         {
             if (entry.getValue() != 0)
-                defines += "#define HAS_" + entry.getKey() + " 1\n";
+                shaderSource.append("#define HAS_" + entry.getKey() + " 1\n");
         }
-        if (mGLSLVersion > 100)
-        {
-            defines = "#version " + mGLSLVersion.toString() + " es\n" + defines;
-        }
-        return defines + combinedSource;
+        shaderSource.append(combinedSource);
+        return shaderSource.toString();
     }
 
     /**
@@ -440,21 +440,19 @@ public class GVRShaderTemplate extends GVRShader
             {
                 Map<String, LightClass> lightClasses = scanLights(lightlist);
 
-                String vertexShaderSource =
-                        generateShaderVariant("Vertex", variantDefines, lightlist, lightClasses,
-                                              material);
-                String fragmentShaderSource =
-                        generateShaderVariant("Fragment", variantDefines, lightlist, lightClasses,
-                                              material);
+                String vertexShaderSource = generateShaderVariant("Vertex", variantDefines,
+                                                                  lightlist, lightClasses, material);
+                String fragmentShaderSource = generateShaderVariant("Fragment", variantDefines,
+                                                                    lightlist, lightClasses, material);
                 StringBuilder uniformDescriptor = new StringBuilder();
                 StringBuilder textureDescriptor = new StringBuilder();
                 StringBuilder vertexDescriptor = new StringBuilder();
-                updateDescriptors(mesh, material, uniformDescriptor, textureDescriptor,
-                                  vertexDescriptor);
+                updateDescriptors(mesh, material, uniformDescriptor, textureDescriptor, vertexDescriptor);
                 nativeShader = shaderManager.addShader(signature, uniformDescriptor.toString(),
                                                        textureDescriptor.toString(),
                                                        vertexDescriptor.toString(),
                                                        vertexShaderSource, fragmentShaderSource);
+                bindCalcMatrixMethod(shaderManager, nativeShader);
                 if (mWriteShadersToDisk)
                 {
                     writeShader(context, "V-" + signature + ".glsl", vertexShaderSource);
@@ -520,9 +518,9 @@ public class GVRShaderTemplate extends GVRShader
                 ;
                 updateDescriptors(null, material, uniformDescriptor, textureDescriptor, null);
                 nativeShader = shaderManager.addShader(signature, uniformDescriptor.toString(),
-                                                       textureDescriptor.toString(),
-                                                       mVertexDescriptor,
+                                                       textureDescriptor.toString(), mVertexDescriptor,
                                                        vertexShaderSource, fragmentShaderSource);
+                bindCalcMatrixMethod(shaderManager, nativeShader);
                 Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
             }
             return nativeShader;

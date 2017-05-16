@@ -35,7 +35,7 @@ VulkanShader::VulkanShader(int id,
                const std::string& fragmentShader)
     : Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader) { }
 
-void VulkanShader::initialize(Mesh* mesh)
+void VulkanShader::initialize()
 {
 }
 

@@ -80,9 +80,12 @@ namespace gvr {
             const float* src = verts + i * stride;
             v.x = *src++;
             v.y = *src++;
-            v.z = *src++;
+            v.z = *src;
             bv.expand(v);
         }
+        LOGV("VertexBuffer::getBoundingVolume (%f, %f, %f) (%f, %f, %f) %d verts",
+            bv.min_corner().x, bv.min_corner().y, bv.min_corner().z,
+            bv.max_corner().x, bv.max_corner().y, bv.max_corner().z, mVertexCount);
     }
 
     void VertexBuffer::forEachAttribute(std::function<void(const DataDescriptor::DataEntry&, VertexAttribute&)> func)
@@ -191,7 +194,7 @@ namespace gvr {
             }
             src += srcStride;
         }
-        mIsDirty = true;
+        markDirty();
         attr->IsSet = true;
         return true;
     }
@@ -307,7 +310,7 @@ namespace gvr {
             }
             src += srcStride;
         }
-        mIsDirty = true;
+        markDirty();
         attr->IsSet = true;
         return true;
     }
