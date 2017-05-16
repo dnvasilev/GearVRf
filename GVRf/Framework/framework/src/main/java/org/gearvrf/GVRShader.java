@@ -67,7 +67,7 @@ public class GVRShader
     protected String mVertexDescriptor;
     protected String mTextureDescriptor;
     protected Map<String, String> mShaderSegments;
-    protected static String sTransformUBOCode = "layout (std140) uniform Transform_ubo {\n"
+    protected static String sTransformUBOCode = "layout (std140) uniform Transform_ubo\n{\n"
             + " #ifdef HAS_MULTIVIEW\n"
             + "     mat4 u_view_[2];\n"
             + "     mat4 u_mvp_[2];\n"
@@ -82,7 +82,7 @@ public class GVRShader
             + "     mat4 u_model;\n"
             + "     mat4 u_view_i;\n"
             + "     float u_right;\n"
-            + "};";
+            + "};\n";
 
     /**
      * Construct a shader using GLSL version 100.
@@ -240,23 +240,21 @@ public class GVRShader
 
     private int addShader(GVRShaderManager shaderManager, String signature)
     {
-        int nativeShader = shaderManager.getShader(signature);
-        if (nativeShader == 0)
+        StringBuilder vertexShaderSource = new StringBuilder();
+        StringBuilder fragmentShaderSource = new StringBuilder();
+        if (mGLSLVersion > 100)
         {
-            StringBuilder vertexShaderSource = new StringBuilder();
-            StringBuilder fragmentShaderSource = new StringBuilder();
-            if (mGLSLVersion > 100)
-            {
-                vertexShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
-                fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
-            }
-            vertexShaderSource.append(getSegment("VertexTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode));
-            fragmentShaderSource.append(getSegment("FragmentTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode));
-            nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,
-                                                   mVertexDescriptor, vertexShaderSource.toString(),
-                                                   fragmentShaderSource.toString());
-            bindCalcMatrixMethod(shaderManager, nativeShader);
+            vertexShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+            fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
         }
+        String vshader = getSegment("VertexTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
+        String fshader = getSegment("FragmentTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
+        vertexShaderSource.append(vshader);
+        fragmentShaderSource.append(fshader);
+        int nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,
+                                               mVertexDescriptor, vertexShaderSource.toString(),
+                                               fragmentShaderSource.toString());
+        bindCalcMatrixMethod(shaderManager, nativeShader);
         return nativeShader;
     }
 
@@ -339,20 +337,7 @@ public class GVRShader
         {
             if (nativeShader == 0)
             {
-                String vertexShaderSource = "";
-                String fragmentShaderSource = "";
-                if (mGLSLVersion > 100)
-                {
-                    vertexShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                    fragmentShaderSource = "#version " + mGLSLVersion.toString() + " es\n";
-                }
-                vertexShaderSource += getSegment("VertexTemplate");
-                fragmentShaderSource += getSegment("FragmentTemplate");
-                nativeShader = shaderManager.addShader(signature,
-                                                       mUniformDescriptor, mTextureDescriptor,
-                                                       mVertexDescriptor, vertexShaderSource,
-                                                       fragmentShaderSource);
-                bindCalcMatrixMethod(shaderManager, nativeShader);
+                nativeShader = addShader(shaderManager, signature);
             }
             return nativeShader;
         }
