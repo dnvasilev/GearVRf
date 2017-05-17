@@ -232,6 +232,7 @@ bool RenderData::updateGPU(Renderer* renderer)
         bones_ubo_->setFloatVec("u_bone_matrix", &bone_matrices[0][0][0], bone_matrices.size() * 16);
         bones_ubo_->updateGPU(renderer);
     }
+    mesh_->updateGPU(renderer);
     return true;
 }
 }

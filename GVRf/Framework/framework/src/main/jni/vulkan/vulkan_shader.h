@@ -58,7 +58,7 @@ public:
 
     virtual ~VulkanShader();
 
-    virtual bool useShader(Mesh*) { return true; }
+    virtual bool useShader() { return true; }
 
     std::vector<uint32_t>& getVkVertexShader()
     {
@@ -103,7 +103,7 @@ private:
     std::vector<uint32_t> compiledFS;
 
 protected:
-    virtual void initialize(Mesh* mesh);
+    virtual void initialize();
     std::vector<uint32_t> CompileVulkanShader(const std::string& shaderName, ShaderType shaderTypeID, std::string& shaderContents);
 };
 

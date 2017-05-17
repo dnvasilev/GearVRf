@@ -121,22 +121,20 @@ ColliderData MeshCollider::isHit(const glm::vec3& rayStart, const glm::vec3& ray
  * @return ColliderData with the hit point and distance in model coordinates
  */
 ColliderData MeshCollider::isHit(const Mesh& mesh, const glm::vec3& rayStart, const glm::vec3& rayDir) {
-    const std::vector<glm::vec3>& vertices = mesh.vertices();
     ColliderData data;
-    if (vertices.size() > 0)
+    if (mesh.getVertexCount() > 0)
     {
-        for (int i = 0; i < mesh.triangles().size(); i += 3)
+        mesh.forAllTriangles([data, rayStart, rayDir](int iter, const float* v1, const float* v2, const float* v3) mutable
         {
-            glm::vec3 V1(vertices[mesh.triangles()[i]]);
-            glm::vec3 V2(vertices[mesh.triangles()[i + 1]]);
-            glm::vec3 V3(vertices[mesh.triangles()[i + 2]]);
-
             /*
              * Compute the point where the ray penetrates the mesh in
              * the coordinate space of the mesh. The hit point will
              * be in mesh coordinates as will the distance.
              */
             glm::vec3 hitPos;
+            glm::vec3 V1(v1[0], v1[2], v1[3]);
+            glm::vec3 V2(v2[0], v2[2], v2[3]);
+            glm::vec3 V3(v3[0], v3[2], v3[3]);
             float distance = rayTriangleIntersect(hitPos, rayStart, rayDir, V1, V2, V3);
             if ((distance > 0) && (distance < data.Distance))
             {
@@ -144,7 +142,7 @@ ColliderData MeshCollider::isHit(const Mesh& mesh, const glm::vec3& rayStart, co
                 data.HitPosition = hitPos;
                 data.Distance = distance;
             }
-         }
+         });
       }
       return data;
    }

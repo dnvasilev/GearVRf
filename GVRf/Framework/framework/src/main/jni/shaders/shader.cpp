@@ -17,6 +17,7 @@
  * A shader which an user can add in run-time.
  ***************************************************************************/
 
+#include <jni_utils.h>
 #include "shader.h"
 
 namespace gvr {
@@ -36,10 +37,37 @@ Shader::Shader(int id,
       mVertexDesc(vertexDescriptor),
       vertexShader_(vertex_shader),
       fragmentShader_(fragment_shader),
-      shaderDirty(true)
+      useTransformBuffer_(false), useLights_(false),
+      javaShaderClass_(0), javaVM_(nullptr), calcMatrixMethod_(0)
 {
-    if (vertex_shader.find("Transform_ubo") == std::string::npos && fragment_shader.find("Transform_ubo") == std::string::npos)
-        transformUboPresent = false;
+    if ((vertex_shader.find("Transform_ubo") != std::string::npos) ||
+        (fragment_shader.find("Transform_ubo") != std::string::npos))
+        useTransformBuffer_ = true;
+    if (signature.find("$LIGHTSOURCES") != std::string::npos)
+        useLights_ = true;
+}
+
+void Shader::setJava(jclass shaderClass, JavaVM *javaVM)
+{
+    JNIEnv *env = getCurrentEnv(javaVM);
+    javaVM_ = javaVM;
+    if (env)
+    {
+        javaShaderClass_ = shaderClass;
+        calcMatrixMethod_ = env->GetStaticMethodID(shaderClass, "calcMatrix",
+                                             "(Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;)V");
+    }
+}
+
+bool Shader::calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize)
+{
+    if (javaVM_ && javaShaderClass_ && calcMatrixMethod_)
+    {
+        JNIEnv *env = getCurrentEnv(javaVM_);
+        jobject inputBuffer = env->NewDirectByteBuffer((void *) inputMatrices, inputSize);
+        jobject outputBuffer = env->NewDirectByteBuffer((void *) outputMatrices, outputSize);
+        env->CallStaticVoidMethod(javaShaderClass_, calcMatrixMethod_, inputBuffer, outputBuffer);
+    }
 }
 
 int Shader::calcSize(std::string type)

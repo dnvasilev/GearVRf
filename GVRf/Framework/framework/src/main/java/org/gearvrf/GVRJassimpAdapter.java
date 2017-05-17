@@ -152,7 +152,7 @@ class GVRJassimpAdapter {
                     name += c;
                 }
                 coords.put(source);
-                mesh.setVec4Vector(name, coords.array());
+                mesh.setFloatVec(name, coords.array());
             }
         }
 
@@ -180,10 +180,10 @@ class GVRJassimpAdapter {
             mesh.setNormals(normalsArray);
         }
         if (tangentsArray != null) {
-            mesh.setVec3Vector("a_tangent", tangentsArray);
+            mesh.setFloatVec("a_tangent", tangentsArray);
         }
         if (bitangentsArray != null) {
-            mesh.setVec3Vector("a_bitangent", bitangentsArray);
+            mesh.setFloatVec("a_bitangent", bitangentsArray);
         }
         // TexCords
         for(int texIndex=0; texIndex< MAX_TEX_COORDS; texIndex++) {

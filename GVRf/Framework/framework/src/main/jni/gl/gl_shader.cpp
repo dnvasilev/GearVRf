@@ -18,7 +18,6 @@
  ***************************************************************************/
 
 #include "gl/gl_shader.h"
-#include "objects/mesh.h"
 #include "gl/gl_material.h"
 #include "engine/renderer/renderer.h"
 
@@ -32,18 +31,19 @@ namespace gvr {
                const std::string& vertexShader,
                const std::string& fragmentShader)
     : Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader),
-      program_(NULL)
+      mProgram(NULL)
 { }
 
 
 GLShader::~GLShader()
 {
-    if (program_)
+    if (mProgram)
     {
-        delete program_;
+        delete mProgram;
     }
 }
-void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line){
+void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line)
+{
     std::string delimiters = " ;+-/*%()<>!={}\n";
     std::unordered_set<char>delim;
     for(int i=0; i<delimiters.length(); i++){
@@ -58,7 +58,9 @@ void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line){
         }
     }
 }
-void modifyShader(std::string& shader){
+
+void modifyShader(std::string& shader)
+{
     std::istringstream shaderStream(shader);
     std::string line;
     std::getline(shaderStream, line);
@@ -92,19 +94,51 @@ void modifyShader(std::string& shader){
     }
     shader = mod_shader;
 }
-void GLShader::convertToGLShaders(){
 
-    if(vertexShader_.find("#version 400")==std::string::npos)
+void GLShader::convertToGLShaders()
+{
+    if (vertexShader_.find("#version 400") == std::string::npos)
         return;
     modifyShader(vertexShader_);
     modifyShader(fragmentShader_);
 
 }
-void GLShader::initialize(Mesh* mesh)
-{
 
- //   convertToGLShaders();
-    program_ = new GLProgram(vertexShader_.c_str(), fragmentShader_.c_str());
+void GLShader::initialize()
+{
+    std::string modified_frag_shader;
+    if (fragmentShader_.find("samplerExternalOES")!= std::string::npos)
+    {
+        std::istringstream iss(fragmentShader_.c_str());
+        const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
+        std::string extension_string;
+        if(strstr(extensions, "GL_OES_EGL_image_external_essl3"))
+        {
+            extension_string = "#extension GL_OES_EGL_image_external_essl3 : require \n";
+        }
+        else
+        {
+            extension_string = "#extension GL_OES_EGL_image_external : require\n";
+        }
+        std::string line;
+        while (std::getline(iss, line))
+        {
+            if(line.find("GL_OES_EGL_image_external") != std::string::npos)
+            {
+                modified_frag_shader = modified_frag_shader + extension_string + "\n";
+            }
+            else
+            {
+                modified_frag_shader = modified_frag_shader + line + "\n";
+            }
+        }
+    }
+    else
+    {
+        modified_frag_shader = fragmentShader_;
+    }
+
+    mProgram = new GLProgram(vertexShader_.c_str(), modified_frag_shader.c_str());
     if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
                            && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
                            && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")))
@@ -115,53 +149,13 @@ void GLShader::initialize(Mesh* mesh)
     }
     vertexShader_.clear();
     fragmentShader_.clear();
-    bindMesh(mesh);
 }
 
-void GLShader::bindMesh(Mesh* mesh)
+bool GLShader::useShader()
 {
-    if (LOG_SHADER) LOGD("SHADER: getting attribute locations");
+    if (nullptr == mProgram)
     {
-        std::lock_guard<std::mutex> lock(attributeVariablesLock_);
-        getVertexDescriptor().forEachEntry([this, mesh](const DataDescriptor::DataEntry& entry) mutable
-        {
-           int loc = getLocation(entry.Name);
-           if (loc < 0)
-           {
-               loc = glGetAttribLocation(getProgramId(), entry.Name.c_str());
-               if (loc >= 0)
-               {
-                   setLocation(entry.Name, loc);
-                   //  if (Shader::LOG_SHADER) LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
-                   switch (entry.Size / sizeof(float))
-                   {
-                       case 1:
-                       mesh->setVertexAttribLocF(loc, entry.Name);
-                       break;
-
-                       case 2:
-                       mesh->setVertexAttribLocV2(loc, entry.Name);
-                       break;
-
-                       case 3:
-                       mesh->setVertexAttribLocV3(loc, entry.Name);
-                       break;
-
-                       case 4:
-                       mesh->setVertexAttribLocV4(loc, entry.Name);
-                       break;
-                   }
-               }
-           }
-        });
-    }
-}
-
-bool GLShader::useShader(Mesh* mesh)
-{
-    if (nullptr == program_)
-    {
-        initialize(mesh);
+        initialize();
     }
     GLint programID = getProgramId();
     if (programID <= 0)
@@ -176,25 +170,25 @@ bool GLShader::useShader(Mesh* mesh)
 
 int GLShader::bindTextures(GLMaterial* material)
 {
-    int texIndex = 0;
+    int texUnit = 0;
     bool fail = false;
     int ntex = material->getNumTextures();
 
     mTextureLocs.resize(ntex, -1);
-    material->forEachTexture([this, fail, texIndex, material](const std::string& texname, Texture* tex) mutable
+    material->forEachTexture([this, fail, texUnit, material](const std::string& texname, Texture* tex) mutable
     {
-         int loc = mTextureLocs[texIndex];
          if (mTextures.find(texname) <= 0)
          {
              LOGV("SHADER: program %d texture %s not used by shader", getProgramId(), texname.c_str());
              return;
          }
+         int loc = mTextureLocs[texUnit];
          if (loc == -1)
          {
              loc = glGetUniformLocation(getProgramId(), texname.c_str());
              if (loc >= 0)
              {
-                 mTextureLocs[texIndex] = loc;
+                 mTextureLocs[texUnit] = loc;
                  LOGV("SHADER: program %d texture %s loc %d", getProgramId(), texname.c_str(), loc);
              }
              else
@@ -204,11 +198,11 @@ int GLShader::bindTextures(GLMaterial* material)
                  return;
              }
          }
-         material->bindTexture(tex, texIndex++, loc);
+         material->bindTexture(tex, texUnit++, loc);
     });
     if (!fail)
     {
-        return texIndex;
+        return texUnit;
     }
     return -1;
 }

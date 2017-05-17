@@ -55,17 +55,16 @@ public:
             const std::string& fragmentShader);
     virtual ~GLShader();
 
-    void bindMesh(Mesh* mesh);
-    virtual bool useShader(Mesh*);
+    virtual bool useShader();
 
-   /*
+    /*
      * Returns the GL program ID for the native shader
      */
     GLuint getProgramId()
     {
-        if (program_)
+        if (mProgram)
         {
-            return program_->id();
+            return mProgram->id();
         }
         else
         {
@@ -73,30 +72,11 @@ public:
         }
     }
 
-    /*
-     * Returns the GL location for a vertex attribute or texture given its name.
-     */
-    GLuint getLocation(const std::string& key)
-    {
-        auto it = locations_.find(key);
-        if (it != locations_.end())
-        {
-            return it->second;
-        }
-        return -1;
-    }
-    /*
-     * Sets the GL location for a named texture or vertex attribute.
-     */
-    void setLocation(const std::string& key, int loc)
-    {
-        locations_[key] = loc;
-    }
     void convertToGLShaders();
     int bindTextures(GLMaterial* material);
 
 protected:
-    void initialize(Mesh*);
+    void initialize();
 
 private:
     GLShader(const GLShader& shader);
@@ -104,9 +84,7 @@ private:
     GLShader& operator=(const GLShader& shader);
     GLShader& operator=(GLShader&& shader);
 
-    GLProgram* program_;
-    std::mutex attributeVariablesLock_;
-    std::map<std::string, int> locations_;
+    GLProgram* mProgram;
     std::vector<int> mTextureLocs;
 };
 

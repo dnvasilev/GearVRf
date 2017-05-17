@@ -167,7 +167,6 @@ namespace gvr
                                   RenderTexture *post_effect_render_texture_a,
                                   RenderTexture *post_effect_render_texture_b)
     {
-
         resetStats();
         RenderState rstate;
         rstate.shadow_map = false;
@@ -589,7 +588,7 @@ namespace gvr
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
                 //Delete the generated bounding box mesh
-                bounding_box_mesh->cleanUp();
+                delete bounding_box_mesh;
                 delete bbox_material;
                 delete pass;
                 delete bounding_box_render_data;
@@ -616,31 +615,62 @@ namespace gvr
 
     void GLRenderer::renderMesh(RenderState &rstate, RenderData *render_data)
     {
+        int indexCount = render_data->mesh()->getIndexCount();
         ShaderData* curr_material = rstate.material_override;
-        Shader* shader = curr_material ? rstate.shader_manager->getShader(curr_material->getNativeShader()) : nullptr;
+        Shader* shader = nullptr;
+
+        if (curr_material)
+        {
+            if (curr_material->updateGPU(this) >= 0)
+            {
+                shader = rstate.shader_manager->getShader(curr_material->getNativeShader());
+            }
+            else
+            {
+                return;
+            }
+        }
+        SceneObject* owner = render_data->owner_object();
+        int drawMode = render_data->draw_mode();
+
+        render_data->updateGPU(this);
+        if ((drawMode == GL_LINE_STRIP) ||
+            (drawMode == GL_LINES) ||
+            (drawMode == GL_LINE_LOOP))
+        {
+            float lineWidth;
+            if (curr_material->getFloat("line_width", lineWidth))
+            {
+                glLineWidth(lineWidth);
+            }
+            else
+            {
+                glLineWidth(1.0f);
+            }
+        }
         for (int curr_pass = 0; curr_pass < render_data->pass_count(); ++curr_pass)
         {
-            numberTriangles += render_data->mesh()->getNumTriangles();
+            numberTriangles += indexCount;
             numberDrawCalls++;
-
             set_face_culling(render_data->pass(curr_pass)->cull_face());
-            if (rstate.material_override == nullptr)
+            if (shader == nullptr)
             {
                 curr_material = render_data->pass(curr_pass)->material();
                 shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
+                if (curr_material->updateGPU(this) < 0)
+                {
+                    return;
+                }
             }
-            if (curr_material != nullptr)
-            {
-                GL(renderMaterialShader(rstate, render_data, curr_material, shader));
-            }
+            GL(renderMaterialShader(rstate, render_data, curr_material, shader));
         }
     }
 
-    void GLRenderer::renderMaterialShader(RenderState &rstate, RenderData *render_data,
-                                          ShaderData *curr_material, Shader* shader)
+    void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data,
+                                          ShaderData* curr_material, Shader* shader)
     {
-        SceneObject *owner = render_data->owner_object();
-        ShaderManager *shader_manager = rstate.shader_manager;
+        SceneObject* owner = render_data->owner_object();
+        ShaderManager* shader_manager = rstate.shader_manager;
         GLMaterial* material = static_cast<GLMaterial*>(curr_material);
         GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
 
@@ -649,44 +679,29 @@ namespace gvr
             LOGE("SHADER: shader not ready %s %p", owner->name().c_str(), render_data);
             return;
         }
-        if (material->updateGPU(this) < 0)
-        {
-            LOGE("SHADER: Texture: textures not ready %s", owner->name().c_str());
-            return;
-        }
-        GLUniformBlock* transform_ubo = getTransformUbo();
-        updateTransforms(rstate, transform_ubo, owner->transform());
-        rdata->updateGPU(this);
         try
         {
-            if ((rdata->draw_mode() == GL_LINE_STRIP) ||
-                (rdata->draw_mode() == GL_LINES) ||
-                (rdata->draw_mode() == GL_LINE_LOOP))
-            {
-                float lineWidth;
-                if (curr_material->getFloat("line_width", lineWidth))
-                {
-                    glLineWidth(lineWidth);
-                }
-                else
-                {
-                    glLineWidth(1.0f);
-                }
-            }
-            shader->useShader(render_data->mesh());
+            shader->useShader();
         }
         catch (const std::string &error)
         {
             LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
                  render_data->owner_object()->name().c_str(), error.c_str());
             shader = shader_manager->findShader(std::string("GVRErrorShader"));
-            shader->useShader(render_data->mesh());
+            shader->useShader();
         }
         int texIndex = material->bindToShader(shader, this);
         if (texIndex >= 0)
         {
-            transform_ubo->bindBuffer(shader, this);
-            updateLights(rstate, shader, texIndex);
+            if (shader->useTransformBuffer())
+            {
+                updateTransforms(rstate, getTransformUbo(), owner->transform());
+                getTransformUbo()->bindBuffer(shader, this);
+            }
+            if (shader->useLights())
+            {
+                updateLights(rstate, shader, texIndex);
+            }
             rdata->render(shader, this);
         }
         checkGLError("renderMesh::renderMaterialShader");
@@ -709,7 +724,7 @@ namespace gvr
         rdata->updateGPU(this);
         try
         {
-            shader->useShader(renderData->mesh());
+            shader->useShader();
         }
         catch (const std::string& error)
         {

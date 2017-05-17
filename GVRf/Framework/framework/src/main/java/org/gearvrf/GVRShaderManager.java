@@ -40,7 +40,9 @@ public class GVRShaderManager extends GVRHybridObject
         super(gvrContext, ctor);
     }
 
-    public int addShader(String signature, String uniformDescriptor, String textureDescriptor, String vertexDescriptor, String vertexShader, String fragmentShader)
+    public int addShader(String signature, String uniformDescriptor,
+                         String textureDescriptor, String vertexDescriptor,
+                         String vertexShader, String fragmentShader)
     {
         return NativeShaderManager.addShader(getNative(), signature,
                 uniformDescriptor, textureDescriptor, vertexDescriptor,
@@ -94,6 +96,6 @@ class NativeShaderManager {
     static native int addShader(long shaderManager, String signature,
                                 String uniformDescriptor, String textureDescriptor, String vertexDescriptor,
                                 String vertexShader, String fragmentShader);
-
+    static native void bindCalcMatrix(long shaderManager, int nativeShader, Class<? extends GVRShader> javaShaderClass);
     static native int getShader(long shaderManager, String signature);
 }

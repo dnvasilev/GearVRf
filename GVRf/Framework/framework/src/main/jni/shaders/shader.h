@@ -66,6 +66,7 @@ public:
             const std::string& vertexDescriptor,
             const std::string& vertexShader,
             const std::string& fragmentShader);
+
     virtual ~Shader() { };
 
     /*
@@ -101,17 +102,25 @@ public:
         return mUniformDesc;
     }
 
-    bool isTransformUboPresent(){
-        return transformUboPresent;
+    void useTransformBuffer(bool flag)
+    {
+        useTransformBuffer_ = flag;
     }
-    bool isShaderDirty(){
-        return  shaderDirty;
+
+    bool useTransformBuffer()
+    {
+        return useTransformBuffer_;
     }
-    void setShaderDirty(bool flag){
-        shaderDirty = flag;
+
+    bool useLights()
+    {
+        return useLights_;
     }
-    virtual bool useShader(Mesh*) = 0;
+
+    virtual bool useShader() = 0;
     static int calcSize(std::string type);
+    void setJava(jclass shaderClass, JavaVM *javaVM);
+    bool calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize);
 
 private:
     Shader(const Shader& shader);
@@ -127,8 +136,11 @@ protected:
     std::string mTextures;
     DataDescriptor mVertexDesc;
     int id_;
-    bool shaderDirty = true;
-    bool transformUboPresent = true;
+    bool useTransformBuffer_ = true;
+    bool useLights_ = true;
+    jclass javaShaderClass_;
+    JavaVM *javaVM_;
+    jmethodID calcMatrixMethod_;
 };
 
 }

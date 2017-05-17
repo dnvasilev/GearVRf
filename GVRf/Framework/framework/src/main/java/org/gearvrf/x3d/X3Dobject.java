@@ -1338,7 +1338,7 @@ public class X3Dobject {
                                                             parseNumbersString(vectorAttribute, X3Dobject.normalsComponent, 3);
 
                                                             // initialize the list
-                                                            char[] ifs = gvrMesh.getIndices();
+                                                            char[] ifs = gvrMesh.getTriangles();
 
                                                             float[] normalVectorList = new float[ifs.length * 3];
 

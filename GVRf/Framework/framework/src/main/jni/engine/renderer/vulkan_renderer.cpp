@@ -106,11 +106,14 @@ namespace gvr {
         }
 
         VulkanRenderData* vkRdata = static_cast<VulkanRenderData*>(rdata);
-        VulkanUniformBlock& transformUBO = vkRdata->getTransformUbo();
+        UniformBlock& transformUBO = vkRdata->getTransformUbo();
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
 
         vkRdata->generateVbos(shader->signature(),this);
-        updateTransforms(rstate, &transformUBO, t);
+        if (shader->useTransformBuffer())
+        {
+            updateTransforms(rstate, &transformUBO, t);
+        }
        // if (status != -1)
         {
             VulkanData& vkdata = vkRdata->getVkData();
@@ -120,19 +123,10 @@ namespace gvr {
 
             // if texture or binding, material is changed, call this
             if(vkRdata->isDirty(0xFFFF))
-                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, &transformUBO, shader);
+                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, transformUBO, shader);
         }
         vkRdata->createPipeline(shader,this);
-        try
-        {
-            shader->useShader(rdata->mesh());
-        }
-        catch (const std::string &error)
-        {
-            LOGE("Error detected in VulkanRenderer; name : %s, error : %s",
-                 rdata->owner_object()->name().c_str(), error.c_str());
-            return -1;
-        }
+        shader->useShader();
         return 1;
     }
 
@@ -185,7 +179,7 @@ namespace gvr {
             {
                 LOGE("Error detected in VulkanRenderer");
                 shader = shader_manager->findShader(std::string("GVRErrorShader"));
-                shader->useShader(rdata->mesh());
+                shader->useShader();
             }
             allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }
