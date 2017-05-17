@@ -25,7 +25,7 @@ namespace gvr {
 
 extern "C" {
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeRenderData_ctor(JNIEnv * env, jobject obj);
+Java_org_gearvrf_NativeRenderData_ctor(JNIEnv * env, jobject obj);
 
     JNIEXPORT jlong JNICALL
     Java_org_gearvrf_NativeRenderData_getComponentType(JNIEnv * env, jobject obj);
@@ -79,7 +79,6 @@ extern "C" {
     JNIEXPORT jfloat JNICALL
     Java_org_gearvrf_NativeRenderData_getOffsetFactor(JNIEnv * env,
             jobject obj, jlong jrender_data);
-
 
     JNIEXPORT void JNICALL
     Java_org_gearvrf_NativeRenderData_setOffsetFactor(JNIEnv * env,

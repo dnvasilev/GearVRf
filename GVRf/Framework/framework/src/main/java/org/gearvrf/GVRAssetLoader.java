@@ -852,6 +852,27 @@ public final class GVRAssetLoader {
         return texture;
     }
 
+    /** @since 1.6.2 */
+    GVRAssimpImporter readFileFromResources(GVRContext gvrContext, GVRAndroidResource resource,
+                                            EnumSet<GVRImportSettings> settings) throws IOException {
+        byte[] bytes;
+        InputStream stream = resource.getStream();
+        try {
+            bytes = new byte[stream.available()];
+            stream.read(bytes);
+        } finally {
+            resource.closeStream();
+        }
+        String resourceFilename = resource.getResourceFilename();
+        if (resourceFilename == null) {
+            resourceFilename = ""; // Passing null causes JNI exception.
+        }
+        long nativeValue = NativeImporter.readFromByteArray(bytes,
+                resourceFilename, GVRImportSettings.getAssimpImportFlags(settings));
+        return new GVRAssimpImporter(gvrContext, nativeValue);
+    }
+
+
 
     // IO Handler for Jassimp
     static class ResourceVolumeIO implements JassimpFileIO {

@@ -22,12 +22,10 @@
 
 #include <memory>
 #include <vector>
-#include <sstream>
+#include<sstream>
 
 #include "gl/gl_program.h"
 #include "glm/glm.hpp"
-
-#include "objects/mesh.h"
 #include "java_component.h"
 #include "objects/shader_data.h"
 #include "objects/render_pass.h"
@@ -141,9 +139,7 @@ public:
         return mesh_;
     }
 
-
-    virtual bool updateGPU(Renderer*) const;
-
+    virtual bool updateGPU(Renderer*);
     void set_mesh(Mesh* mesh);
 
     void add_pass(RenderPass* render_pass);
@@ -155,13 +151,13 @@ public:
 
     ShaderData* material(int pass) const ;
 
-    void updateBones(const float* boneData, int numFloats);
     /**
      * Select or generate a shader for this render data.
      * This function executes a Java task on the Framework thread.
      */
     void bindShader(Scene* scene);
     void setDirty(u_short dirty);
+
     bool isDirty(u_short bit){
         return *dirty_flag_ & bit;
     }
@@ -350,6 +346,7 @@ public:
 
     void set_shader(int pass, int shaderid)
     {
+        LOGD("SHADER: RenderData:setNativeShader %d %p", shaderid, this);
         render_pass_list_[pass]->set_shader(shaderid);
     }
 
@@ -383,7 +380,7 @@ protected:
     static const int DEFAULT_RENDERING_ORDER = Geometry;
     jmethodID bindShaderMethod_;
     Mesh* mesh_;
-    mutable UniformBlock* bones_ubo_;
+    UniformBlock* bones_ubo_;
     Batch* batch_;
     bool hash_code_dirty_;
     std::string hash_code;

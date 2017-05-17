@@ -37,14 +37,14 @@ void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data
         LOGE("External renderer only takes external renderer textures");
         return;
     }
-    ExternalImage* image = static_cast<ExternalImage*>(texture->getImage());
+
     Mesh* mesh = render_data->mesh();
     if (mesh == NULL) {
         LOGE("No mesh!?");
         return;
     }
 
-    if (mesh->getVertexCount() == 0) {
+    if (mesh->vertices().empty()) {
         LOGE("No vertices!?");
         return;
     }
@@ -70,39 +70,31 @@ void ExternalRendererShader::render(RenderState* rstate, RenderData* render_data
     glActiveTexture(GL_TEXTURE0);
 
     TextureCapturer *capturer(render_data->get_texture_capturer());
-    int index, offset, size;
-    int nverts = mesh->getVertexCount();
-    const VertexBuffer* vbuf = mesh->getVertexBuffer();
-    if (!vbuf->getInfo("a_texcoord", index, offset, size))
-    {
-        return;
-    }
-    const float* texcoords = vbuf->getVertexData() + (offset / sizeof(float));
+    ExternalImage* extImage = reinterpret_cast<ExternalImage*>(texture->getImage());
     if (!capturer || !capturer->getAndClearPendingCapture()) {
         // Original rendering
         float opacity = 1.0f;
-
         material->getFloat("u_opacity", opacity);
-        if (vbuf->getInfo("a_texcoord", index, offset, size))
-        {
-            externalRenderer(image->getData(),
-                             scratchBuffer, 6, glm::value_ptr(rstate->uniforms.u_mvp), 16,
-                             texcoords, nverts * 2, opacity);
-        }
+        externalRenderer(extImage->getData(),
+                         scratchBuffer, 6,
+                         glm::value_ptr(rstate->uniforms.u_mvp), 16,
+                         glm::value_ptr(*mesh->getVec2Vector("a_texcoord").data()), mesh->getVec2Vector("a_texcoord").size() * 2,
+                         opacity);
     } else {
         // Capture texture in RenderTexture
         capturer->beginCapture();
 
-        const float* vertices = vbuf->getVertexData();
-        if (nverts > 0) {
-            float halfWidth = fabs(vertices[0]);
-            float halfHeight = fabs(vertices[1]);
+        const std::vector<glm::vec3>& vertices(mesh->vertices());
+        if (!vertices.empty()) {
+            float halfWidth = fabs(vertices[0][0]);
+            float halfHeight = fabs(vertices[0][1]);
 
             glm::mat4 mvp = capturer->getMvpMatrix(halfWidth, halfHeight);
-            externalRenderer(image->getData(),
+            externalRenderer(extImage->getData(),
                     scratchBuffer, 6,
                     glm::value_ptr(mvp), 16,
-                    texcoords, nverts * 2, 1.0f);
+                    glm::value_ptr(*mesh->getVec2Vector("a_texcoord").data()), mesh->getVec2Vector("a_texcoord").size() * 2,
+                    1.0);
         }
 
         capturer->startReadBack();

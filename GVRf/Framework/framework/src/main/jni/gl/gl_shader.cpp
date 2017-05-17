@@ -115,6 +115,46 @@ void GLShader::initialize(Mesh* mesh)
     }
     vertexShader_.clear();
     fragmentShader_.clear();
+    bindMesh(mesh);
+}
+
+void GLShader::bindMesh(Mesh* mesh)
+{
+    if (LOG_SHADER) LOGD("SHADER: getting attribute locations");
+    {
+        std::lock_guard<std::mutex> lock(attributeVariablesLock_);
+        getVertexDescriptor().forEachEntry([this, mesh](const DataDescriptor::DataEntry& entry) mutable
+        {
+           int loc = getLocation(entry.Name);
+           if (loc < 0)
+           {
+               loc = glGetAttribLocation(getProgramId(), entry.Name.c_str());
+               if (loc >= 0)
+               {
+                   setLocation(entry.Name, loc);
+                   //  if (Shader::LOG_SHADER) LOGE("SHADER::attribute:location: %s location: %d", key.c_str(), loc);
+                   switch (entry.Size / sizeof(float))
+                   {
+                       case 1:
+                       mesh->setVertexAttribLocF(loc, entry.Name);
+                       break;
+
+                       case 2:
+                       mesh->setVertexAttribLocV2(loc, entry.Name);
+                       break;
+
+                       case 3:
+                       mesh->setVertexAttribLocV3(loc, entry.Name);
+                       break;
+
+                       case 4:
+                       mesh->setVertexAttribLocV4(loc, entry.Name);
+                       break;
+                   }
+               }
+           }
+        });
+    }
 }
 
 bool GLShader::useShader(Mesh* mesh)

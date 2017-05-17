@@ -42,16 +42,12 @@ void RenderData::set_mesh(Mesh* mesh) {
     *dirty_flag_ |= (1 << NEW_MESH);
 }
 
-void RenderData::setDirty(u_short dirty)
-{
+void RenderData::setDirty(u_short dirty){
     *dirty_flag_ = dirty;
 }
-
-void RenderData::clearDirtyBits(u_short bits)
-{
+    void RenderData::clearDirtyBits(u_short bits){
         *dirty_flag_ &= bits;
-}
-
+    }
 bool RenderData::cull_face(int pass) const {
     if (pass >= 0 && pass < render_pass_list_.size()) {
         return render_pass_list_[pass]->cull_face();
@@ -83,7 +79,6 @@ JNIEnv *RenderData::set_java(jobject javaObj, JavaVM *javaVM)
         }
     }
 }
-
 
 void RenderData::setStencilFunc(int func, int ref, int mask) {
     stencilFuncFunc_= func;
@@ -129,7 +124,6 @@ void RenderData::bindShader(Scene *scene)
         }
     }
 }
-
 
 bool compareRenderDataByShader(RenderData *i, RenderData *j)
 {
@@ -219,7 +213,6 @@ std::string RenderData::getHashCode()
         render_data_string.append(to_string(stencilOpSfail_));
         render_data_string.append(to_string(stencilOpDpfail_));
         render_data_string.append(to_string(stencilOpDppass_));
-
         hash_code = render_data_string;
         hash_code_dirty_ = false;
 
@@ -227,7 +220,7 @@ std::string RenderData::getHashCode()
     return hash_code;
 }
 
-bool RenderData::updateGPU(Renderer* renderer) const
+bool RenderData::updateGPU(Renderer* renderer)
 {
     if (mesh_->hasBones())
     {
@@ -239,6 +232,6 @@ bool RenderData::updateGPU(Renderer* renderer) const
         bones_ubo_->setFloatVec("u_bone_matrix", &bone_matrices[0][0][0], bone_matrices.size() * 16);
         bones_ubo_->updateGPU(renderer);
     }
-    return mesh_->updateGPU(renderer);
+    return true;
 }
 }

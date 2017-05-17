@@ -216,7 +216,7 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
         oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye);
             int textureSwapChainIndex = frameBuffer_[eye].mTextureSwapChainIndex;
             const GLuint colorTexture = vrapi_GetTextureSwapChainHandle(frameBuffer_[eye].mColorTextureSwapChain, textureSwapChainIndex);
-#if 0
+
             if(gRenderer->isVulkanInstace()){
                 glBindTexture(GL_TEXTURE_2D,colorTexture);
                 glTexSubImage2D(   GL_TEXTURE_2D,
@@ -229,7 +229,6 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
                                    GL_UNSIGNED_BYTE,
                                    oculusTexData);
             }
-#endif
             endRenderingEye(eye);
         }
 

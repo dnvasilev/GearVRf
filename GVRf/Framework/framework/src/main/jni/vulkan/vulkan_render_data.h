@@ -24,7 +24,6 @@
 #include "objects/components/render_data.h"
 #include "vulkan_headers.h"
 #include "vulkan_shader.h"
-#include "vulkan_vertex_buffer.h"
 
 typedef unsigned long Long;
 namespace gvr
@@ -108,9 +107,23 @@ namespace gvr
         VulkanRenderData(const RenderData &rdata) : RenderData(rdata)
         {
         }
-        void createPipeline(Shader* shader, VulkanRenderer* renderer);
+        void createPipeline(Shader* shader, VulkanRenderer* renderer){
+            if(shader == NULL)
+                return;
 
-        UniformBlock& getTransformUbo(){
+            generateVbos(shader->signature(),renderer);
+            GVR_VK_Vertices& vertices = mesh_->getVkVertices();
+            VulkanShader* vk_shader = static_cast<VulkanShader*>(shader);
+
+            // TODO: if viewport, vertices, shader, draw_mode, blending or depth state changes, we need to re-create the pipeline
+            if(isHashCodeDirty() || isDirty(0xFFFF)){
+                renderer->getCore()->InitPipelineForRenderData(vertices,this, vk_shader->getVkVertexShader(),vk_shader->getVkFragmentShader());
+                getHashCode();
+                setDirty(false);
+            }
+
+        }
+        VulkanUniformBlock& getTransformUbo(){
             return vkData.getTransformUbo();
         }
         VulkanData &getVkData()
@@ -124,8 +137,7 @@ namespace gvr
             vkData.setDescriptorSetNull(flag);
         }
         void generateVbos(const std::string& descriptor, VulkanRenderer* renderer){
-            VulkanVertexBuffer* vbuf = static_cast<VulkanVertexBuffer*>(mesh_->getVertexBuffer());
-            vbuf->generateVKBuffers(renderer->getCore());
+            mesh_->generateVKBuffers(descriptor,renderer);
         }
 
         bool       uniform_dirty;
