@@ -499,6 +499,7 @@ BoundingVolume& SceneObject::getBoundingVolume() {
         }
     }
     bounding_volume_dirty_ = false;
+    BoundingVolume& bv = transformed_bounding_volume_;
     return transformed_bounding_volume_;
 }
 

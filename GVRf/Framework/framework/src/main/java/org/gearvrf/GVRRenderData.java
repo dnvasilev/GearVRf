@@ -432,7 +432,8 @@ public class GVRRenderData extends GVRJavaComponent implements IRenderable, Pret
         {
             Log.e(TAG, "Trying to set material from invalid pass. Pass " + passIndex + " was not created.");
         }
-        if (oldmtl != null) {
+        if (oldmtl != material)
+        {
             bindShader(getGVRContext().getMainScene());
         }
     }

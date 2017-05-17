@@ -312,7 +312,7 @@ public class GVRSphereSceneObject extends GVRSceneObject {
             int sliceNumber, boolean facingOut, GVRMaterial material) {
         generateSphere(stackNumber, sliceNumber, facingOut);
 
-        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+        GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
         mesh.setVertices(vertices);
         mesh.setNormals(normals);
         mesh.setTexCoords(texCoords);
@@ -761,7 +761,7 @@ public class GVRSphereSceneObject extends GVRSceneObject {
 
             sliceCounter++;
             if (sliceCounter == slicePerSegment) {
-                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 mesh.setVertices(vertices);
                 mesh.setNormals(normals);
                 mesh.setTexCoords(texCoords);
@@ -952,7 +952,7 @@ public class GVRSphereSceneObject extends GVRSceneObject {
                     }
                 }
 
-                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+                GVRMesh mesh = new GVRMesh(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal");
                 mesh.setVertices(vertices);
                 mesh.setNormals(normals);
                 mesh.setTexCoords(texCoords);

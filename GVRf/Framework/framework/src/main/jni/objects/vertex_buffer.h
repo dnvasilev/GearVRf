@@ -11,6 +11,7 @@
 namespace gvr {
     class Shader;
     class Renderer;
+    class IndexBuffer;
 
 /**
  * Interleaved vertex storage
@@ -140,7 +141,7 @@ namespace gvr {
         void            getBoundingVolume(BoundingVolume& bv) const;
         void            setBoneData(VertexBoneData& boneData);
         virtual bool    updateGPU(Renderer*) = 0;
-        virtual bool    bindBuffer(Shader*, Renderer*) = 0;
+        virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf) = 0;
 
     protected:
         virtual void    parseDescriptor();

@@ -40,7 +40,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
 
 
     public GVRMesh(GVRContext gvrContext) {
-        this(gvrContext, "float3 a_position float3 a_normal float2 a_texcoord");
+        this(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal ");
     }
 
     public GVRMesh(GVRContext gvrContext, String vertexDescriptor) {

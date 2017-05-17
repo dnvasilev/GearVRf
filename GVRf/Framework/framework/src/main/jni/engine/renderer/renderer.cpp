@@ -430,26 +430,24 @@ RenderData* Renderer::post_effect_render_data()
 void Renderer::updateTransforms(RenderState& rstate, UniformBlock* transform_ubo, Transform* model)
 {
     rstate.uniforms.u_model = model->getModelMatrix();
-    rstate.uniforms.u_mv = rstate.uniforms.u_view * rstate.uniforms.u_model;
-    rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
-    rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
+    transform_ubo->setMat4("u_model", rstate.uniforms.u_model);
 
-    if (use_multiview && !rstate.shadow_map)
-    {
-        rstate.uniforms.u_view_[0] = rstate.scene->main_camera_rig()->left_camera()->getViewMatrix();
-        rstate.uniforms.u_view_[1] = rstate.scene->main_camera_rig()->right_camera()->getViewMatrix();
-        rstate.uniforms.u_mv_[0] = rstate.uniforms.u_view_[0] * rstate.uniforms.u_model;
-        rstate.uniforms.u_mv_[1] = rstate.uniforms.u_view_[1] * rstate.uniforms.u_model;
-        rstate.uniforms.u_mv_it_[0] = glm::inverseTranspose(rstate.uniforms.u_mv_[0]);
-        rstate.uniforms.u_mv_it_[1] = glm::inverseTranspose(rstate.uniforms.u_mv_[1]);
-        rstate.uniforms.u_mvp_[0] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[0];
-        rstate.uniforms.u_mvp_[1] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[1];
-        rstate.uniforms.u_view_inv_[0] = glm::inverse(rstate.uniforms.u_view_[0]);
-        rstate.uniforms.u_view_inv_[1] = glm::inverse(rstate.uniforms.u_view_[1]);
-    }
     if (use_multiview)
     {
+        if (!rstate.shadow_map)
+        {
+            rstate.uniforms.u_view_[0] = rstate.scene->main_camera_rig()->left_camera()->getViewMatrix();
+            rstate.uniforms.u_view_[1] = rstate.scene->main_camera_rig()->right_camera()->getViewMatrix();
+            rstate.uniforms.u_mv_[0] = rstate.uniforms.u_view_[0] * rstate.uniforms.u_model;
+            rstate.uniforms.u_mv_[1] = rstate.uniforms.u_view_[1] * rstate.uniforms.u_model;
+            rstate.uniforms.u_mv_it_[0] = glm::inverseTranspose(rstate.uniforms.u_mv_[0]);
+            rstate.uniforms.u_mv_it_[1] = glm::inverseTranspose(rstate.uniforms.u_mv_[1]);
+            rstate.uniforms.u_mvp_[0] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[0];
+            rstate.uniforms.u_mvp_[1] = rstate.uniforms.u_proj * rstate.uniforms.u_mv_[1];
+            rstate.uniforms.u_view_inv_[0] = glm::inverse(rstate.uniforms.u_view_[0]);
+            rstate.uniforms.u_view_inv_[1] = glm::inverse(rstate.uniforms.u_view_[1]);
+        }
         transform_ubo->setMat4("u_view_", rstate.uniforms.u_view_[0]);
         transform_ubo->setMat4("u_mvp_", rstate.uniforms.u_mvp_[0]);
         transform_ubo->setMat4("u_mv_", rstate.uniforms.u_mv_[0]);
@@ -458,13 +456,15 @@ void Renderer::updateTransforms(RenderState& rstate, UniformBlock* transform_ubo
     }
     else
     {
+        rstate.uniforms.u_mv = rstate.uniforms.u_view * rstate.uniforms.u_model;
+        rstate.uniforms.u_mv_it = glm::inverseTranspose(rstate.uniforms.u_mv);
+        rstate.uniforms.u_mvp = rstate.uniforms.u_proj * rstate.uniforms.u_mv;
         transform_ubo->setMat4("u_view", rstate.uniforms.u_view);
         transform_ubo->setMat4("u_mvp", rstate.uniforms.u_mvp);
         transform_ubo->setMat4("u_mv", rstate.uniforms.u_mv);
         transform_ubo->setMat4("u_mv_it", rstate.uniforms.u_mv_it);
         transform_ubo->setMat4("u_view_i", rstate.uniforms.u_view_inv);
     }
-    transform_ubo->setMat4("u_model", rstate.uniforms.u_model);
     transform_ubo->updateGPU(this);
 }
 

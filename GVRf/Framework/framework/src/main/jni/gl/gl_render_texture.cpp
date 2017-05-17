@@ -64,15 +64,12 @@ GLRenderTexture::GLRenderTexture(int width, int height, int sample_count,
           renderTexture_gl_color_buffer_(nullptr),
           layer_index_(0)
 {
-    GLRenderImage* colorbuffer = new GLRenderImage(width, height);
+    GLRenderImage* colorbuffer = new GLRenderImage(width, height, jcolor_format, texparams);
     GLenum depth_format;
 
     mImage = colorbuffer;
-    if (texparams)
-    {
-        mImage->texParamsChanged(mTexParams);
-    }
     initialize();
+    mImage->isReady();
     switch (jdepth_format)
     {
         case DepthFormat::DEPTH_24:
@@ -100,7 +97,7 @@ GLRenderTexture::GLRenderTexture(int width, int height, int sample_count,
     else
     {
         generateRenderTextureEXT(sample_count, jdepth_format,
-                                 depth_format,width, height);
+                                 depth_format, width, height);
     }
     if (jdepth_format != DepthFormat::DEPTH_0)
     {

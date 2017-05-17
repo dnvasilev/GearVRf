@@ -54,10 +54,7 @@ public:
      */
     static void dump(GLuint programID, int blockIndex);
 
-    GLuint getBuffer() { return GLBuffer; }
-
 protected:
-    GLint       GLBlockIndex;
     GLuint      GLBuffer;
     GLuint      GLOffset;
 };

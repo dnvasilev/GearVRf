@@ -5,6 +5,7 @@
  *
  ****/
 #include "gl_vertex_buffer.h"
+#include "gl_index_buffer.h"
 #include "gl_shader.h"
 
 namespace gvr {
@@ -28,32 +29,26 @@ namespace gvr {
         }
     }
 
-    bool GLVertexBuffer::bindBuffer(Shader* shader, Renderer* renderer)
+    void GLVertexBuffer::bindToShader(Shader* shader, IndexBuffer* ibuf)
     {
-        if (mVBufferID != -1)
-        {
-            GLShader* glshader = reinterpret_cast<GLShader*>(shader);
-            LOGV("VertexBuffer::bindBuffer %d %d", mVArrayID, mVBufferID);
-            glBindVertexArray(mVArrayID);
-            glBindBuffer(GL_ARRAY_BUFFER, mVBufferID);
-            bindToShader(glshader->getVertexDescriptor(), glshader->getProgramId());
-            checkGLError("VertexBuffer::bindBuffer");
-            return true;
-        }
-        return false;
-    }
+        DataDescriptor& vertexDesc = shader->getVertexDescriptor();
+        GLuint programId = static_cast<GLShader*>(shader)->getProgramId();
 
-
-    void GLVertexBuffer::bindToShader(DataDescriptor& desc, GLuint programId)
-    {
+        glBindVertexArray(mVArrayID);
         if (mProgramID == programId)
         {
             return;
         }
         mProgramID = programId;
-        LOGV("VertexBuffer::bindToShader bind buffer %d to shader %d", mVBufferID, programId);
+        if (ibuf)
+        {
+            ibuf->bindBuffer(shader);
+        }
+        LOGV("VertexBuffer::bindToShader bind vertex array %d to shader %d", mVBufferID, programId);
         int vsize = getTotalSize();
-        desc.forEachEntry([this, programId, vsize](const DataDescriptor::DataEntry &e)
+        glBindBuffer(GL_ARRAY_BUFFER, mVBufferID);
+
+        vertexDesc.forEachEntry([this, programId, vsize](const DataDescriptor::DataEntry &e)
         {
             const DataDescriptor::DataEntry* entry = find(e.Name);
             if (entry != nullptr)
@@ -94,8 +89,8 @@ namespace gvr {
         if (mVBufferID == -1)
         {
             glGenBuffers(1, (GLuint*) &mVBufferID);
-            mIsDirty = true;
             LOGV("VertexBuffer::updateGPU created vertex buffer %d with %d vertices", mVBufferID, getVertexCount());
+            mIsDirty = true;
         }
         if (mIsDirty)
         {

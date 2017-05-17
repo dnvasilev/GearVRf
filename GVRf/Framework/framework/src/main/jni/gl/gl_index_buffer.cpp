@@ -22,7 +22,7 @@ namespace gvr {
         }
     }
 
-    bool GLIndexBuffer::bindBuffer(Shader* shader, Renderer* renderer)
+    bool GLIndexBuffer::bindBuffer(Shader* shader)
     {
         if (mIBufferID != -1)
         {

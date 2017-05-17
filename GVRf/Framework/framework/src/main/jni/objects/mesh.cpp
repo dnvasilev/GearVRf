@@ -528,7 +528,7 @@ namespace gvr {
 
     void Mesh::createAttributeMapping(int programId, int& totalStride, int &attrLen) {
         totalStride_ = attrLen = 0;
-        if (programId == -1) {
+        if (programId < 0) {
             // If program id has not been set, return.
             return;
         }
@@ -550,6 +550,7 @@ namespace gvr {
             else {
                 attrData.type = GL_FLOAT;
                 int loc = glGetAttribLocation(programId, attrName);
+
                 attrData.index = loc;
                 attrData.data = NULL;
                 attrData.offset = totalStride_;

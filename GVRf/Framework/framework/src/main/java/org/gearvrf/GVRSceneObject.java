@@ -228,17 +228,17 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      * @param gvrContext
      *            current {@link GVRContext}.
      * @param mesh
-     *            Basically, a stream containing a mesh file.
+     *            A stream containing a mesh file.
      * @param texture
-     *            Basically, a stream containing a texture file. This can be
+     *            A stream containing a texture file. This can be
      *            either a compressed texture or a regular Android bitmap file.
      * 
      * @since 1.6.7
      */
     public GVRSceneObject(GVRContext gvrContext, GVRAndroidResource mesh,
-            GVRAndroidResource resource) {
+            GVRAndroidResource texture) {
         this(gvrContext, gvrContext.loadFutureMesh(mesh), gvrContext
-                .getAssetLoader().loadTexture(resource));
+                .getAssetLoader().loadTexture(texture));
     }
 
     /**

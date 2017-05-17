@@ -21,7 +21,7 @@ namespace gvr {
         virtual ~VulkanVertexBuffer();
 
         virtual bool    updateGPU(Renderer*);
-        virtual bool    bindBuffer(Shader*, Renderer*) { }
+        virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf) { }
         GVR_VK_Vertices* getVKVertices() const  { return vkVertices_; }
         void    generateVKBuffers(VulkanCore* vulkanCore);
 

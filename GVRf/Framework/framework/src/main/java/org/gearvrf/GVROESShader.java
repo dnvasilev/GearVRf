@@ -35,7 +35,7 @@ public class GVROESShader extends GVRShader
     {
         super("float3 u_color float u_opacity ",
               "samplerExternalOES u_texture",
-              "float3 a_position float3 a_normal float2 a_texcoord", 300);
+              "float3 a_position float2 a_texcoord", 300);
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context, R.raw.ext_tex_frag));
         setSegment("VertexTemplate", TextFile.readTextFile(context, R.raw.pos_tex_ubo));

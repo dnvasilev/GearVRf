@@ -19,7 +19,7 @@ namespace gvr {
         virtual ~VulkanIndexBuffer();
 
         virtual bool    updateGPU(Renderer*);
-        virtual bool    bindBuffer(Shader*, Renderer*)  { return true; }
+        virtual bool    bindBuffer(Shader*)  { return true; }
         const GVR_VK_Indices& getVKIndices() const { return m_indices; }
 
     protected:
