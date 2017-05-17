@@ -13,44 +13,42 @@
  * limitations under the License.
  */
 
-#include <engine/renderer/gl_renderer.h>
-#include "objects/scene.h"
+#include "engine/renderer/gl_renderer.h"
 #include "gl/gl_render_data.h"
-#include "objects/mesh.h"
 
 namespace gvr
 {
-
     void GLRenderData::render(Shader* shader, Renderer* renderer)
     {
         GLShader*   glshader = reinterpret_cast<GLShader*>(shader);
         int         programId = glshader->getProgramId();
-        int         a_bone_indices;
-        int         a_bone_weights;
+        int         indexCount = mesh_->getIndexCount();
+        int         vertexCount = mesh_->getVertexCount();
+        int         mode = draw_mode();
 
+        mesh_->bindBuffers(shader, renderer);
+        if (mesh_->hasBones() && bones_ubo_)
+        {
+            GLUniformBlock* glbones = static_cast<GLUniformBlock*>(bones_ubo_);
+            glbones->bindBuffer(shader, renderer);
+        }
+        if (Shader::LOG_SHADER) LOGV("SHADER: binding vertex arrays to program %d %p %d vertices, %d indices mode = %d",
+                                     programId, this, vertexCount, indexCount, mode);
+        switch (mesh_->getIndexSize())
+        {
+            case 2:
+            glDrawElements(mode, indexCount, GL_UNSIGNED_SHORT, 0);
+            break;
 
-        glBindVertexArray(mesh_->getVAOId(programId));
-        a_bone_indices = glGetAttribLocation(programId, "a_bone_indices");
-        a_bone_weights = glGetAttribLocation(programId, "a_bone_weights");
-        if ((a_bone_indices >= 0) && (a_bone_weights >= 0) && bones_ubo_)
-        {
-            GLUniformBlock *bones_ubo = reinterpret_cast<GLUniformBlock *>(bones_ubo_);
-            mesh_->setBoneLoc(a_bone_indices, a_bone_weights);
-            mesh_->generateBoneArrayBuffers(programId);
-            bones_ubo->updateGPU(renderer);
-            bones_ubo->bindBuffer(shader, renderer);
-        }
-        if (Shader::LOG_SHADER) LOGV("SHADER: binding vertex arrays to program %d %p", programId, this);
-        if (mesh_->indices().size() > 0)
-        {
-            glDrawElements(draw_mode(), mesh_->indices().size(), GL_UNSIGNED_SHORT, 0);
+            case 4:
+            glDrawElements(mode, indexCount, GL_UNSIGNED_INT, 0);
+            break;
 
+            default:
+            glDrawArrays(mode, 0, vertexCount);
+            break;
         }
-        else
-        {
-            glDrawArrays(draw_mode(), 0, mesh_->vertices().size());
-        }
-        checkGLError("GLRenderData::render");
+        checkGLError("RenderData::render after draw");
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

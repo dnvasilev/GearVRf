@@ -415,9 +415,9 @@ RenderData* Renderer::post_effect_render_data()
     quad_triangles.push_back(3);
     quad_triangles.push_back(2);
     Mesh* mesh = new Mesh(std::string("float3 a_position float2 a_texcoord"));
-    mesh->set_vertices(quad_vertices);
-    mesh->setVec2Vector("a_texcoord",quad_uvs);
-    mesh->set_triangles(quad_triangles);
+    mesh->setVertices(glm::value_ptr(quad_vertices[0]), quad_vertices.size());
+    mesh->setFloatVec("a_texcoord", glm::value_ptr(quad_uvs[0]), quad_uvs.size());
+    mesh->setTriangles(quad_triangles.data(), quad_triangles.size());
 
     RenderPass* pass = new RenderPass();
 
