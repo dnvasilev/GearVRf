@@ -86,8 +86,10 @@ namespace gvr {
         */
         bool    getShortVec(unsigned short* dest, int destSize) const;
 
+        bool            isDirty() const { return mIsDirty; }
         virtual bool    bindBuffer(Shader*) = 0;
         virtual bool    updateGPU(Renderer*) = 0;
+        void            dump() const;
 
     protected:
         bool            setIndexCount(int count);

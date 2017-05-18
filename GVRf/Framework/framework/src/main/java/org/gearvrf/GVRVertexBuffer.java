@@ -15,6 +15,8 @@
 
 package org.gearvrf;
 
+import org.gearvrf.utility.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.channels.IllegalBlockingModeException;
@@ -47,11 +49,13 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
     public FloatBuffer getFloatVec(String attributeName)
     {
         int size = getAttributeSize(attributeName);
-        if (size < 0)
+        if (size <= 0)
         {
             return null;
         }
-        FloatBuffer data = ByteBuffer.allocateDirect(4 * size).asFloatBuffer();
+        size *= 4 * getVertexCount();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+        FloatBuffer data = buffer.asFloatBuffer();
         if (!NativeVertexBuffer.getFloatVec(getNative(), attributeName, data, 0))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
@@ -59,14 +63,25 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
         return data;
     }
 
+    public float[] getFloatArray(String attributeName)
+    {
+        float[] array = NativeVertexBuffer.getFloatVecArray(getNative(), attributeName);
+        if (array == null)
+        {
+            throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
+        }
+        return array;
+    }
+
     public int[] getIntVec(String attributeName)
     {
         int size = getAttributeSize(attributeName);
-        if (size < 0)
+        if (size <= 0)
         {
             return null;
         }
-        int[] data = new int[getVertexCount() * size];
+        size *= 4 * getVertexCount();
+        int[] data = new int[size];
         if (!NativeVertexBuffer.getIntVec(getNative(), attributeName, data, 0))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
@@ -251,6 +266,8 @@ class NativeVertexBuffer {
     static native boolean setIntVec(long vbuf, String name, int[] data, int stride);
 
     static native boolean getFloatVec(long vbuf, String name, FloatBuffer data, int stride);
+
+    static native float[] getFloatVecArray(long vbuf, String name);
 
     static native boolean setFloatVec(long vbuf, String name, FloatBuffer data, int stride);
 

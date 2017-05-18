@@ -44,7 +44,6 @@ namespace gvr {
     public:
         Mesh(const std::string& descriptor);
         Mesh(VertexBuffer& vbuf);
-        virtual ~Mesh() { }
 
         VertexBuffer* getVertexBuffer() const { return mVertices; }
         IndexBuffer* getIndexBuffer() const { return mIndices; }
@@ -101,7 +100,6 @@ namespace gvr {
         {
             return vertexBoneData_;
         }
-        virtual bool updateGPU(Renderer*);
         void add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
         void dirty(DIRTY_BITS bit);
 

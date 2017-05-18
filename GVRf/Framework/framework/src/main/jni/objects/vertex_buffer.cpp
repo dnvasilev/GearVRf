@@ -6,6 +6,7 @@
  ****/
 #include "vertex_buffer.h"
 #include "util/gvr_log.h"
+#include <sstream>
 
 namespace gvr {
 
@@ -175,9 +176,9 @@ namespace gvr {
             LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName.c_str());
             return false;
         }
-        dest = reinterpret_cast<float*>(mVertexData);
+        dest = reinterpret_cast<float*>(mVertexData) + attr->Offset / sizeof(float);
         dstStride = getTotalSize() / sizeof(float);
-        mAttributes[attr->Index].Data = ((char*) dest) + attr->Offset;
+        mAttributes[attr->Index].Data = (char*) dest;
         srcend = src + srcSize;
 
         for (int i = 0; i < mVertexCount; ++i)
@@ -219,7 +220,7 @@ namespace gvr {
             LOGD("VertexBuffer: cannot set attribute %s", attributeName.c_str());
             return false;
         }
-        srcStride = getTotalSize() / sizeof(float);
+        src += attr->Offset / sizeof(float);
         dstend = dest + destSize;
         if (destStride == 0)
         {
@@ -232,12 +233,12 @@ namespace gvr {
                 dest[j] = src[j];
             }
             src += srcStride;
+            dest += destStride;
             if (dest > dstend)
             {
                 LOGE("VertexBuffer: error reading from vertex array %s, not enough room in destination array", attributeName.c_str());
                 return false;
             }
-            dest += destStride;
         }
         return true;
     }
@@ -290,9 +291,9 @@ namespace gvr {
             LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName.c_str());
             return false;
         }
-        dest = reinterpret_cast<int*>(mVertexData);
+        dest = reinterpret_cast<int*>(mVertexData) + attr->Offset / sizeof(int);
         dstStride = getTotalSize() / sizeof(int);
-        mAttributes[attr->Index].Data = ((char*) dest) + attr->Offset;
+        mAttributes[attr->Index].Data = ((char*) dest);
         attrStride = attr->Size / sizeof(int);
         srcend = src + srcSize;
 
@@ -334,6 +335,7 @@ namespace gvr {
             LOGE("VertexBuffer: cannot set attribute %s", attributeName.c_str());
             return false;
         }
+        src += attr->Offset / sizeof(float);
         srcStride = getTotalSize() / sizeof(float);
         dstend = dest + destSize;
         if (destStride == 0)
@@ -421,7 +423,25 @@ namespace gvr {
         }
     }
 
-    bool VertexBuffer::forAllVertices(const std::string& attrName, std::function<void(int iter, const float* vertex)> func) const
+    bool VertexBuffer::forAllVertices(std::function<void(int iter, const float* vertex)> func) const
+    {
+        std::lock_guard<std::mutex> lock(mLock);
+        const float*    data = reinterpret_cast<float*>(mVertexData);
+        int             stride = getVertexSize();
+
+        if (data == NULL)
+        {
+            return false;
+        }
+        for (int i = 0; i < mVertexCount; ++i)
+        {
+            func(i, data);
+            data += stride;
+        }
+        return true;
+    }
+
+    bool VertexBuffer::forAllVertices(const std::string& attrName, std::function<void (int iter, const float* vertex)> func) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* attr = find(attrName);
@@ -440,10 +460,27 @@ namespace gvr {
         }
         for (int i = 0; i < mVertexCount; ++i)
         {
-            func(i, data);
+            func(i, data + attr->Offset);
             data += stride;
         }
         return true;
+    }
+
+    void VertexBuffer::dump() const
+    {
+        int vsize = getVertexSize();
+        forAllVertices([vsize](int iter, const float* vertex)
+        {
+            const float* v = vertex;
+            std::ostringstream os;
+            os.precision(3);
+            for (int i = 0; i < vsize; ++i)
+            {
+                float f = *v++;
+                os << std::fixed << f << " ";
+            }
+            LOGV("%s", os.str().c_str());
+        });
     }
 
 } // end gvrf

@@ -5,6 +5,7 @@
  *
  ****/
 #include <string>
+#include <sstream>
 #include "index_buffer.h"
 #include "../util/gvr_log.h"
 
@@ -97,6 +98,8 @@ namespace gvr {
         dest = reinterpret_cast<unsigned int*>(mIndexData);
         memcpy(dest, src, srcSize * sizeof(int));
         mIsDirty = true;
+        LOGE("Dump IndexBuffer:");
+        dump();
         return true;
     }
 
@@ -189,6 +192,40 @@ namespace gvr {
         }
     }
 
+    void IndexBuffer::dump() const
+    {
+        std::ostringstream os;
+        int n = 0;
+
+        if ((mIndexData == NULL) || (mIndexCount == 0))
+        {
+            return;
+        }
+        for (int i = 0; i < mIndexCount; ++i)
+        {
+            char* p = mIndexData + i * mIndexByteSize;
+
+            if (n == 8)
+            {
+                LOGV("%s", os.str().c_str());
+                os.clear();
+                os.str("");
+                n = 0;
+            }
+            if (mIndexByteSize > 2)
+            {
+                int tmp = *((int*) p);
+                os << tmp << " ";
+            }
+            else
+            {
+                short tmp = *((short*) p);
+                os <<  tmp << " ";
+            }
+            ++n;
+        }
+        LOGV("%s", os.str().c_str());
+    }
 
 } // end gvrf
 

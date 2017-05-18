@@ -136,12 +136,14 @@ namespace gvr {
         bool            getIntVec(const std::string& attributeName, int* data, int dataByteSize, int dataStride) const;
 
         void            forEachAttribute(std::function<void(const DataDescriptor::DataEntry &, VertexAttribute&)> func);
-        bool            forAllVertices(const std::string& attrName, std::function<void(int iter, const float* vertex)> func) const ;
+        bool            forAllVertices(const std::string& attrName, std::function<void (int iter, const float* vertex)> func) const;
+        bool            forAllVertices(std::function<void (int iter, const float* vertex)> func) const;
         bool            getInfo(const std::string& attributeName, int& index, int& offset, int& size) const;
         void            getBoundingVolume(BoundingVolume& bv) const;
         void            setBoneData(VertexBoneData& boneData);
-        virtual bool    updateGPU(Renderer*) = 0;
+        virtual bool    updateGPU(Renderer*, IndexBuffer*) = 0;
         virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf) = 0;
+        void            dump() const;
 
     protected:
         virtual void    parseDescriptor();

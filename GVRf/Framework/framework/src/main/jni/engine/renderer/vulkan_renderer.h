@@ -131,7 +131,7 @@ public:
                                  const std::string& uniformDescriptor, const std::string& textureDescriptor,
                                  const std::string& vertexDescriptor, const std::string& vertexShader,
                                  const std::string& fragmentShader);
-    virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
+    virtual void renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
 private:
     VulkanCore* vulkanCore_;
     void renderMesh(RenderState& rstate, RenderData* render_data){}

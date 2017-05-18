@@ -18,6 +18,7 @@ package org.gearvrf;
 import static org.gearvrf.utility.Assert.*;
 
 import java.nio.CharBuffer;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +59,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     }
 
     public GVRMesh(GVRContext gvrContext, String vertexDescriptor) {
-        this(new GVRVertexBuffer(gvrContext, vertexDescriptor, 0), new GVRIndexBuffer(gvrContext, 2, 0));
+        this(new GVRVertexBuffer(gvrContext, vertexDescriptor, 0), null);
     }
 
     /**
@@ -193,7 +194,8 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * @param triangles
      *            Array containing the packed triangle index data.
      */
-    public void setTriangles(char[] triangles) {
+    public void setTriangles(char[] triangles)
+    {
         if ((mIndices == null) && (triangles != null))
         {
             mIndices = new GVRIndexBuffer(getGVRContext(), 2, triangles.length);
@@ -243,10 +245,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
             {
                 setIndexBuffer(new GVRIndexBuffer(getGVRContext(), 4, indices.length));
             }
-            else
-            {
-                mIndices.setIntVec(indices);
-            }
+            mIndices.setIntVec(indices);
         }
         else
         {
@@ -263,10 +262,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
             {
                 setIndexBuffer(new GVRIndexBuffer(getGVRContext(), 2, indices.length));
             }
-            else
-            {
-                mIndices.setShortVec(indices);
-            }
+            mIndices.setShortVec(indices);
         }
         else
         {
@@ -283,11 +279,8 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
             {
                 setIndexBuffer(new GVRIndexBuffer(getGVRContext(), 2, indices.capacity() / 2));
             }
-            else
-            {
-                mIndices.setShortVec(indices);
-            }
-        }
+            mIndices.setShortVec(indices);
+         }
         else
         {
             NativeMesh.setIndexBuffer(getNative(), 0L);
@@ -303,7 +296,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      */
     public float[] getFloatVec(String key)
     {
-        return mVertices.getFloatVec(key).array();
+        return mVertices.getFloatArray(key);
     }
 
     /**

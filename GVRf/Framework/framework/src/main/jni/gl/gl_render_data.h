@@ -40,7 +40,6 @@ namespace gvr
         {
             copy(rdata);
         }
-
         virtual void render(Shader*, Renderer*);
 
     private:

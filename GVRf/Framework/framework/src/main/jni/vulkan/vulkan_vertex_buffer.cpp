@@ -32,10 +32,14 @@ namespace gvr {
         }
     }
 
-    bool VulkanVertexBuffer::updateGPU(Renderer* renderer)
+    bool VulkanVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf)
     {
         VulkanRenderer* vkrender = reinterpret_cast<VulkanRenderer*>(renderer);
         generateVKBuffers(vkrender->getCore());
+        if (ibuf)
+        {
+            ibuf->updateGPU(renderer);
+        }
     }
 
     void VulkanVertexBuffer::generateVKBuffers(VulkanCore* vulkanCore)

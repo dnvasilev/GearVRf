@@ -1,4 +1,3 @@
-#version 300 es
 in vec3 a_position;
 in vec2 a_texcoord;
 

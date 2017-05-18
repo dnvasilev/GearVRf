@@ -279,19 +279,6 @@ namespace gvr
         }
     }
 
-    bool Mesh::updateGPU(Renderer *renderer)
-    {
-        if (!mVertices || !mVertices->updateGPU(renderer))
-        {
-            return false;
-        }
-        if (mIndices && !mIndices->updateGPU(renderer))
-        {
-            return false;
-        }
-        return true;
-    }
-
     void Mesh::add_dirty_flag(const std::shared_ptr<u_short> &dirty_flag)
     {
         dirty_flags_.insert(dirty_flag);

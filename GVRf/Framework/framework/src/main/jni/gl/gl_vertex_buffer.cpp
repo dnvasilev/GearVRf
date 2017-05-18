@@ -29,9 +29,18 @@ namespace gvr {
         }
     }
 
+    /***
+     * Binds a VertexBuffer to a specific shader.
+     * The binding occurs if the VertexBuffer was previously used
+     * by a different shader. The GL vertex array object is
+     * configuration so that its vertex attributes match the
+     * associated shader. The IndexBuffer is also associated
+     * with the GL vertex array.
+     * @param shader shader vertex buffer is rendered with
+     * @param ibuf index buffer
+     */
     void GLVertexBuffer::bindToShader(Shader* shader, IndexBuffer* ibuf)
     {
-        DataDescriptor& vertexDesc = shader->getVertexDescriptor();
         GLuint programId = static_cast<GLShader*>(shader)->getProgramId();
 
         glBindVertexArray(mVArrayID);
@@ -45,10 +54,9 @@ namespace gvr {
             ibuf->bindBuffer(shader);
         }
         LOGV("VertexBuffer::bindToShader bind vertex array %d to shader %d", mVBufferID, programId);
-        int vsize = getTotalSize();
         glBindBuffer(GL_ARRAY_BUFFER, mVBufferID);
 
-        vertexDesc.forEachEntry([this, programId, vsize](const DataDescriptor::DataEntry &e)
+        shader->getVertexDescriptor().forEachEntry([this, programId](const DataDescriptor::DataEntry &e)
         {
             const DataDescriptor::DataEntry* entry = find(e.Name);
             if (entry != nullptr)
@@ -57,11 +65,11 @@ namespace gvr {
                 GLint loc = glGetAttribLocation(programId, e.Name.c_str());
                 if (loc >= 0)
                 {
+                    glEnableVertexAttribArray(loc);
                     glVertexAttribPointer(loc, entry->Size / sizeof(float),
                                        (entry->Type[0] == 'i') ? GL_INT : GL_FLOAT, GL_FALSE,
-                                       vsize, (GLvoid*) offset);
-                    glEnableVertexAttribArray(loc);
-                    LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %ld", e.Index, e.Name.c_str(), loc, offset);
+                                          getTotalSize(), (GLvoid*) offset);
+                    LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %d", e.Index, e.Name.c_str(), loc, entry->Offset);
                     checkGLError("VertexBuffer::bindToShader");
                 }
                 else
@@ -72,7 +80,7 @@ namespace gvr {
         });
     }
 
-    bool GLVertexBuffer::updateGPU(Renderer* renderer)
+    bool GLVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf)
     {
         std::lock_guard<std::mutex> lock(mLock);
         const float* vertexData = getVertexData();
@@ -83,14 +91,18 @@ namespace gvr {
         }
         if (mVArrayID == -1)
         {
-            glGenVertexArrays(1, (GLuint*) &mVArrayID);
+            glGenVertexArrays(1, &mVArrayID);
             LOGD("VertexBuffer::updateGPU creating vertex array %d", mVArrayID);
         }
         if (mVBufferID == -1)
         {
-            glGenBuffers(1, (GLuint*) &mVBufferID);
+            glGenBuffers(1, &mVBufferID);
             LOGV("VertexBuffer::updateGPU created vertex buffer %d with %d vertices", mVBufferID, getVertexCount());
             mIsDirty = true;
+        }
+        if (ibuf)
+        {
+            ibuf->updateGPU(renderer);
         }
         if (mIsDirty)
         {

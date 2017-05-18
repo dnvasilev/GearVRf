@@ -125,7 +125,7 @@ public:
 private:
     void updateLights(RenderState &rstate, Shader* shader, int texIndex);
     virtual void renderMesh(RenderState& rstate, RenderData* render_data);
-    virtual int renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
+    virtual void renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
     virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, Shader* shader);
     void occlusion_cull(RenderState& rstate,
                     std::vector<SceneObject*>& scene_objects);

@@ -32,8 +32,11 @@ namespace gvr {
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeIndexBuffer_getIntVec(JNIEnv* env, jobject obj, jlong jibuf, jintArray data);
 
+    JNIEXPORT jintArray JNICALL
+    Java_org_gearvrf_NativeIndexBuffer_getIntArray(JNIEnv* env, jobject obj, jlong jibuf);
+
     JNIEXPORT bool JNICALL
-    Java_org_gearvrf_NativeIndexBuffer_setIntVecArray(JNIEnv* env, jobject obj, jlong jibuf, jintArray data);
+    Java_org_gearvrf_NativeIndexBuffer_setIntArray(JNIEnv* env, jobject obj, jlong jibuf, jintArray data);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeIndexBuffer_setIntVec(JNIEnv* env, jobject obj, jlong jibuf, jobject jintbuf);
@@ -41,8 +44,11 @@ namespace gvr {
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeIndexBuffer_getShortVec(JNIEnv* env, jobject obj, jlong jibuf, jobject jshortbuf);
 
+    JNIEXPORT jcharArray JNICALL
+    Java_org_gearvrf_NativeIndexBuffer_getShortArray(JNIEnv* env, jobject obj, jlong jibuf);
+
     JNIEXPORT bool JNICALL
-    Java_org_gearvrf_NativeIndexBuffer_setShortVecArray(JNIEnv* env, jobject obj, jlong jibuf, jcharArray data);
+    Java_org_gearvrf_NativeIndexBuffer_setShortArray(JNIEnv* env, jobject obj, jlong jibuf, jcharArray data);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeIndexBuffer_setShortVec(JNIEnv* env, jobject obj, jlong jibuf, jobject jshortbuf);
@@ -91,8 +97,32 @@ Java_org_gearvrf_NativeIndexBuffer_getIntVec(JNIEnv * env, jobject obj, jlong ji
     return rc;
 }
 
+JNIEXPORT jintArray JNICALL
+Java_org_gearvrf_NativeIndexBuffer_getIntArray(JNIEnv* env, jobject obj, jlong jibuf)
+{
+    IndexBuffer* ibuf = reinterpret_cast<IndexBuffer*>(jibuf);
+    int n = ibuf->getIndexCount();
+    jintArray jdata = env->NewIntArray(n);
+    unsigned int* data = reinterpret_cast<unsigned int*>(env->GetIntArrayElements(jdata, 0));
+    ibuf->getIntVec(data, n);
+    env->ReleaseIntArrayElements(jdata, reinterpret_cast<jint*>(data), 0);
+    return jdata;
+}
+
+JNIEXPORT jcharArray JNICALL
+Java_org_gearvrf_NativeIndexBuffer_getShortArray(JNIEnv* env, jobject obj, jlong jibuf)
+{
+    IndexBuffer* ibuf = reinterpret_cast<IndexBuffer*>(jibuf);
+    jchar n = ibuf->getIndexCount();
+    jcharArray jdata = env->NewCharArray(n);
+    unsigned short* data = reinterpret_cast<unsigned short*>(env->GetCharArrayElements(jdata, 0));
+    ibuf->getShortVec(data, n);
+    env->ReleaseCharArrayElements(jdata, reinterpret_cast<jchar*>(data), 0);
+    return jdata;
+}
+
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeIndexBuffer_setShortVecArray(JNIEnv * env, jobject obj, jlong jibuf, jcharArray jdata)
+Java_org_gearvrf_NativeIndexBuffer_setShortArray(JNIEnv * env, jobject obj, jlong jibuf, jcharArray jdata)
 {
     IndexBuffer* ibuf = reinterpret_cast<IndexBuffer*>(jibuf);
     jchar* data = env->GetCharArrayElements(jdata, 0);
@@ -129,7 +159,7 @@ Java_org_gearvrf_NativeIndexBuffer_setIntVec(JNIEnv* env, jobject obj, jlong jib
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeIndexBuffer_setIntVecArray(JNIEnv * env, jobject obj, jlong jibuf, jintArray jdata)
+Java_org_gearvrf_NativeIndexBuffer_setIntArray(JNIEnv * env, jobject obj, jlong jibuf, jintArray jdata)
 {
     IndexBuffer* ibuf = reinterpret_cast<IndexBuffer*>(jibuf);
     unsigned int* data = reinterpret_cast<unsigned int*>(env->GetIntArrayElements(jdata, 0));

@@ -26,7 +26,7 @@ namespace gvr
     {
         if (!descriptor.empty())
         {
-            LOGE("setting descriptor %s", descriptor.c_str());
+            LOGV("DataDescriptor: %s", descriptor.c_str());
             parseDescriptor();
         }
         else

@@ -29,8 +29,8 @@ namespace gvr {
         GLVertexBuffer(const std::string& layout_desc, int vertexCount);
         virtual ~GLVertexBuffer();
 
-        virtual bool    updateGPU(Renderer*);
-        virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf);
+        virtual bool    updateGPU(Renderer*, IndexBuffer*f);
+        virtual void    bindToShader(Shader*, IndexBuffer*);
 
     protected:
         GLuint          mVBufferID;

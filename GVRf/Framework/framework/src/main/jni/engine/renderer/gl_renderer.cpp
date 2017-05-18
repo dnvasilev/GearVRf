@@ -619,21 +619,58 @@ namespace gvr
         ShaderData* curr_material = rstate.material_override;
         Shader* shader = nullptr;
 
+        /*
+         * If a material override is provided, render the mesh
+         * once with the designated material.
+         * If updateGPU returns -1, some textures are not ready
+         * yet and we do not render this mesh.
+         */
         if (curr_material)
         {
             if (curr_material->updateGPU(this) >= 0)
             {
                 shader = rstate.shader_manager->getShader(curr_material->getNativeShader());
+                numberTriangles += indexCount;
+                numberDrawCalls++;
+                set_face_culling(render_data->pass(0)->cull_face());
+                render_data->updateGPU(this);
+                GL(renderMaterialShader(rstate, render_data, curr_material, shader));
             }
-            else
-            {
-                return;
-            }
+            return;
         }
-        SceneObject* owner = render_data->owner_object();
+        /*
+         * No material override, render the mesh once for each pass
+         * using a different shader each time.
+         */
+        for (int curr_pass = 0; curr_pass < render_data->pass_count(); ++curr_pass)
+        {
+            numberTriangles += indexCount;
+            numberDrawCalls++;
+            set_face_culling(render_data->pass(curr_pass)->cull_face());
+            curr_material = render_data->pass(curr_pass)->material();
+            shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
+            renderWithShader(rstate, shader, render_data, curr_material);
+        }
+    }
+
+    void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data,
+                                          ShaderData* curr_material, Shader* shader)
+    {
+        GLMaterial* material = static_cast<GLMaterial*>(curr_material);
+        GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
         int drawMode = render_data->draw_mode();
 
-        render_data->updateGPU(this);
+        try
+        {
+            shader->useShader();
+        }
+        catch (const std::string &error)
+        {
+            LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
+                 render_data->owner_object()->name().c_str(), error.c_str());
+            shader = rstate.shader_manager->findShader(std::string("GVRErrorShader"));
+            shader->useShader();
+        }
         if ((drawMode == GL_LINE_STRIP) ||
             (drawMode == GL_LINES) ||
             (drawMode == GL_LINE_LOOP))
@@ -648,54 +685,12 @@ namespace gvr
                 glLineWidth(1.0f);
             }
         }
-        for (int curr_pass = 0; curr_pass < render_data->pass_count(); ++curr_pass)
-        {
-            numberTriangles += indexCount;
-            numberDrawCalls++;
-            set_face_culling(render_data->pass(curr_pass)->cull_face());
-            if (shader == nullptr)
-            {
-                curr_material = render_data->pass(curr_pass)->material();
-                shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
-                if (curr_material->updateGPU(this) < 0)
-                {
-                    return;
-                }
-            }
-            GL(renderMaterialShader(rstate, render_data, curr_material, shader));
-        }
-    }
-
-    void GLRenderer::renderMaterialShader(RenderState& rstate, RenderData* render_data,
-                                          ShaderData* curr_material, Shader* shader)
-    {
-        SceneObject* owner = render_data->owner_object();
-        ShaderManager* shader_manager = rstate.shader_manager;
-        GLMaterial* material = static_cast<GLMaterial*>(curr_material);
-        GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
-
-        if (shader == NULL)
-        {
-            LOGE("SHADER: shader not ready %s %p", owner->name().c_str(), render_data);
-            return;
-        }
-        try
-        {
-            shader->useShader();
-        }
-        catch (const std::string &error)
-        {
-            LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
-                 render_data->owner_object()->name().c_str(), error.c_str());
-            shader = shader_manager->findShader(std::string("GVRErrorShader"));
-            shader->useShader();
-        }
         int texIndex = material->bindToShader(shader, this);
         if (texIndex >= 0)
         {
             if (shader->useTransformBuffer())
             {
-                updateTransforms(rstate, getTransformUbo(), owner->transform());
+                updateTransforms(rstate, getTransformUbo(), render_data->owner_object()->transform());
                 getTransformUbo()->bindBuffer(shader, this);
             }
             if (shader->useLights())
@@ -707,36 +702,18 @@ namespace gvr
         checkGLError("renderMesh::renderMaterialShader");
     }
 
-    int GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData)
+    void GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData)
     {
-        GLMaterial* material = static_cast<GLMaterial*>(shaderData);
-
         if (shader == NULL)
         {
             LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
-            return 0;
+            return;
         }
-        GLRenderData* rdata = static_cast<GLRenderData*>(renderData);
-        if (material->updateGPU(this) < 0)
+        if (shaderData->updateGPU(this) >= 0)
         {
-            return 0;
+            renderData->updateGPU(this);
+            renderMaterialShader(rstate, renderData, shaderData, shader);
         }
-        rdata->updateGPU(this);
-        try
-        {
-            shader->useShader();
-        }
-        catch (const std::string& error)
-        {
-            LOGE("Error detected in Renderer::renderWithShader; error : %s", error.c_str());
-            return -1;
-        }
-        int texIndex = material->bindToShader(shader, this);
-        if (texIndex >= 0)
-        {
-            rdata->render(shader, this);
-        }
-        return texIndex;
     }
 
     void GLRenderer::updateLights(RenderState& rstate, Shader* shader, int texIndex)

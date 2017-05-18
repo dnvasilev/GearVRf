@@ -42,19 +42,23 @@ GLShader::~GLShader()
         delete mProgram;
     }
 }
+
 void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line)
 {
     std::string delimiters = " ;+-/*%()<>!={}\n";
     std::unordered_set<char>delim;
-    for(int i=0; i<delimiters.length(); i++){
+    for(int i=0; i<delimiters.length(); i++)
+    {
         delim.insert(delimiters[i]);
     }
     int start  =0;
-    for(int i=0; i<line.length(); i++){
-        if(delim.find(line[i])!= delim.end()){
-            if((i-start) > 0)
-                tokens[line.substr(start, i-start)] = start;
-            start = i+1;
+    for (int i=0; i<line.length(); i++)
+    {
+        if (delim.find(line[i]) != delim.end())
+        {
+            if ((i - start) > 0)
+                tokens[line.substr(start, i - start)] = start;
+            start = i + 1;
         }
     }
 }
@@ -70,27 +74,35 @@ void modifyShader(std::string& shader)
     std::unordered_map<std::string, int>::iterator it;
     std::unordered_map<std::string, int>::iterator it1;
 
-    while (std::getline(shaderStream, line)) {
+    while (std::getline(shaderStream, line))
+    {
 
-        if (line.find("GL_ARB_separate_shader_objects") != std::string::npos || line.find("GL_ARB_shading_language_420pack") != std::string::npos)
+        if (line.find("GL_ARB_separate_shader_objects") != std::string::npos ||
+            line.find("GL_ARB_shading_language_420pack") != std::string::npos)
             continue;
         std::unordered_map<std::string, int> tokens;
         getTokens(tokens, line);
 
-        if((it = tokens.find("uniform"))!=tokens.end()){
+        if ((it = tokens.find("uniform")) != tokens.end())
+        {
             int pos = tokens["layout"];
-            mod_shader += ((pos > 0) ? line.substr((0,pos)) :"") + ((tokens.find("sampler")) == tokens.end() ? "layout (std140) " : "") + line.substr(it->second) + "\n";
+            mod_shader += ((pos > 0) ? line.substr((0, pos)) : "") +
+                          ((tokens.find("sampler")) == tokens.end() ? "layout (std140) " : "") +
+                          line.substr(it->second) + "\n";
         }
-        else if((it = tokens.find("layout"))!=tokens.end()){
+        else if ((it = tokens.find("layout")) != tokens.end())
+        {
             it1 = tokens.find("in");
-            if(it1 == tokens.end())
+            if (it1 == tokens.end())
                 it1 = tokens.find("out");
             int pos = it->second;
 
-            mod_shader += ((pos > 0) ? line.substr(0,pos) :"") + line.substr(it1->second) + "\n";
+            mod_shader += ((pos > 0) ? line.substr(0, pos) : "") + line.substr(it1->second) + "\n";
         }
         else
+        {
             mod_shader += line + "\n";
+        }
     }
     shader = mod_shader;
 }

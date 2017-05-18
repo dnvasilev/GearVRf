@@ -80,12 +80,30 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
 
     public int[] asIntArray()
     {
-        return asIntBuffer().array();
+        int n = getIndexCount();
+        if (getIndexSize() != 4)
+        {
+            throw new UnsupportedOperationException("Cannot convert char indices to int array");
+        }
+        if (n <= 0)
+        {
+            return null;
+        }
+        return NativeIndexBuffer.getIntArray(getNative());
     }
 
     public char[] asCharArray()
     {
-        return asCharBuffer().array();
+        int n = getIndexCount();
+        if (getIndexSize() != 2)
+        {
+            throw new UnsupportedOperationException("Cannot convert int indices to char array");
+        }
+        if (n <= 0)
+        {
+            return null;
+        }
+        return NativeIndexBuffer.getShortArray(getNative());
     }
 
     /**
@@ -106,7 +124,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         {
             throw new UnsupportedOperationException("Cannot update integer indices with char array");
         }
-        if (!NativeIndexBuffer.setShortVecArray(getNative(), data))
+        if (!NativeIndexBuffer.setShortArray(getNative(), data))
         {
             throw new UnsupportedOperationException("Input array is wrong size");
         }
@@ -139,7 +157,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         }
         else if (data.hasArray())
         {
-            if (!NativeIndexBuffer.setShortVecArray(getNative(), data.array()))
+            if (!NativeIndexBuffer.setShortArray(getNative(), data.array()))
             {
                 throw new UnsupportedOperationException("Input buffer is wrong size");
             }
@@ -165,7 +183,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         {
             throw new UnsupportedOperationException("Cannot update short indices with int array");
         }
-        if (!NativeIndexBuffer.setIntVecArray(getNative(), data))
+        if (!NativeIndexBuffer.setIntArray(getNative(), data))
         {
             throw new UnsupportedOperationException("Input array is wrong size");
         }
@@ -217,19 +235,23 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
 class NativeIndexBuffer {
     static native long ctor(int bytesPerIndex, int vertexCount);
 
-    static native int getIndexCount(long vbuf);
+    static native int getIndexCount(long ibuf);
 
-    static native int getIndexSize(long vbuf);
+    static native int getIndexSize(long ibuf);
 
-    static native boolean getIntVec(long vbuf, IntBuffer data);
+    static native boolean getIntVec(long ibuf, IntBuffer data);
 
-    static native boolean setIntVec(long vbuf, IntBuffer data);
+    static native boolean setIntVec(long ibuf, IntBuffer data);
 
-    static native boolean setIntVecArray(long vbuf, int[] data);
+    static native char[] getShortArray(long ibuf);
 
-    static native boolean getShortVec(long vbuf, CharBuffer data);
+    static native int[] getIntArray(long ibuf);
 
-    static native boolean setShortVec(long vbuf, CharBuffer data);
+    static native boolean setIntArray(long ibuf, int[] data);
 
-    static native boolean setShortVecArray(long vbuf, char[] data);
+    static native boolean getShortVec(long ibuf, CharBuffer data);
+
+    static native boolean setShortVec(long ibuf, CharBuffer data);
+
+    static native boolean setShortArray(long ibuf, char[] data);
 }

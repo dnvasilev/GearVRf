@@ -22,7 +22,7 @@
 
 #include <memory>
 #include <vector>
-#include<sstream>
+#include <sstream>
 
 #include "gl/gl_program.h"
 #include "glm/glm.hpp"
