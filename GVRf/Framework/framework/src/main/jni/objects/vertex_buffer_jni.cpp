@@ -44,11 +44,11 @@ namespace gvr {
                                                     jlong jvbuf, jstring attribName,
                                                     jobject jfloatbuf, jint stride);
     JNIEXPORT jfloatArray JNICALL
-    Java_org_gearvrf_NativeVertexBuffer_getFloatVecArray(JNIEnv * env, jobject obj,
+    Java_org_gearvrf_NativeVertexBuffer_getFloatArray(JNIEnv * env, jobject obj,
                                                          jlong jvbuf, jstring attribName);
 
     JNIEXPORT bool JNICALL
-    Java_org_gearvrf_NativeVertexBuffer_setFloatVecArray(JNIEnv* env, jobject obj,
+    Java_org_gearvrf_NativeVertexBuffer_setFloatArray(JNIEnv* env, jobject obj,
                                                     jlong jvbuf, jstring attribName,
                                                     jfloatArray data, jint stride);
     JNIEXPORT bool JNICALL
@@ -101,7 +101,7 @@ Java_org_gearvrf_NativeVertexBuffer_getFloatVec(JNIEnv * env, jobject obj,
 }
 
 JNIEXPORT jfloatArray JNICALL
-Java_org_gearvrf_NativeVertexBuffer_getFloatVecArray(JNIEnv * env, jobject obj,
+Java_org_gearvrf_NativeVertexBuffer_getFloatArray(JNIEnv * env, jobject obj,
                                                 jlong jvbuf, jstring attribName)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
@@ -137,7 +137,7 @@ Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv * env, jobject obj,
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_setFloatVecArray(JNIEnv * env, jobject obj,
+Java_org_gearvrf_NativeVertexBuffer_setFloatArray(JNIEnv * env, jobject obj,
                                                 jlong jvbuf, jstring attribName, jfloatArray jdata, jint stride)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);

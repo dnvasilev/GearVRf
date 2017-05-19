@@ -65,7 +65,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
 
     public float[] getFloatArray(String attributeName)
     {
-        float[] array = NativeVertexBuffer.getFloatVecArray(getNative(), attributeName);
+        float[] array = NativeVertexBuffer.getFloatArray(getNative(), attributeName);
         if (array == null)
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
@@ -112,7 +112,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
      */
     public void setFloatVec(String attributeName, float[] data)
     {
-        if (!NativeVertexBuffer.setFloatVecArray(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data, 0))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
         }
@@ -150,7 +150,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
         }
         else if (data.hasArray())
         {
-            if (!NativeVertexBuffer.setFloatVecArray(getNative(), attributeName, data.array(), 0))
+            if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data.array(), 0))
             {
                 throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
             }
@@ -267,11 +267,11 @@ class NativeVertexBuffer {
 
     static native boolean getFloatVec(long vbuf, String name, FloatBuffer data, int stride);
 
-    static native float[] getFloatVecArray(long vbuf, String name);
+    static native float[] getFloatArray(long vbuf, String name);
 
     static native boolean setFloatVec(long vbuf, String name, FloatBuffer data, int stride);
 
-    static native boolean setFloatVecArray(long vbuf, String name, float[] data, int stride);
+    static native boolean setFloatArray(long vbuf, String name, float[] data, int stride);
 
     static native int  getAttributeSize(long vbuf, String name);
 
