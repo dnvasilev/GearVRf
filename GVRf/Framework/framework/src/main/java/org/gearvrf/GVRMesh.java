@@ -201,23 +201,17 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
             mIndices = new GVRIndexBuffer(getGVRContext(), 2, triangles.length);
             NativeMesh.setIndexBuffer(getNative(), mIndices.getNative());
         }
-        else
-        {
-            mIndices.setShortVec(triangles);
-        }
+        mIndices.setShortVec(triangles);
     }
 
-    public void setTriangles(int[] triangles) {
+    public void setTriangles(int[] triangles)
+    {
         if ((mIndices == null) && (triangles != null))
         {
             mIndices = new GVRIndexBuffer(getGVRContext(), 4, triangles.length);
             NativeMesh.setIndexBuffer(getNative(), mIndices.getNative());
         }
-        else
-        {
-            mIndices.setIntVec(triangles);
-        }
-
+        mIndices.setIntVec(triangles);
     }
 
     /**

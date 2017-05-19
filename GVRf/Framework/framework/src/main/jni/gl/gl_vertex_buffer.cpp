@@ -107,7 +107,7 @@ namespace gvr {
         if (mIsDirty)
         {
             glBindBuffer(GL_ARRAY_BUFFER, mVBufferID);
-            glBufferData(GL_ARRAY_BUFFER, mTotalSize, mVertexData, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, getDataSize(), mVertexData, GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             mIsDirty = false;
             LOGV("VertexBuffer::updateGPU updated vertex buffer %d", mVBufferID);
