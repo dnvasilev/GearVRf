@@ -116,21 +116,21 @@ public:
                         RenderTexture* post_effect_render_texture_b) {};
     void makeShadowMaps(Scene* scene, ShaderManager* shader_manager){}
     void set_face_culling(int cull_face){}
-    virtual ShaderData* createMaterial(const std::string& desc);
+    virtual ShaderData* createMaterial(const char* desc);
     virtual RenderData* createRenderData();
-    virtual UniformBlock* createUniformBlock(const std::string& desc, int binding, const std::string& name);
+    virtual UniformBlock* createUniformBlock(const char* desc, int binding, const char* name);
     Image* createImage(int type, int format);
     virtual Texture* createTexture(int target = GL_TEXTURE_2D);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                int jcolor_format, int jdepth_format, bool resolve_depth,
                                                const TextureParameters* texture_parameters);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers) { }
-    virtual VertexBuffer* createVertexBuffer(const std::string& desc, int vcount);
+    virtual VertexBuffer* createVertexBuffer(const char* desc, int vcount);
     virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
-    virtual Shader* createShader(int id, const std::string& signature,
-                                 const std::string& uniformDescriptor, const std::string& textureDescriptor,
-                                 const std::string& vertexDescriptor, const std::string& vertexShader,
-                                 const std::string& fragmentShader);
+    virtual Shader* createShader(int id, const char* signature,
+                                 const char* uniformDescriptor, const char* textureDescriptor,
+                                 const char* vertexDescriptor, const char* vertexShader,
+                                 const char* fragmentShader);
     virtual void renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
 private:
     VulkanCore* vulkanCore_;

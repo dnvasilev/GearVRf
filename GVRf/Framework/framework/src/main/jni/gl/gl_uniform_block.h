@@ -32,7 +32,7 @@ namespace gvr {
 class GLUniformBlock : public UniformBlock
 {
 public:
-    GLUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName);
+    GLUniformBlock(const char* descriptor, int bindingPoint, const char* blockName);
     virtual ~GLUniformBlock();
 
     /**

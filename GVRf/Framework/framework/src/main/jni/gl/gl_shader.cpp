@@ -24,12 +24,12 @@
 namespace gvr {
 
     GLShader::GLShader(int id,
-               const std::string& signature,
-               const std::string& uniformDescriptor,
-               const std::string& textureDescriptor,
-               const std::string& vertexDescriptor,
-               const std::string& vertexShader,
-               const std::string& fragmentShader)
+               const char* signature,
+               const char* uniformDescriptor,
+               const char* textureDescriptor,
+               const char* vertexDescriptor,
+               const char* vertexShader,
+               const char* fragmentShader)
     : Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader),
       mProgram(NULL)
 { }
@@ -109,19 +109,19 @@ void modifyShader(std::string& shader)
 
 void GLShader::convertToGLShaders()
 {
-    if (vertexShader_.find("#version 400") == std::string::npos)
+    if (mVertexShader.find("#version 400") == std::string::npos)
         return;
-    modifyShader(vertexShader_);
-    modifyShader(fragmentShader_);
+    modifyShader(mVertexShader);
+    modifyShader(mFragmentShader);
 
 }
 
 void GLShader::initialize()
 {
     std::string modified_frag_shader;
-    if (fragmentShader_.find("samplerExternalOES")!= std::string::npos)
+    if (mFragmentShader.find("samplerExternalOES")!= std::string::npos)
     {
-        std::istringstream iss(fragmentShader_.c_str());
+        std::istringstream iss(mFragmentShader.c_str());
         const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
         std::string extension_string;
         if(strstr(extensions, "GL_OES_EGL_image_external_essl3"))
@@ -147,20 +147,20 @@ void GLShader::initialize()
     }
     else
     {
-        modified_frag_shader = fragmentShader_;
+        modified_frag_shader = mFragmentShader;
     }
 
-    mProgram = new GLProgram(vertexShader_.c_str(), modified_frag_shader.c_str());
-    if (use_multiview && !(strstr(vertexShader_.c_str(), "gl_ViewID_OVR")
-                           && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")
-                           && strstr(vertexShader_.c_str(), "GL_OVR_multiview2")))
+    mProgram = new GLProgram(mVertexShader.c_str(), modified_frag_shader.c_str());
+    if (use_multiview && !(strstr(mVertexShader.c_str(), "gl_ViewID_OVR")
+                           && strstr(mVertexShader.c_str(), "GL_OVR_multiview2")
+                           && strstr(mVertexShader.c_str(), "GL_OVR_multiview2")))
     {
         std::string error = "Your shaders are not multiview";
         LOGE("Your shaders are not multiview");
         throw error;
     }
-    vertexShader_.clear();
-    fragmentShader_.clear();
+    mVertexShader.clear();
+    mFragmentShader.clear();
 }
 
 bool GLShader::useShader()
@@ -172,7 +172,7 @@ bool GLShader::useShader()
     GLint programID = getProgramId();
     if (programID <= 0)
     {
-        LOGE("SHADER: shader could not be generated %s", signature_.c_str());
+        LOGE("SHADER: shader could not be generated %s", mSignature.c_str());
         return false;
     }
     if (LOG_SHADER) LOGV("SHADER: rendering with program %d", programID);
@@ -187,26 +187,26 @@ int GLShader::bindTextures(GLMaterial* material)
     int ntex = material->getNumTextures();
 
     mTextureLocs.resize(ntex, -1);
-    material->forEachTexture([this, fail, texUnit, material](const std::string& texname, Texture* tex) mutable
+    material->forEachTexture([this, fail, texUnit, material](const char* texname, Texture* tex) mutable
     {
          if (mTextures.find(texname) <= 0)
          {
-             LOGV("SHADER: program %d texture %s not used by shader", getProgramId(), texname.c_str());
+             LOGV("SHADER: program %d texture %s not used by shader", getProgramId(), texname);
              return;
          }
          int loc = mTextureLocs[texUnit];
          if (loc == -1)
          {
-             loc = glGetUniformLocation(getProgramId(), texname.c_str());
+             loc = glGetUniformLocation(getProgramId(), texname);
              if (loc >= 0)
              {
                  mTextureLocs[texUnit] = loc;
-                 LOGV("SHADER: program %d texture %s loc %d", getProgramId(), texname.c_str(), loc);
+                 LOGV("SHADER: program %d texture %s loc %d", getProgramId(), texname, loc);
              }
              else
              {
                  fail = true;
-                 LOGE("SHADER: texture %s has no location in shader %d", texname.c_str(), getProgramId());
+                 LOGE("SHADER: texture %s has no location in shader %d", texname, getProgramId());
                  return;
              }
          }

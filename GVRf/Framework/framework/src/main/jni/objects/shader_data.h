@@ -40,10 +40,9 @@ class Texture;
 class ShaderData : public HybridObject
 {
 public:
-    ShaderData(const std::string& descriptor) :
-            native_shader_(0),
-            textures_(),
-            lock_()
+    ShaderData(const char* descriptor) :
+            mNativeShader(0),
+            mLock()
     {
 
     }
@@ -52,44 +51,39 @@ public:
 
     int getNativeShader()
     {
-        return native_shader_;
+        return mNativeShader;
     }
 
     void setNativeShader(int shader)
     {
-        native_shader_ = shader;
+        mNativeShader = shader;
         dirty(NATIVE_SHADER);
     }
 
-    const std::map<std::string, Texture*>& getAllTextures()
-    {
-        return textures_;
-    }
-
-    Texture* getTexture(const std::string& key) const;
-    void setTexture(const std::string& key, Texture* texture);
-    void forEachTexture(std::function< void(const std::string& texname, Texture* tex) > func);
-    int getByteSize(const std::string& name) const;
-    const std::string& getDescriptor() const;
-    bool getFloat(const std::string& name, float& v) const;
-    bool getInt(const std::string& name, int& v) const;
-    bool  setInt(const std::string& name, int val);
-    bool  setFloat(const std::string& name, float val);
-    bool  setIntVec(const std::string& name, const int* val, int n);
-    bool  setFloatVec(const std::string& name, const float* val, int n);
-    bool  getFloatVec(const std::string& name, float* val, int n);
-    bool  getIntVec(const std::string& name, int* val, int n);
-    bool  setVec2(const std::string& name, const glm::vec2& v);
-    bool  setVec3(const std::string& name, const glm::vec3& v);
-    bool  setVec4(const std::string& name, const glm::vec4& v);
-    bool  setMat4(const std::string& name, const glm::mat4& m);
+    Texture* getTexture(const char* key) const;
+    void setTexture(const char* key, Texture* texture);
+    void forEachTexture(std::function< void(const char* texname, Texture* tex) > func);
+    int getByteSize(const char* name) const;
+    const char* getDescriptor() const;
+    bool getFloat(const char* name, float& v) const;
+    bool getInt(const char* name, int& v) const;
+    bool  setInt(const char* name, int val);
+    bool  setFloat(const char* name, float val);
+    bool  setIntVec(const char* name, const int* val, int n);
+    bool  setFloatVec(const char* name, const float* val, int n);
+    bool  getFloatVec(const char* name, float* val, int n);
+    bool  getIntVec(const char* name, int* val, int n);
+    bool  setVec2(const char* name, const glm::vec2& v);
+    bool  setVec3(const char* name, const glm::vec3& v);
+    bool  setVec4(const char* name, const glm::vec4& v);
+    bool  setMat4(const char* name, const glm::mat4& m);
     void add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
     void add_dirty_flags(const std::unordered_set<std::shared_ptr<u_short>>& dirty_flags);
     void dirty(DIRTY_BITS bit);
-    bool hasTexture(const std::string& key) const;
-    bool hasUniform(const std::string& key) const;
+    bool hasTexture(const char* key) const;
+    bool hasUniform(const char* key) const;
     virtual int updateGPU(Renderer* renderer);
-    u_int32_t getNumTextures() { return textures_.size(); }
+    u_int32_t getNumTextures() { return mTextures.size(); }
     virtual UniformBlock&   uniforms() = 0;
     virtual const UniformBlock& uniforms() const = 0;
 
@@ -100,10 +94,11 @@ private:
     ShaderData& operator=(ShaderData&&);
 
 protected:
-    int native_shader_;
-    std::map<std::string, Texture*> textures_;
-    std::mutex lock_;
-    std::unordered_set<std::shared_ptr<u_short>> dirty_flags_;
+    int mNativeShader;
+    std::vector<std::string> mNames;
+    std::vector<Texture*> mTextures;
+    std::mutex mLock;
+    std::unordered_set<std::shared_ptr<u_short>> mDirtyFlags;
 };
 
 }

@@ -25,64 +25,54 @@ namespace gvr {
 const bool Shader::LOG_SHADER = true;
 
 Shader::Shader(int id,
-               const std::string& signature,
-               const std::string& uniformDescriptor,
-               const std::string& textureDescriptor,
-               const std::string& vertexDescriptor,
-               const std::string& vertex_shader,
-               const std::string& fragment_shader)
-    : id_(id), signature_(signature),
+               const char* signature,
+               const char* uniformDescriptor,
+               const char* textureDescriptor,
+               const char* vertexDescriptor,
+               const char* vertex_shader,
+               const char* fragment_shader)
+    : mId(id), mSignature(signature),
       mUniformDesc(uniformDescriptor),
       mTextures(textureDescriptor),
       mVertexDesc(vertexDescriptor),
-      vertexShader_(vertex_shader),
-      fragmentShader_(fragment_shader),
-      useTransformBuffer_(false), useLights_(false),
-      javaShaderClass_(0), javaVM_(nullptr), calcMatrixMethod_(0)
+      mVertexShader(vertex_shader),
+      mFragmentShader(fragment_shader),
+      mUseTransformBuffer(false), mUseLights(false),
+      mJavaShaderClass(0), mJavaVM(nullptr), mCalcMatrixMethod(0)
 {
-    if ((vertex_shader.find("Transform_ubo") != std::string::npos) ||
-        (fragment_shader.find("Transform_ubo") != std::string::npos))
-        useTransformBuffer_ = true;
-    if (signature.find("$LIGHTSOURCES") != std::string::npos)
-        useLights_ = true;
+    if (strstr(vertex_shader, "Transform_ubo") ||
+        strstr(fragment_shader, "Transform_ubo"))
+        mUseTransformBuffer = true;
+    if (strstr(signature, "$LIGHTSOURCES"))
+        mUseLights = true;
 }
 
 void Shader::setJava(jclass shaderClass, JavaVM *javaVM)
 {
     JNIEnv *env = getCurrentEnv(javaVM);
-    javaVM_ = javaVM;
+    mJavaVM = javaVM;
     if (env)
     {
-        javaShaderClass_ = shaderClass;
-        calcMatrixMethod_ = env->GetStaticMethodID(shaderClass, "calcMatrix",
+        mJavaShaderClass = shaderClass;
+        mCalcMatrixMethod = env->GetStaticMethodID(shaderClass, "calcMatrix",
                                              "(Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;)V");
     }
 }
 
 bool Shader::calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize)
 {
-    if (javaVM_ && javaShaderClass_ && calcMatrixMethod_)
+    if (mJavaVM && mJavaShaderClass && mCalcMatrixMethod)
     {
-        JNIEnv *env = getCurrentEnv(javaVM_);
+        JNIEnv *env = getCurrentEnv(mJavaVM);
         jobject inputBuffer = env->NewDirectByteBuffer((void *) inputMatrices, inputSize);
         jobject outputBuffer = env->NewDirectByteBuffer((void *) outputMatrices, outputSize);
-        env->CallStaticVoidMethod(javaShaderClass_, calcMatrixMethod_, inputBuffer, outputBuffer);
+        env->CallStaticVoidMethod(mJavaShaderClass, mCalcMatrixMethod, inputBuffer, outputBuffer);
     }
 }
 
-int Shader::calcSize(std::string type)
+int Shader::calcSize(const char* type)
 {
-    if (type == "float") return 1;
-    if (type == "float3") return 3;
-    if (type == "float4") return 4;
-    if (type == "float2") return 2;
-    if (type == "int") return 1;
-    if (type == "int3") return 4;
-    if (type == "int4") return 4;
-    if (type == "float2") return 2;
-    if (type == "mat4") return 16;
-    if (type == "mat3") return 12;
-    return 0;
+    return DataDescriptor::calcSize(type) / sizeof(float);
 }
 
 

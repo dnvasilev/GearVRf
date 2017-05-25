@@ -19,26 +19,33 @@
 
 namespace gvr {
 
-    Texture* ShaderData::getTexture(const std::string& key) const
+    Texture* ShaderData::getTexture(const char* key) const
     {
-        auto it = textures_.find(key);
-        if (it != textures_.end())
+        for (auto it = mNames.begin(); it < mNames.end(); ++it)
         {
-            return it->second;
+            if (*it == key)
+            {
+                return mTextures[it - mNames.begin()];
+            }
         }
         return NULL;
     }
 
-    void ShaderData::setTexture(const std::string& key, Texture* texture)
+    void ShaderData::setTexture(const char* key, Texture* texture)
     {
-        std::lock_guard<std::mutex> lock(lock_);
-        if(textures_.find(key) != textures_.end()){
-            dirty(MOD_TEXTURE);
+        std::lock_guard<std::mutex> lock(mLock);
+        for (auto it = mNames.begin(); it < mNames.end(); ++it)
+        {
+            if (*it == key)
+            {
+                dirty(MOD_TEXTURE);
+                mTextures[it - mNames.begin()] = texture;
+                return;
+            }
         }
-        else {
-            dirty(NEW_TEXTURE);
-        }
-        textures_[key] = texture;
+        dirty(NEW_TEXTURE);
+        mNames.push_back(key);
+        mTextures.push_back(texture);
         //By the time the texture is being set to its attaching material, it is ready
         //This is guaranteed by upper java layer scheduling
     }
@@ -46,137 +53,146 @@ namespace gvr {
     /**
      * Visits each texture in the material and calls the given function.
      */
-    void ShaderData::forEachTexture(std::function< void(const std::string& texname, Texture* tex) > func)
+    void ShaderData::forEachTexture(std::function< void(const char* texname, Texture* tex) > func)
     {
-        for (auto it = textures_.begin(); it != textures_.end(); ++it)
+        std::lock_guard<std::mutex> lock(mLock);
+        for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
         {
-            func(it->first, it->second);
+            const std::string& name = mNames[it - mTextures.begin()];
+            func(name.c_str(), *it);
         }
     }
 
-    int ShaderData::getByteSize(const std::string& name) const
+    int ShaderData::getByteSize(const char* name) const
     {
         return uniforms().getByteSize(name);
     }
 
-    const std::string& ShaderData::getDescriptor() const
+    const char* ShaderData::getDescriptor() const
     {
         return uniforms().getDescriptor();
     }
 
-    bool ShaderData::getFloat(const std::string& name, float& v) const
+    bool ShaderData::getFloat(const char* name, float& v) const
     {
         return uniforms().getFloat(name, v);
     }
 
-    bool   ShaderData::getInt(const std::string& name, int& v) const
+    bool   ShaderData::getInt(const char* name, int& v) const
     {
         return uniforms().getInt(name, v);
     }
 
-    bool  ShaderData::setInt(const std::string& name, int val)
+    bool  ShaderData::setInt(const char* name, int val)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         dirty(MAT_DATA);
         return uniforms().setInt(name, val);
     }
 
-    bool  ShaderData::setFloat(const std::string& name, float val)
+    bool  ShaderData::setFloat(const char* name, float val)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         dirty(MAT_DATA);
         return uniforms().setFloat(name, val);
     }
 
-    bool  ShaderData::setIntVec(const std::string& name, const int* val, int n)
+    bool  ShaderData::setIntVec(const char* name, const int* val, int n)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         dirty(MAT_DATA);
         return uniforms().setIntVec(name, val, n);
     }
 
-    bool  ShaderData::setFloatVec(const std::string& name, const float* val, int n)
+    bool  ShaderData::setFloatVec(const char* name, const float* val, int n)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         dirty(MAT_DATA);
         return uniforms().setFloatVec(name, val, n);
     }
 
-    bool  ShaderData::getFloatVec(const std::string& name, float* val, int n)
+    bool  ShaderData::getFloatVec(const char* name, float* val, int n)
     {
         return uniforms().getFloatVec(name, val, n);
     }
 
-    bool  ShaderData::getIntVec(const std::string& name, int* val, int n)
+    bool  ShaderData::getIntVec(const char* name, int* val, int n)
     {
         return uniforms().getIntVec(name, val, n);
     }
 
-    bool  ShaderData::setVec2(const std::string& name, const glm::vec2& v)
+    bool  ShaderData::setVec2(const char* name, const glm::vec2& v)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         return uniforms().setVec2(name, v);
     }
 
-    bool  ShaderData::setVec3(const std::string& name, const glm::vec3& v)
+    bool  ShaderData::setVec3(const char* name, const glm::vec3& v)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         return uniforms().setVec3(name, v);
     }
 
-    bool  ShaderData::setVec4(const std::string& name, const glm::vec4& v)
+    bool  ShaderData::setVec4(const char* name, const glm::vec4& v)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         return uniforms().setVec4(name, v);
     }
 
-    bool  ShaderData::setMat4(const std::string& name, const glm::mat4& m)
+    bool  ShaderData::setMat4(const char* name, const glm::mat4& m)
     {
-        std::lock_guard<std::mutex> lock(lock_);
+        std::lock_guard<std::mutex> lock(mLock);
         return uniforms().setMat4(name, m);
     }
 
     void ShaderData::add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag)
     {
-        dirty_flags_.insert(dirty_flag);
+        mDirtyFlags.insert(dirty_flag);
     }
 
     void ShaderData::add_dirty_flags(const std::unordered_set<std::shared_ptr<u_short>>& dirty_flags)
     {
-        dirty_flags_.insert(dirty_flags.begin(), dirty_flags.end());
+        mDirtyFlags.insert(dirty_flags.begin(), dirty_flags.end());
     }
 
     void ShaderData::dirty(DIRTY_BITS bit)
     {
-        dirtyImpl(dirty_flags_,bit);
+        dirtyImpl(mDirtyFlags,bit);
     }
 
-    bool ShaderData::hasTexture(const std::string& key) const
+    bool ShaderData::hasTexture(const char* key) const
     {
-        auto it = textures_.find(key);
-        return (it != textures_.end());
+        for (auto it = mNames.begin(); it < mNames.end(); ++it)
+        {
+            if (*it == key)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
-    bool ShaderData::hasUniform(const std::string& key) const
+    bool ShaderData::hasUniform(const char* key) const
     {
         return (uniforms().getByteSize(key) > 0);
     }
 
     int ShaderData::updateGPU(Renderer* renderer)
     {
-        std::lock_guard<std::mutex> lock(lock_);
-        for (auto it = textures_.begin(); it != textures_.end(); ++it)
+        std::lock_guard<std::mutex> lock(mLock);
+        for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
         {
-            Texture *tex = it->second;
+            Texture *tex = *it;
+            const std::string& name = mNames[it - mTextures.begin()];
             if (tex == NULL)
             {
-                LOGV("ShaderData::updateGPU %s is null", it->first.c_str());
+                LOGV("ShaderData::updateGPU %s is null", name.c_str());
                 return -1;
             }
             bool ready = tex->isReady();
             if (Shader::LOG_SHADER)
             {
-                LOGV("ShaderData::updateGPU %s is %s", it->first.c_str(),
+                LOGV("ShaderData::updateGPU %s is %s", name.c_str(),
                      ready ? "ready" : "not ready");
             }
             if ((tex == NULL) || !ready)

@@ -42,7 +42,7 @@ namespace gvr {
 
     class Mesh: public HybridObject {
     public:
-        Mesh(const std::string& descriptor);
+        Mesh(const char* descriptor);
         Mesh(VertexBuffer& vbuf);
 
         VertexBuffer* getVertexBuffer() const { return mVertices; }
@@ -57,14 +57,14 @@ namespace gvr {
         bool setTriangles(const unsigned short* indices, int nindices);
         bool getIndices(unsigned short* indices, int nindices);
         bool getLongIndices(unsigned int* indices, int nindices);
-        bool setFloatVec(const std::string& attrName, const float* src, int nelems);
-        bool setIntVec(const std::string& attrName, const int* src, int nelems);
-        bool getFloatVec(const std::string& attrName, float* dest, int nelems);
-        bool getIntVec(const std::string& attrName, int* dest, int nelems);
-        bool getAttributeInfo(const std::string& attributeName, int& index, int& offset, int& size) const;
+        bool setFloatVec(const char* attrName, const float* src, int nelems);
+        bool setIntVec(const char* attrName, const int* src, int nelems);
+        bool getFloatVec(const char* attrName, float* dest, int nelems);
+        bool getIntVec(const char* attrName, int* dest, int nelems);
+        bool getAttributeInfo(const char* attributeName, int& index, int& offset, int& size) const;
 
         void forAllIndices(std::function<void(int iter, int index)> func);
-        void forAllVertices(const std::string& attrName, std::function<void(int iter, const float* vertex)> func) const;
+        void forAllVertices(const char* attrName, std::function<void(int iter, const float* vertex)> func) const;
         void forAllTriangles(std::function<void(int iter, const float* V1, const float* V2, const float* V3)> func) const;
         Mesh* createBoundingBox();
         void getTransformedBoundingBoxInfo(glm::mat4 *M, float *transformed_bounding_box); //Get Bounding box info transformed by matrix

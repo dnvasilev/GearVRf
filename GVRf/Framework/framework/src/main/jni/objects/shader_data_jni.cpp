@@ -107,9 +107,8 @@ JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeShaderData_ctor(JNIEnv * env, jobject obj, jstring jdescriptor)
 {
     const char* char_desc = env->GetStringUTFChars(jdescriptor, 0);
-    std::string native_desc = std::string(char_desc);
     Renderer* renderer = Renderer::getInstance();
-    ShaderData* shaderData = renderer->createMaterial(native_desc);
+    ShaderData* shaderData = renderer->createMaterial(char_desc);
     env->ReleaseStringUTFChars(jdescriptor, char_desc);
     return reinterpret_cast<jlong>(shaderData);
 }
@@ -137,8 +136,7 @@ Java_org_gearvrf_NativeShaderData_setTexture(JNIEnv * env, jobject obj,
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     Texture* texture = reinterpret_cast<Texture*>(jtexture);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    shader_data->setTexture(native_key, texture);
+    shader_data->setTexture(char_key, texture);
     env->ReleaseStringUTFChars(key, char_key);
 }
 
@@ -148,9 +146,8 @@ Java_org_gearvrf_NativeShaderData_setIntVec(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
     int* elems = env->GetIntArrayElements(jvec, 0);
-    bool rc = shader_data->setIntVec(native_key, elems, size);
+    bool rc = shader_data->setIntVec(char_key, elems, size);
     env->ReleaseStringUTFChars(key, char_key);
     env->ReleaseIntArrayElements(jvec, elems, 0);
     return rc;
@@ -162,9 +159,8 @@ Java_org_gearvrf_NativeShaderData_setFloatVec(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
     float* elems = env->GetFloatArrayElements(jvec, 0);
-    bool rc = shader_data->setFloatVec(native_key, elems, size);
+    bool rc = shader_data->setFloatVec(char_key, elems, size);
     env->ReleaseStringUTFChars(key, char_key);
     env->ReleaseFloatArrayElements(jvec, elems, 0);
     return rc;
@@ -176,13 +172,12 @@ Java_org_gearvrf_NativeShaderData_getFloatVec(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    int size = shader_data->getByteSize(native_key) / sizeof(float);
+    int size = shader_data->getByteSize(char_key) / sizeof(float);
     if (size > 0)
     {
         jfloatArray jvec = env->NewFloatArray(size);
         float *elems = env->GetFloatArrayElements(jvec, 0);
-        shader_data->getFloatVec(native_key, elems, size);
+        shader_data->getFloatVec(char_key, elems, size);
         env->ReleaseFloatArrayElements(jvec, elems, 0);
         env->ReleaseStringUTFChars(key, char_key);
         return jvec;
@@ -197,13 +192,12 @@ Java_org_gearvrf_NativeShaderData_getIntVec(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    int size = shader_data->getByteSize(native_key) / sizeof(int);
+    int size = shader_data->getByteSize(char_key) / sizeof(int);
     if (size > 0)
     {
         jintArray jvec = env->NewIntArray(size);
         int *elems = env->GetIntArrayElements(jvec, 0);
-        shader_data->getIntVec(native_key, elems, size);
+        shader_data->getIntVec(char_key, elems, size);
         env->ReleaseStringUTFChars(key, char_key);
         env->ReleaseIntArrayElements(jvec, elems, 0);
         return jvec;
@@ -218,10 +212,9 @@ Java_org_gearvrf_NativeShaderData_getFloat(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    env->ReleaseStringUTFChars(key, char_key);
     float f = 0.0f;
-    shader_data->getFloat(native_key, f);
+    shader_data->getFloat(char_key, f);
+    env->ReleaseStringUTFChars(key, char_key);
     return static_cast<jfloat>(f);
 }
 
@@ -231,8 +224,7 @@ Java_org_gearvrf_NativeShaderData_setFloat(JNIEnv * env, jobject obj, jlong jsha
 {
     ShaderData *shader_data = reinterpret_cast<ShaderData *>(jshader_data);
     const char *char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    shader_data->setFloat(native_key, value);
+    shader_data->setFloat(char_key, value);
     env->ReleaseStringUTFChars(key, char_key);
 }
 
@@ -242,10 +234,9 @@ Java_org_gearvrf_NativeShaderData_getInt(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    env->ReleaseStringUTFChars(key, char_key);
     int i = 0;
-    shader_data->getInt(native_key, i);
+    shader_data->getInt(char_key, i);
+    env->ReleaseStringUTFChars(key, char_key);
     return static_cast<jint>(i);
 }
 
@@ -255,8 +246,7 @@ Java_org_gearvrf_NativeShaderData_setInt(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool rc = shader_data->setInt(native_key, value);
+    bool rc = shader_data->setInt(char_key, value);
     env->ReleaseStringUTFChars(key, char_key);
     return rc;
 }
@@ -268,8 +258,7 @@ Java_org_gearvrf_NativeShaderData_setVec2(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data =reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool rc = shader_data->setVec2(native_key, glm::vec2(x, y));
+    bool rc = shader_data->setVec2(char_key, glm::vec2(x, y));
     env->ReleaseStringUTFChars(key, char_key);
     return rc;
 }
@@ -281,8 +270,7 @@ Java_org_gearvrf_NativeShaderData_setVec3(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool rc = shader_data->setVec3(native_key, glm::vec3(x, y, z));
+    bool rc = shader_data->setVec3(char_key, glm::vec3(x, y, z));
     env->ReleaseStringUTFChars(key, char_key);
     return rc;
 }
@@ -294,8 +282,7 @@ Java_org_gearvrf_NativeShaderData_setVec4(JNIEnv * env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool rc = shader_data->setVec4(native_key, glm::vec4(x, y, z, w));
+    bool rc = shader_data->setVec4(char_key, glm::vec4(x, y, z, w));
     env->ReleaseStringUTFChars(key, char_key);
     return rc;
 }
@@ -310,9 +297,8 @@ Java_org_gearvrf_NativeShaderData_setMat4(JNIEnv * env,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
     float m[16] = { x1, y1, z1, w1, x2, y2, z2, w2, x3, y3, z3, w3, x4, y4, z4, w4 };
-    bool rc = shader_data->setFloatVec(native_key, m, 16);
+    bool rc = shader_data->setFloatVec(char_key, m, 16);
     env->ReleaseStringUTFChars(key, char_key);
     return rc;
 }
@@ -330,8 +316,7 @@ Java_org_gearvrf_NativeShaderData_hasTexture(JNIEnv *env, jobject obj,
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool hasKey = shader_data->hasTexture(native_key);
+    bool hasKey = shader_data->hasTexture(char_key);
     env->ReleaseStringUTFChars(key, char_key);
     return (jboolean) hasKey;
 }
@@ -341,8 +326,7 @@ Java_org_gearvrf_NativeShaderData_hasUniform(JNIEnv *env, jobject obj, jlong jsh
 {
     ShaderData* shader_data = reinterpret_cast<ShaderData*>(jshader_data);
     const char* char_key = env->GetStringUTFChars(key, 0);
-    std::string native_key = std::string(char_key);
-    bool hasUniform = shader_data->hasUniform(native_key);
+    bool hasUniform = shader_data->hasUniform(char_key);
     env->ReleaseStringUTFChars(key, char_key);
     return (jboolean) hasUniform;
 

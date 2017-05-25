@@ -83,7 +83,7 @@ public:
     void setRenderStates(RenderData* render_data, RenderState& rstate);
     Texture* createSharedTexture(int id);
     virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount);
-    virtual VertexBuffer* createVertexBuffer(const std::string& descriptor, int vcount);
+    virtual VertexBuffer* createVertexBuffer(const char* descriptor, int vcount);
 
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
@@ -107,19 +107,19 @@ public:
 
      void set_face_culling(int cull_face);
 
-    virtual ShaderData* createMaterial(const std::string& desc);
+    virtual ShaderData* createMaterial(const char* desc);
     virtual RenderData* createRenderData();
-    virtual UniformBlock* createUniformBlock(const std::string& desc, int binding, const std::string& name);
+    virtual UniformBlock* createUniformBlock(const char* desc, int binding, const char* name);
     virtual Image* createImage(int type, int format);
     virtual Texture* createTexture(int target = GL_TEXTURE_2D);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers);
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                int jcolor_format, int jdepth_format, bool resolve_depth,
                                                const TextureParameters* texture_parameters);
-    virtual Shader* createShader(int id, const std::string& signature,
-                                 const std::string& uniformDescriptor, const std::string& textureDescriptor,
-                                 const std::string& vertexDescriptor, const std::string& vertexShader,
-                                 const std::string& fragmentShader);
+    virtual Shader* createShader(int id, const char* signature,
+                                 const char* uniformDescriptor, const char* textureDescriptor,
+                                 const char* vertexDescriptor, const char* vertexShader,
+                                 const char* fragmentShader);
     GLUniformBlock* getTransformUbo() { return transform_ubo_; }
 
 private:

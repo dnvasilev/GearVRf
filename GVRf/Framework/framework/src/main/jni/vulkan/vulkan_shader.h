@@ -49,12 +49,12 @@ public:
  * @param fragmentShader    String with GLSL source for fragment shader
  * @see ShaderManager::addShader
  */
-    explicit VulkanShader(int id, const std::string& signature,
-            const std::string& uniformDescriptor,
-            const std::string& textureDescriptor,
-            const std::string& vertexDescriptor,
-            const std::string& vertexShader,
-            const std::string& fragmentShader);
+    explicit VulkanShader(int id, const char* signature,
+            const char* uniformDescriptor,
+            const char* textureDescriptor,
+            const char* vertexDescriptor,
+            const char* vertexShader,
+            const char* fragmentShader);
 
     virtual ~VulkanShader();
 
@@ -64,7 +64,7 @@ public:
     {
         if(!compiledVS.size())
         {
-            compiledVS = CompileVulkanShader("VertexShader", VERTEX_SHADER, vertexShader_);
+            compiledVS = CompileVulkanShader("VertexShader", VERTEX_SHADER, mVertexShader);
         }
 
         return compiledVS;
@@ -74,7 +74,7 @@ public:
     {
         if(!compiledFS.size())
         {
-            compiledFS = CompileVulkanShader("FragmentShader", FRAGMENT_SHADER, fragmentShader_);
+            compiledFS = CompileVulkanShader("FragmentShader", FRAGMENT_SHADER, mFragmentShader);
         }
 
         return compiledFS;

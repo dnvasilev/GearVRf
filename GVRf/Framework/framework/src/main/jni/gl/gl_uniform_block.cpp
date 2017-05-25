@@ -16,7 +16,7 @@
 #include "gl/gl_shader.h"
 
 namespace gvr {
-    GLUniformBlock::GLUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName) :
+    GLUniformBlock::GLUniformBlock(const char* descriptor, int bindingPoint, const char* blockName) :
             UniformBlock(descriptor, bindingPoint, blockName),
             GLOffset(0),
             GLBuffer(0)
@@ -45,7 +45,7 @@ namespace gvr {
             glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
             glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
             mIsDirty = false;
-            if (Shader::LOG_SHADER) LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName().c_str(), getTotalSize());
+            if (Shader::LOG_SHADER) LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName(), getTotalSize());
         }
         checkGLError("GLUniformBlock::updateGPU");
         return true;
@@ -56,17 +56,17 @@ namespace gvr {
         GLShader* glshader = static_cast<GLShader*>(shader);
         if (GLBuffer > 0)
         {
-            GLuint blockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName().c_str());
+            GLuint blockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName());
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
 
             if (blockIndex < 0)
             {
-                LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName().c_str());
+                LOGE("UniformBlock: ERROR: cannot find block named %s\n", getBlockName());
                 return false;
             }
             glUniformBlockBinding(glshader->getProgramId(), blockIndex, mBindingPoint);
             glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
-            if (Shader::LOG_SHADER) LOGV("UniformBlock::bindBuffer %s bind at %d index = %d\n", getBlockName().c_str(), mBindingPoint, blockIndex);
+            if (Shader::LOG_SHADER) LOGV("UniformBlock::bindBuffer %s bind at %d index = %d\n", getBlockName(), mBindingPoint, blockIndex);
             checkGLError("GLUniformBlock::bindBuffer");
             return true;
         }

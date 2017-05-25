@@ -9,7 +9,7 @@
 #include "gl_shader.h"
 
 namespace gvr {
-    GLVertexBuffer::GLVertexBuffer(const std::string& layout_desc, int vertexCount)
+    GLVertexBuffer::GLVertexBuffer(const char* layout_desc, int vertexCount)
     : VertexBuffer(layout_desc, vertexCount),
       mVBufferID(-1), mVArrayID(-1), mProgramID(-1)
     {
@@ -58,24 +58,29 @@ namespace gvr {
 
         shader->getVertexDescriptor().forEachEntry([this, programId](const DataDescriptor::DataEntry &e)
         {
+            LOGV("VertexBuffer::bindToShader find %s", e.Name);
             const DataDescriptor::DataEntry* entry = find(e.Name);
-            if (entry != nullptr)
+            if ((entry != nullptr) && entry->IsSet)
             {
                 long offset =  entry->Offset;
-                GLint loc = glGetAttribLocation(programId, e.Name.c_str());
+                GLint loc = glGetAttribLocation(programId, e.Name);
                 if (loc >= 0)
                 {
                     glEnableVertexAttribArray(loc);
                     glVertexAttribPointer(loc, entry->Size / sizeof(float),
                                        (entry->Type[0] == 'i') ? GL_INT : GL_FLOAT, GL_FALSE,
                                           getTotalSize(), (GLvoid*) offset);
-                    LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %d", e.Index, e.Name.c_str(), loc, entry->Offset);
+                    LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %d", e.Index, e.Name, loc, entry->Offset);
                     checkGLError("VertexBuffer::bindToShader");
                 }
                 else
                 {
-                    LOGE("SHADER: vertex attribute %s has no location in shader", e.Name.c_str());
+                    LOGE("SHADER: vertex attribute %s has no location in shader", e.Name);
                 }
+            }
+            else
+            {
+                LOGE("SHADER: shader needs vertex attribute %s but it is not found", e.Name);
             }
         });
     }

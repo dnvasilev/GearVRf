@@ -20,10 +20,11 @@
 namespace gvr
 {
 
-    Mesh::Mesh(const std::string &descriptor) : mVertices(nullptr),
-                                                mIndices(nullptr),
-                                                have_bounding_volume_(false),
-                                                vertexBoneData_(nullptr)
+    Mesh::Mesh(const char* descriptor)
+    : mVertices(nullptr),
+      mIndices(nullptr),
+      have_bounding_volume_(false),
+      vertexBoneData_(nullptr)
     {
         mVertices = Renderer::getInstance()->createVertexBuffer(descriptor, 0);
     }
@@ -37,7 +38,7 @@ namespace gvr
 
     Mesh *Mesh::createBoundingBox()
     {
-        Mesh *mesh = new Mesh(std::string("float3 a_position"));
+        Mesh *mesh = new Mesh("float3 a_position");
         getBoundingVolume(); // Make sure bounding_volume is valid
 
         glm::vec3 min_corner = bounding_volume.min_corner();
@@ -72,7 +73,7 @@ namespace gvr
         return bounding_volume;
     }
 
-    void Mesh::getTransformedBoundingBoxInfo(glm::mat4 *Mat, float *transformed_bounding_box)
+    void Mesh::getTransformedBoundingBoxInfo(glm::mat4 *Mat, float* transformed_bounding_box)
     {
         if (!have_bounding_volume_)
         {
@@ -142,7 +143,9 @@ namespace gvr
         }
     }
 
-    bool Mesh::getAttributeInfo(const std::string &attributeName, int &index, int &offset,
+    bool Mesh::getAttributeInfo(const char* attributeName,
+                                int &index,
+                                int &offset,
                                 int &size) const
     {
         return mVertices->getInfo(attributeName, index, offset, size);
@@ -204,22 +207,22 @@ namespace gvr
         return false;
     }
 
-    bool Mesh::setFloatVec(const std::string &attrName, const float *src, int nelems)
+    bool Mesh::setFloatVec(const char* attrName, const float *src, int nelems)
     {
         return mVertices->setFloatVec(attrName, src, nelems, 0);
     }
 
-    bool Mesh::setIntVec(const std::string &attrName, const int *src, int nelems)
+    bool Mesh::setIntVec(const char* attrName, const int *src, int nelems)
     {
         mVertices->setIntVec(attrName, src, nelems, 1);
     }
 
-    bool Mesh::getFloatVec(const std::string &attrName, float *dest, int nelems)
+    bool Mesh::getFloatVec(const char* attrName, float *dest, int nelems)
     {
         return mVertices->getFloatVec(attrName, dest, nelems, 0);
     }
 
-    bool Mesh::getIntVec(const std::string &attrName, int *dest, int nelems)
+    bool Mesh::getIntVec(const char* attrName, int *dest, int nelems)
     {
         return mVertices->getIntVec(attrName, dest, nelems, 1);
     }
@@ -254,7 +257,7 @@ namespace gvr
     }
 
 
-    void Mesh::forAllVertices(const std::string &attrName,
+    void Mesh::forAllVertices(const char* attrName,
                               std::function<void(int iter, const float *vertex)> func) const
     {
         mVertices->forAllVertices(attrName, func);

@@ -16,12 +16,12 @@ namespace gvr {
         shadersBySignature.clear();
     }
 
-    int ShaderManager::addShader(const std::string& signature,
-          const std::string& uniformDescriptor,
-          const std::string& textureDescriptor,
-          const std::string& vertexDescriptor,
-          const std::string& vertex_shader,
-          const std::string& fragment_shader)
+    int ShaderManager::addShader(const char* signature,
+          const char* uniformDescriptor,
+          const char* textureDescriptor,
+          const char* vertexDescriptor,
+          const char* vertex_shader,
+          const char* fragment_shader)
     {
         Shader* shader = findShader(signature);
         if (shader != NULL)
@@ -30,16 +30,16 @@ namespace gvr {
         }
         std::lock_guard<std::mutex> lock(lock_);
         int id = ++latest_shader_id_;
-        LOGD("SHADER: before add shader %d %s", id, signature.c_str());
+        LOGD("SHADER: before add shader %d %s", id, signature);
         shader = Renderer::getInstance()->createShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertex_shader, fragment_shader);
-        LOGD("SHADER: after obj creation shader %d %s", id, signature.c_str());
+        LOGD("SHADER: after obj creation shader %d %s", id, signature);
         shadersBySignature[signature] = shader;
         shadersByID[id] = shader;
-        if (Shader::LOG_SHADER) LOGD("SHADER: added shader %d %s", id, signature.c_str());
+        if (Shader::LOG_SHADER) LOGD("SHADER: added shader %d %s", id, signature);
         return id;
     }
 
-    Shader* ShaderManager::findShader(const std::string& signature)
+    Shader* ShaderManager::findShader(const char* signature)
     {
         std::lock_guard<std::mutex> lock(lock_);
         auto it = shadersBySignature.find(signature);

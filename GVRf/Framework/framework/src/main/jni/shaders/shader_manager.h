@@ -61,19 +61,19 @@ public:
  * it description is added to the table.
  * @returns ID of shader (integer that is unique within this ShaderManager).
  */
-    int addShader(const std::string& signature,
-                  const std::string& uniformDescriptor,
-                  const std::string& textureDescriptor,
-                  const std::string& vertexDescriptor,
-                  const std::string& vertex_shader,
-                  const std::string& fragment_shader);
+    int addShader(const char* signature,
+                  const char* uniformDescriptor,
+                  const char* textureDescriptor,
+                  const char* vertexDescriptor,
+                  const char* vertex_shader,
+                  const char* fragment_shader);
 
     /*
      * Find a shader by its signature.
      * @param String with shader signature
      * @returns -> Shader or NULL if not found
      */
-    Shader* findShader(const std::string& signature);
+    Shader* findShader(const char* signature);
 
     /*
      * Get a shader by its ShaderManager ID.

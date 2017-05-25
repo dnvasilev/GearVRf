@@ -32,14 +32,8 @@ namespace gvr {
     class VertexBuffer : public HybridObject, public DataDescriptor
     {
     public:
-        struct VertexAttribute
-        {
-            VertexAttribute() : Data(nullptr), Location(-1) { }
 
-            void*   Data;
-            int     Location;
-        };
-        VertexBuffer(const std::string& layout_desc, int vertexCount);
+        VertexBuffer(const char* layout_desc, int vertexCount);
         virtual ~VertexBuffer();
 
         /**
@@ -80,7 +74,7 @@ namespace gvr {
          * @returns true if successfully set, false on error.
          * @see getIntVec
          */
-        bool    setFloatVec(const std::string& attributeName, const float* src, int srcSize, int srcStride);
+        bool    setFloatVec(const char* attributeName, const float* src, int srcSize, int srcStride);
 
         /**
          * Gets all the values of a float vertex attribute.
@@ -98,7 +92,7 @@ namespace gvr {
          * @return true if vector retrieved, false if not found or size is wrong.
          * @see setVec
          */
-        bool    getFloatVec(const std::string& attributeName, float* dest, int destSize, int destStride) const;
+        bool    getFloatVec(const char* attributeName, float* dest, int destSize, int destStride) const;
 
         /**
          * Set all the values for an integer vertex attribute.
@@ -115,7 +109,7 @@ namespace gvr {
          * @returns true if successfully set, false on error.
          * @see getIntVec
          */
-        bool            setIntVec(const std::string& attributeName, const int* src, int srcSize, int srcStride);
+        bool            setIntVec(const char* attributeName, const int* src, int srcSize, int srcStride);
 
         /**
          * Gets all the values of an integer vertex attribute.
@@ -133,12 +127,11 @@ namespace gvr {
          * @return true if vector retrieved, false if not found or size is wrong.
          * @see setVec
          */
-        bool            getIntVec(const std::string& attributeName, int* data, int dataByteSize, int dataStride) const;
+        bool            getIntVec(const char* attributeName, int* data, int dataByteSize, int dataStride) const;
 
-        void            forEachAttribute(std::function<void(const DataDescriptor::DataEntry &, VertexAttribute&)> func);
-        bool            forAllVertices(const std::string& attrName, std::function<void (int iter, const float* vertex)> func) const;
+        bool            forAllVertices(const char* attrName, std::function<void (int iter, const float* vertex)> func) const;
         bool            forAllVertices(std::function<void (int iter, const float* vertex)> func) const;
-        bool            getInfo(const std::string& attributeName, int& index, int& offset, int& size) const;
+        bool            getInfo(const char* attributeName, int& index, int& offset, int& size) const;
         void            getBoundingVolume(BoundingVolume& bv) const;
         void            setBoneData(VertexBoneData& boneData);
         virtual bool    updateGPU(Renderer*, IndexBuffer*) = 0;
@@ -148,14 +141,13 @@ namespace gvr {
     protected:
         virtual void    parseDescriptor();
         bool            setVertexCount(int vertexCount);
-        const void*     getData(const std::string& attributeName, int& size) const;
+        const void*     getData(const char* attributeName, int& size) const;
         const void*     getData(int index, int& size) const;
 
         mutable std::mutex mLock;
         int             mVertexCount;       // current number of vertices
         char*           mVertexData;        // vertex data buffer
         int             mBoneFlags;         // indicates which vertex attributes are bones
-        std::vector<VertexAttribute> mAttributes;
     };
 
 } // end gvrf

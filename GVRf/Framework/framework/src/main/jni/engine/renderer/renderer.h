@@ -118,20 +118,20 @@ public:
         delete instance;
          instance = NULL;
      }
-     virtual ShaderData* createMaterial(const std::string& desc) = 0;
+     virtual ShaderData* createMaterial(const char* desc) = 0;
      virtual RenderData* createRenderData() = 0;
-     virtual UniformBlock* createUniformBlock(const std::string& desc, int, const std::string& name) = 0;
+     virtual UniformBlock* createUniformBlock(const char* desc, int, const char* name) = 0;
      virtual Image* createImage(int type, int format) = 0;
      virtual Texture* createTexture(int target = GL_TEXTURE_2D) = 0;
      virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                 int jcolor_format, int jdepth_format, bool resolve_depth,
                                                 const TextureParameters* texture_parameters) = 0;
     virtual RenderTexture* createRenderTexture(int width, int height, int sample_count, int layers) = 0;
-    virtual Shader* createShader(int id, const std::string& signature,
-                                 const std::string& uniformDescriptor, const std::string& textureDescriptor,
-                                 const std::string& vertexDescriptor, const std::string& vertexShader,
-                                 const std::string& fragmentShader) = 0;
-     virtual VertexBuffer* createVertexBuffer(const std::string& descriptor, int vcount) = 0;
+    virtual Shader* createShader(int id, const char* signature,
+                                 const char* uniformDescriptor, const char* textureDescriptor,
+                                 const char* vertexDescriptor, const char* vertexShader,
+                                 const char* fragmentShader) = 0;
+     virtual VertexBuffer* createVertexBuffer(const char* descriptor, int vcount) = 0;
      virtual IndexBuffer* createIndexBuffer(int bytesPerIndex, int icount) = 0;
      void updateTransforms(RenderState& rstate, UniformBlock* block, Transform* model);
      virtual void initializeStats();

@@ -10,7 +10,7 @@
 
 namespace gvr {
 
-    VertexBuffer::VertexBuffer(const std::string& layout_desc, int vertexCount)
+    VertexBuffer::VertexBuffer(const char* layout_desc, int vertexCount)
     : DataDescriptor(layout_desc),
       mVertexCount(0),
       mBoneFlags(0),
@@ -18,7 +18,6 @@ namespace gvr {
     {
         mVertexData = NULL;
         mBoneFlags == 0;
-        parseDescriptor();
         setVertexCount(vertexCount);
     }
 
@@ -47,8 +46,7 @@ namespace gvr {
     {
         int index = 0;
         mTotalSize = 0;
-        mLayout.resize(0);
-        DataDescriptor::forEach([this, index] (const std::string& name, const std::string& type, int size) mutable
+        DataDescriptor::forEach([this, index] (const char* name, const char* type, int size) mutable
         {
             short byteSize = calcSize(type);
 
@@ -58,15 +56,17 @@ namespace gvr {
             DataEntry entry;
             entry.Type = makeShaderType(type, byteSize, 1);
             entry.IsSet = false;
-            entry.Name = name;
+            entry.IsDynamic = false;
+            entry.IsInt = type[0] == 'i';
             entry.Size = byteSize;
             entry.Offset = mTotalSize;
             entry.Index = index++;
             mTotalSize += byteSize;
+            addName(name, entry);
             mLayout.push_back(entry);
-            LOGV("VertexBuffer: %s index=%d offset=%d size=%d\n", name.c_str(), entry.Index, entry.Offset, entry.Size);
+            LOGV("VertexBuffer: %s index=%d offset=%d size=%d %d entries\n",
+                 entry.Name, entry.Index, entry.Offset, entry.Size, mLayout.size());
         });
-        mAttributes.reserve(mLayout.size());
     }
 
     void VertexBuffer::getBoundingVolume(BoundingVolume& bv) const
@@ -89,17 +89,6 @@ namespace gvr {
             bv.max_corner().x, bv.max_corner().y, bv.max_corner().z, mVertexCount);
     }
 
-    void VertexBuffer::forEachAttribute(std::function<void(const DataDescriptor::DataEntry&, VertexAttribute&)> func)
-    {
-        std::lock_guard<std::mutex> lock(mLock);
-        for (int i = 0; i < mLayout.size(); ++i)
-        {
-            const DataEntry& e = mLayout[i];
-            VertexAttribute& a = mAttributes[i];
-            func(e, a);
-        }
-    }
-
     const void*  VertexBuffer::getData(int index, int& size) const
     {
         if ((index < 0) || (index > mLayout.size()))
@@ -107,24 +96,22 @@ namespace gvr {
             return NULL;
         }
         std::lock_guard<std::mutex> lock(mLock);
-        const VertexAttribute& a = mAttributes[index];
         const DataEntry& e = mLayout[index];
         size = e.Size;
-        return a.Data;
+        return getVertexData() + (e.Offset / sizeof(float));
     }
 
-    const void*  VertexBuffer::getData(const std::string& attributeName, int& size) const
+    const void*  VertexBuffer::getData(const char* attributeName, int& size) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* e = find(attributeName);
 
-        if (e == NULL)
+        if ((e == NULL) || !e->IsSet)
         {
             return NULL;
         }
-        const VertexAttribute& a = mAttributes[e->Index];
         size = e->Size;
-        return a.Data;
+        return getVertexData() + (e->Offset / sizeof(float));
     }
 
     /**
@@ -139,7 +126,7 @@ namespace gvr {
      *                      closely packed and the stride is the size of the attribute.
      * @return true if attribute was updated, false on error
      */
-    bool    VertexBuffer::setFloatVec(const std::string& attributeName, const float* src, int srcSize, int srcStride)
+    bool    VertexBuffer::setFloatVec(const char* attributeName, const float* src, int srcSize, int srcStride)
     {
         std::lock_guard<std::mutex> lock(mLock);
         DataEntry*      attr = find(attributeName);
@@ -149,15 +136,15 @@ namespace gvr {
         int             nverts;
         int             attrStride;
 
-        LOGD("VertexBuffer::setFloatVec %s %d", attributeName.c_str(), srcSize);
+        LOGD("VertexBuffer::setFloatVec %s %d", attributeName, srcSize);
         if (attr == NULL)
         {
-            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName.c_str());
+            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName);
             return false;
         }
         if (src == NULL)
         {
-            LOGE("VertexBuffer: cannot set attribute %s, source array not found", attributeName.c_str());
+            LOGE("VertexBuffer: cannot set attribute %s, source array not found", attributeName);
             return false;
         }
         attrStride = attr->Size / sizeof(float);    // # of floats in vertex attribute
@@ -167,18 +154,17 @@ namespace gvr {
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
-            LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName.c_str(), srcStride, attrStride);
+            LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
         nverts = srcSize / srcStride;               // # of vertices in input array
         if (!setVertexCount(nverts))
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName.c_str());
+            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
             return false;
         }
         dest = reinterpret_cast<float*>(mVertexData) + attr->Offset / sizeof(float);
         dstStride = getTotalSize() / sizeof(float);
-        mAttributes[attr->Index].Data = (char*) dest;
         srcend = src + srcSize;
 
         for (int i = 0; i < mVertexCount; ++i)
@@ -190,7 +176,7 @@ namespace gvr {
             dest += dstStride;
             if (src >= srcend)
             {
-                LOGE("VertexBuffer: error copying to vertex array %s, not enough vertices in source array", attributeName.c_str());
+                LOGE("VertexBuffer: error copying to vertex array %s, not enough vertices in source array", attributeName);
                 break;
             }
             src += srcStride;
@@ -201,7 +187,7 @@ namespace gvr {
     }
 
 
-    bool    VertexBuffer::getFloatVec(const std::string& attributeName, float* dest, int destSize, int destStride) const
+    bool    VertexBuffer::getFloatVec(const char* attributeName, float* dest, int destSize, int destStride) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* attr = find(attributeName);
@@ -210,14 +196,14 @@ namespace gvr {
         int             attrSize = attr->Size / sizeof(float);
         int             srcStride = getVertexSize();
 
-        if (attr == NULL)
+        if ((attr == NULL) || !attr->IsSet)
         {
-            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName.c_str());
+            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName);
             return false;
         }
         if (src == NULL)
         {
-            LOGD("VertexBuffer: cannot set attribute %s", attributeName.c_str());
+            LOGD("VertexBuffer: cannot set attribute %s", attributeName);
             return false;
         }
         src += attr->Offset / sizeof(float);
@@ -236,7 +222,7 @@ namespace gvr {
             dest += destStride;
             if (dest > dstend)
             {
-                LOGE("VertexBuffer: error reading from vertex array %s, not enough room in destination array", attributeName.c_str());
+                LOGE("VertexBuffer: error reading from vertex array %s, not enough room in destination array", attributeName);
                 return false;
             }
         }
@@ -255,7 +241,7 @@ namespace gvr {
  *                      closely packed and the stride is the size of the attribute.
  * @return true if attribute was updated, false on error
  */
-    bool    VertexBuffer::setIntVec(const std::string& attributeName, const int* src, int srcSize, int srcStride)
+    bool    VertexBuffer::setIntVec(const char* attributeName, const int* src, int srcSize, int srcStride)
     {
         std::lock_guard<std::mutex> lock(mLock);
         DataEntry*      attr = find(attributeName);
@@ -265,15 +251,15 @@ namespace gvr {
         int             nverts;
         int             attrStride;
 
-        LOGD("VertexBuffer::setIntVec %s %d", attributeName.c_str(), srcSize);
+        LOGD("VertexBuffer::setIntVec %s %d", attributeName, srcSize);
         if (attr == NULL)
         {
-            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName.c_str());
+            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName);
             return false;
         }
         if (src == NULL)
         {
-            LOGE("VertexBuffer: cannot set attribute %s, source array not found", attributeName.c_str());
+            LOGE("VertexBuffer: cannot set attribute %s, source array not found", attributeName);
             return false;
         }
         if (srcStride == 0)
@@ -282,18 +268,17 @@ namespace gvr {
         }
         else if (attrStride > srcStride)    // stride too small for this attribute?
         {
-            LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName.c_str(), srcStride, attrStride);
+            LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
         nverts = srcSize / srcStride;       // # of vertices in input array
         if  (!setVertexCount(nverts))
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName.c_str());
+            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
             return false;
         }
         dest = reinterpret_cast<int*>(mVertexData) + attr->Offset / sizeof(int);
         dstStride = getTotalSize() / sizeof(int);
-        mAttributes[attr->Index].Data = ((char*) dest);
         attrStride = attr->Size / sizeof(int);
         srcend = src + srcSize;
 
@@ -306,7 +291,7 @@ namespace gvr {
             dest += dstStride;
             if (src >= srcend)
             {
-                LOGE("VertexBuffer: error copying to vertex array %s, not enough vertices in source array", attributeName.c_str());
+                LOGE("VertexBuffer: error copying to vertex array %s, not enough vertices in source array", attributeName);
                 break;
             }
             src += srcStride;
@@ -316,7 +301,7 @@ namespace gvr {
         return true;
     }
 
-    bool    VertexBuffer::getIntVec(const std::string& attributeName, int* dest, int destSize, int destStride) const
+    bool    VertexBuffer::getIntVec(const char* attributeName, int* dest, int destSize, int destStride) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* attr = find(attributeName);
@@ -325,14 +310,14 @@ namespace gvr {
         int             attrSize = attr->Size / sizeof(int);
         int             srcStride = getVertexSize();
 
-        if (attr == NULL)
+        if ((attr == NULL) || !attr->IsSet)
         {
-            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName.c_str());
+            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attributeName);
             return false;
         }
         if (src == NULL)
         {
-            LOGE("VertexBuffer: cannot set attribute %s", attributeName.c_str());
+            LOGE("VertexBuffer: cannot set attribute %s", attributeName);
             return false;
         }
         src += attr->Offset / sizeof(float);
@@ -351,7 +336,7 @@ namespace gvr {
             src += srcStride;
             if (dest > dstend)
             {
-                LOGE("VertexBuffer: error reading from vertex array %s, not enough room in destination array", attributeName.c_str());
+                LOGE("VertexBuffer: error reading from vertex array %s, not enough room in destination array", attributeName);
                 return false;
             }
             dest += destStride;
@@ -359,11 +344,12 @@ namespace gvr {
         return true;
     }
 
-    bool VertexBuffer::getInfo(const std::string& attributeName, int& index, int& offset, int& size) const
+    bool VertexBuffer::getInfo(const char* attributeName, int& index, int& offset, int& size) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* attr = find(attributeName);
-        if (attr == NULL)
+
+        if ((attr == NULL) || !attr->IsSet)
             return false;
         offset = attr->Offset;
         index = attr->Index;
@@ -400,17 +386,15 @@ namespace gvr {
     void VertexBuffer::setBoneData(VertexBoneData& bones)
     {
         std::lock_guard<std::mutex> lock(mLock);
-        const DataEntry* attrIndex = find("a_bone_indices");
-        const DataEntry* attrWeight = find("a_bone_weights");
-        float*           vertexData = reinterpret_cast<float*>(mVertexData);
+        int sizeBoneIndex, sizeBoneWeight;
+        float* boneIndex = (float*) getData("a_bone_indices", sizeBoneIndex);
+        float* boneWeight = (float*) getData("a_bone_weights", sizeBoneWeight);
 
-        if ((vertexData == NULL) || (attrIndex == NULL) || (attrWeight == NULL))
+        if ((boneIndex == NULL) || (boneWeight == NULL))
         {
             LOGE("VertexBuffer: ERROR cannot set bone data unless vertex array has a_bone_indices and a_bone_weights attributes");
             return;
         }
-        float* boneIndex = vertexData + attrIndex->Offset / sizeof(float);
-        float* boneWeight = vertexData + attrWeight->Offset / sizeof(float);
         int boneSlots = BONES_PER_VERTEX;
         for (int i = 0; i < getVertexCount(); ++i)
         {
@@ -441,21 +425,21 @@ namespace gvr {
         return true;
     }
 
-    bool VertexBuffer::forAllVertices(const std::string& attrName, std::function<void (int iter, const float* vertex)> func) const
+    bool VertexBuffer::forAllVertices(const char* attrName, std::function<void (int iter, const float* vertex)> func) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         const DataEntry* attr = find(attrName);
         const float*    data = reinterpret_cast<float*>(mVertexData);
         int             stride = getVertexSize();
 
-        if (attr == NULL)
+        if ((attr == NULL) || !attr->IsSet)
         {
-            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attrName.c_str());
+            LOGE("VertexBuffer: ERROR attribute %s not found in vertex buffer", attrName);
             return false;
         }
         if (data == NULL)
         {
-            LOGD("VertexBuffer: cannot find attribute %s", attrName.c_str());
+            LOGD("VertexBuffer: cannot find attribute %s", attrName);
             return false;
         }
         for (int i = 0; i < mVertexCount; ++i)

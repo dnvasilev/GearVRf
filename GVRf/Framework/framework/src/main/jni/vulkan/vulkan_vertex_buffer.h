@@ -17,7 +17,7 @@ namespace gvr {
     class VulkanVertexBuffer : public VertexBuffer
     {
     public:
-        VulkanVertexBuffer(const std::string& layout_desc, int vertexCount);
+        VulkanVertexBuffer(const char* layout_desc, int vertexCount);
         virtual ~VulkanVertexBuffer();
 
         virtual bool    updateGPU(Renderer*, IndexBuffer*);

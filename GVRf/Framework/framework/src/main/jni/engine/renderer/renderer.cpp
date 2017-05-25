@@ -375,7 +375,6 @@ void Renderer::build_frustum(float frustum[6][4], const float *vp_matrix) {
 void Renderer::renderRenderData(RenderState& rstate, RenderData* render_data) {
     if (!(rstate.render_mask & render_data->render_mask()))
         return;
-
     // Set the states
     setRenderStates(render_data, rstate);
     if (render_data->mesh() != 0) {
@@ -414,7 +413,7 @@ RenderData* Renderer::post_effect_render_data()
     quad_triangles.push_back(1);
     quad_triangles.push_back(3);
     quad_triangles.push_back(2);
-    Mesh* mesh = new Mesh(std::string("float3 a_position float2 a_texcoord"));
+    Mesh* mesh = new Mesh("float3 a_position float2 a_texcoord");
     mesh->setVertices(glm::value_ptr(quad_vertices[0]), quad_vertices.size());
     mesh->setFloatVec("a_texcoord", glm::value_ptr(quad_uvs[0]), quad_uvs.size());
     mesh->setTriangles(quad_triangles.data(), quad_triangles.size());

@@ -21,7 +21,7 @@ namespace gvr
     {
         if (uniforms_.isDirty())
         {
-            std::lock_guard<std::mutex> lock(lock_);
+            std::lock_guard<std::mutex> lock(mLock);
             uniforms_.bindBuffer(shader, unused);
         }
         return 0;

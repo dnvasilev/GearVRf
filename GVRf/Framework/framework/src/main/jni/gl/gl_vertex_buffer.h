@@ -26,7 +26,7 @@ namespace gvr {
     class GLVertexBuffer : public VertexBuffer
     {
     public:
-        GLVertexBuffer(const std::string& layout_desc, int vertexCount);
+        GLVertexBuffer(const char* layout_desc, int vertexCount);
         virtual ~GLVertexBuffer();
 
         virtual bool    updateGPU(Renderer*, IndexBuffer*f);

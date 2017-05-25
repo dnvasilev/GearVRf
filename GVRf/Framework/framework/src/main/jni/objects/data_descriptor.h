@@ -18,8 +18,6 @@
 #ifndef DATA_DESCRIPTOR_H_
 #define DATA_DESCRIPTOR_H_
 
-#include<unordered_map>
-#include <map>
 #include <vector>
 #include <functional>
 
@@ -39,16 +37,19 @@ public:
      */
     struct DataEntry
     {
-        short Index;        // 0-based index in descriptor order
-        short Offset;       // offset in bytes from the top of the uniform block
-        short Size;         // byte size of uniform entry
-        char  IsSet;        // true if the entry has been set, else false
-        std::string Type;   // shader type "int", "float", "mat", "vec", "ivec"
-        std::string Name;   // name of the entry
+        std::string Type;           // type of the entry
+        short Index;                // 0-based index in descriptor order
+        short Offset;               // offset in bytes from the top of the uniform block
+        short Size;                 // byte size of uniform entry
+        unsigned int IsSet : 1;     // true if the entry has been set, else false
+        unsigned int IsInt : 1;     // true if the entry represents an integer, false for float
+        unsigned int IsDynamic : 1; // true if the entry changes frequently, else false
+        char NameLength;            // length of the name
+        char Name[63];              // name of the entry
     };
 
 public:
-    DataDescriptor(const std::string& descriptor);
+    DataDescriptor(const char* descriptor);
     virtual ~DataDescriptor() { }
 
    /**
@@ -59,16 +60,11 @@ public:
     * @param name name of uniform to look for
     * @returns true if uniform is in this block, false if not
     */
-    bool isSet(const std::string& name) const
+    bool isSet(const char* name) const
     {
-        for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
-        {
-            if (((*it).Name == name) && (*it).IsSet)
-            {
-                return true;
-            }
-        }
-        return false;
+        int i = findName(name);
+
+        return (i >= 0) && mLayout[i].IsSet;
     }
 
     /*
@@ -98,16 +94,16 @@ public:
      * @return layout descriptor string
      * @see setDescriptor
      */
-    const std::string& getDescriptor() const
+    const char* getDescriptor() const
     {
-        return mDescriptor;
+        return mDescriptor.c_str();
     }
 
     /**
      * Visits each entry in the descriptor and calls the given function
      * once for each named item.
      */
-    void forEach(std::function< void(const std::string& name, const std::string& type, int size) > func);
+    void forEach(std::function< void(const char* name, const char* type, int size) > func);
 
     /**
      * Visits each entry in the descriptor and calls the given function
@@ -123,8 +119,8 @@ public:
      * @param dataptr pointer to where to store data pointer
      * @return pointer to Uniform structure describing the uniform or NULL on failure
      */
-    const DataEntry* find(const std::string& name) const;
-    DataEntry* find(const std::string& name);
+    const DataEntry* find(const char* name) const;
+    DataEntry* find(const char* name);
 
     /*
      * Get the number of bytes occupied by the named entry.
@@ -132,7 +128,7 @@ public:
      * by that attribute in a single vertex.
      * @param name string name of uniform whose size you want
      */
-    int getByteSize(const std::string& name) const;
+    int getByteSize(const char* name) const;
 
     /*
      * Determine if data has changed since last render.
@@ -140,7 +136,12 @@ public:
      */
     bool isDirty() const { return mIsDirty; }
     virtual void markDirty() { mIsDirty = true; }
-    virtual std::string makeShaderType(const std::string& type, int byteSize, int arraySize);
+    virtual std::string makeShaderType(const char* type, int byteSize, int arraySize);
+
+    /**
+     * Calculate the byte size of the given type.
+     */
+    static short calcSize(const char* type);
 
 protected:
 
@@ -150,16 +151,13 @@ protected:
      */
     virtual void parseDescriptor();
 
-    /**
-     * Calculate the byte size of the given type.
-     */
-    short calcSize(const std::string& type) const;
+    const char* addName(const char* name, DataEntry& entry);
+    int findName(const char* name) const;
 
-
-    mutable bool mIsDirty;       // true if data in block has changed since last render
-    std::string mDescriptor;     // descriptor with name, type and size of uniforms
-    int         mTotalSize;      // number of bytes in data block or vertex
-    std::vector<DataEntry> mLayout;
+    mutable bool mIsDirty;          // true if data in block has changed since last render
+    std::string mDescriptor;        // descriptor with name, type and size of uniforms
+    int         mTotalSize;         // number of bytes in data block or vertex
+    std::vector<DataEntry> mLayout; // entries describing layout
 };
 
 }

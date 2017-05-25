@@ -32,7 +32,7 @@
 #include "vulkan/vk_bitmap_image.h"
 
 namespace gvr {
-    ShaderData* VulkanRenderer::createMaterial(const std::string& desc)
+    ShaderData* VulkanRenderer::createMaterial(const char* desc)
     {
         return new VulkanMaterial(desc);
     }
@@ -42,7 +42,7 @@ namespace gvr {
         return new VulkanRenderData();
     }
 
-    UniformBlock* VulkanRenderer::createUniformBlock(const std::string& desc, int binding, const std::string& name)
+    UniformBlock* VulkanRenderer::createUniformBlock(const char* desc, int binding, const char* name)
     {
         return new VulkanUniformBlock(desc, binding, name);
     }
@@ -71,15 +71,15 @@ namespace gvr {
         return NULL;
     }
 
-    Shader* VulkanRenderer::createShader(int id, const std::string& signature,
-                                     const std::string& uniformDescriptor, const std::string& textureDescriptor,
-                                     const std::string& vertexDescriptor, const std::string& vertexShader,
-                                     const std::string& fragmentShader)
+    Shader* VulkanRenderer::createShader(int id, const char* signature,
+                                     const char* uniformDescriptor, const char* textureDescriptor,
+                                     const char* vertexDescriptor, const char* vertexShader,
+                                     const char* fragmentShader)
     {
         return new VulkanShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader);
     }
 
-    VertexBuffer* VulkanRenderer::createVertexBuffer(const std::string& desc, int vcount)
+    VertexBuffer* VulkanRenderer::createVertexBuffer(const char* desc, int vcount)
     {
         return new VulkanVertexBuffer(desc, vcount);
     }

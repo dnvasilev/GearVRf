@@ -9,7 +9,7 @@
 #include "vulkan_shader.h"
 
 namespace gvr {
-    VulkanVertexBuffer::VulkanVertexBuffer(const std::string& layout_desc, int vertexCount)
+    VulkanVertexBuffer::VulkanVertexBuffer(const char* layout_desc, int vertexCount)
     : VertexBuffer(layout_desc, vertexCount),
       vkVertices_(new GVR_VK_Vertices())
     {
@@ -47,7 +47,7 @@ namespace gvr {
         if (!isDirty())
             return;
         m_vertices.vi_bindings = new VkVertexInputBindingDescription[1];
-        m_vertices.vi_attrs = new VkVertexInputAttributeDescription[mAttributes.size()];
+        m_vertices.vi_attrs = new VkVertexInputAttributeDescription[mLayout.size()];
         VkResult   err;
         bool   pass;
 
@@ -148,20 +148,23 @@ namespace gvr {
         // check this
         m_vertices.vi.vertexBindingDescriptionCount = 1;
         m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-        m_vertices.vi.vertexAttributeDescriptionCount = mAttributes.size();
+        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size();
         m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
         m_vertices.vi_bindings[0].binding = 0;
         m_vertices.vi_bindings[0].stride = bufferByteSize;
         m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        LOGE("attrMapping.size() %d, total_size= %d", mAttributes.size(), bufferByteSize);
+        LOGE("attrMapping.size() %d, total_size= %d", mLayout.size(), bufferByteSize);
         int i = 0;
-        forEachAttribute([this, i](const DataEntry& e, const VertexAttribute& a) mutable
+        forEachEntry([this, i](const DataEntry& e) mutable
         {
-            m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-            m_vertices.vi_attrs[i].location = e.Index;
-            LOGE("location %d attrMapping[i].offset %d",  e.Index, e.Offset);
-            m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
-            m_vertices.vi_attrs[i].offset = e.Offset;
+            if (e.IsSet)
+            {
+                m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+                m_vertices.vi_attrs[i].location = e.Index;
+                LOGE("location %d attrMapping[i].offset %d", e.Index, e.Offset);
+                m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
+                m_vertices.vi_attrs[i].offset = e.Offset;
+            }
         });
         vkFreeCommandBuffers(device, vulkanCore->getTransientCmdPool(), 1, &trnCmdBuf);
         mIsDirty = false;

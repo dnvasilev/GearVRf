@@ -54,7 +54,7 @@ class Renderer;
 class UniformBlock : public DataDescriptor
 {
 public:
-    UniformBlock(const std::string& descriptor, int binding_point, const std::string& blockName);
+    UniformBlock(const char* descriptor, int binding_point, const char* blockName);
 
     /**
      * Gets the OpenGL binding point for this uniform block.
@@ -72,7 +72,7 @@ public:
      * @returns uniform block name or NULL if not set.
      * @see #setBlockName
      */
-    const std::string& getBlockName() const { return mBlockName; }
+    const char* getBlockName() const { return mBlockName.c_str(); }
 
     /**
      * Set the value of an integer uniform.
@@ -83,7 +83,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getInt
      */
-    virtual bool setInt(const std::string&, int val);
+    virtual bool setInt(const char*, int val);
 
     /**
      * Set the value of a floating point uniform.
@@ -94,7 +94,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getFloat
      */
-    virtual bool setFloat(const std::string&, float val);
+    virtual bool setFloat(const char*, float val);
 
     /**
      * Set the value of an integer vector uniform.
@@ -106,7 +106,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getIntVec
      */
-    virtual bool setIntVec(const std::string& name, const int* val, int n);
+    virtual bool setIntVec(const char* name, const int* val, int n);
 
     /**
      * Set the value of a floating point vector uniform.
@@ -118,7 +118,7 @@ public:
      * @returns true if successfully set, false on error.
      * @see getVec
      */
-    virtual bool setFloatVec(const std::string& name, const float* val, int n);
+    virtual bool setFloatVec(const char* name, const float* val, int n);
 
     /**
      * Set the value of a 2D vector uniform.
@@ -131,7 +131,7 @@ public:
      * @see getVec
      * @see getVec2
      */
-    virtual bool setVec2(const std::string& name, const glm::vec2& val);
+    virtual bool setVec2(const char* name, const glm::vec2& val);
 
     /**
      * Set the value of a 3D vector uniform.
@@ -144,7 +144,7 @@ public:
      * @see getVec
      * @see getVec3
      */
-    virtual bool setVec3(const std::string& name, const glm::vec3& val);
+    virtual bool setVec3(const char* name, const glm::vec3& val);
 
     /**
      * Set the value of a 4D vector uniform.
@@ -157,7 +157,7 @@ public:
      * @see setVec
      * @see getVec4
      */
-    virtual bool setVec4(const std::string& name, const glm::vec4& val);
+    virtual bool setVec4(const char* name, const glm::vec4& val);
 
     /**
      * Set the value of a 4x4 matrix uniform.
@@ -169,7 +169,7 @@ public:
      * @see setVec
      * @see getVec
      */
-    virtual bool setMat4(const std::string& name,  const glm::mat4& val);
+    virtual bool setMat4(const char* name,  const glm::mat4& val);
 
     /**
      * Get the value of a 2D vector uniform.
@@ -181,7 +181,7 @@ public:
      * @see setVec
      * @see getVec
      */
-    virtual const glm::vec2* getVec2(const std::string& name) const;
+    virtual const glm::vec2* getVec2(const char* name) const;
 
     /**
      * Get the value of a 3D vector uniform.
@@ -193,7 +193,7 @@ public:
      * @see setVec3
      * @see setVec
      */
-    virtual const glm::vec3* getVec3(const std::string& name) const;
+    virtual const glm::vec3* getVec3(const char* name) const;
 
     /**
      * Get the value of a 4D vector uniform.
@@ -205,7 +205,7 @@ public:
      * @see setVec4
      * @see setVec
      */
-    virtual const glm::vec4* getVec4(const std::string& name) const;
+    virtual const glm::vec4* getVec4(const char* name) const;
 
     /**
      * Get the value of a 4x4 matrix uniform.
@@ -217,7 +217,7 @@ public:
      * @see setMat4
      * @see setVec
      */
-    virtual bool getMat4(const std::string&, glm::mat4& val) const;
+    virtual bool getMat4(const char*, glm::mat4& val) const;
 
     /**
      * Get the value of a floating po2int uniform.
@@ -230,7 +230,7 @@ public:
      * @see getVec
      * @see setFloat
      */
-    virtual bool getFloat(const std::string& name, float& v) const;
+    virtual bool getFloat(const char* name, float& v) const;
 
     /**
      * Get the value of an integer uniform.
@@ -243,7 +243,7 @@ public:
      * @see getVec
      * @see setInt
      */
-    virtual bool getInt(const std::string& name, int& v) const;
+    virtual bool getInt(const char* name, int& v) const;
 
     /**
      * Get the value of a float vector uniform.
@@ -255,7 +255,7 @@ public:
      * @return true if vector retrieved, false if not found or size is wrong.
      * @see setVec
      */
-    virtual bool getFloatVec(const std::string& name, float* val, int n) const;
+    virtual bool getFloatVec(const char* name, float* val, int n) const;
 
     /**
      * Get the value of an integer vector uniform.
@@ -267,7 +267,7 @@ public:
      * @return true if vector retrieved, false if not found or size is wrong.
      * @see setVec
      */
-    virtual bool getIntVec(const std::string& name, int* val, int n) const;
+    virtual bool getIntVec(const char* name, int* val, int n) const;
 
     /**
      * Copy the data from the uniform block into the GPU.
@@ -324,8 +324,8 @@ protected:
      * @param bytesize number of bytes uniform occupies
      * @return pointer to start of uniform value or NULL if not found.
      */
-    char* getData(const std::string& name, int& bytesize);
-    const char* getData(const std::string& name, int& bytesize) const;
+    char* getData(const char* name, int& bytesize);
+    const char* getData(const char* name, int& bytesize) const;
 
     int         mBindingPoint;   // shader binding point
     bool        mOwnData;        // true if this uniform owns its data block

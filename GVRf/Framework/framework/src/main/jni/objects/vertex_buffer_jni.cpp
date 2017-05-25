@@ -76,8 +76,7 @@ JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeVertexBuffer_ctor(JNIEnv* env, jobject obj, jstring descriptor, int vertexCount)
 {
     const char* char_desc = env->GetStringUTFChars(descriptor, 0);
-    std::string native_desc = std::string(char_desc);
-    VertexBuffer* vbuf = Renderer::getInstance()->createVertexBuffer(native_desc, vertexCount);
+    VertexBuffer* vbuf = Renderer::getInstance()->createVertexBuffer(char_desc, vertexCount);
     env->ReleaseStringUTFChars(descriptor, char_desc);
     return reinterpret_cast<jlong>(vbuf);
 }
@@ -88,13 +87,12 @@ Java_org_gearvrf_NativeVertexBuffer_getFloatVec(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
     void* bufptr = env->GetDirectBufferAddress(jfloatbuf);
     bool rc = false;
     if (bufptr)
     {
         int capacity = env->GetDirectBufferCapacity(jfloatbuf);
-        rc = vbuf->getFloatVec(native_key, (float *) bufptr, capacity, stride);
+        rc = vbuf->getFloatVec(char_key, (float *) bufptr, capacity, stride);
     }
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
@@ -106,18 +104,17 @@ Java_org_gearvrf_NativeVertexBuffer_getFloatArray(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
-    VertexBuffer::DataEntry* entry = vbuf->find(native_key);
+    VertexBuffer::DataEntry* entry = vbuf->find(char_key);
+    jfloatArray jdata = NULL;
 
-    if (entry == NULL)
+    if (entry != NULL)
     {
-        return nullptr;
+        int n = (vbuf->getVertexCount() * entry->Size) / sizeof(float);
+        jdata = env->NewFloatArray(n);
+        float *data = env->GetFloatArrayElements(jdata, 0);
+        vbuf->getFloatVec(char_key, data, n, 0);
+        env->ReleaseFloatArrayElements(jdata, data, 0);
     }
-    int n = (vbuf->getVertexCount() * entry->Size) / sizeof(float);
-    jfloatArray jdata = env->NewFloatArray(n);
-    float* data = env->GetFloatArrayElements(jdata, 0);
-    vbuf->getFloatVec(native_key, data, n, 0);
-    env->ReleaseFloatArrayElements(jdata, data, 0);
     env->ReleaseStringUTFChars(attribName, char_key);
     return jdata;
 }
@@ -128,10 +125,9 @@ Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
 
     jint* attribData = env->GetIntArrayElements(jdata, 0);
-    bool rc = vbuf->getIntVec(native_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    bool rc = vbuf->getIntVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
@@ -142,10 +138,9 @@ Java_org_gearvrf_NativeVertexBuffer_setFloatArray(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
 
     jfloat* attribData = env->GetFloatArrayElements(jdata, 0);
-    bool rc = vbuf->setFloatVec(native_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    bool rc = vbuf->setFloatVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
@@ -156,13 +151,12 @@ Java_org_gearvrf_NativeVertexBuffer_setFloatVec(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
     void* bufptr = env->GetDirectBufferAddress(jfloatbuf);
     bool rc = false;
     if (bufptr)
     {
         int capacity = env->GetDirectBufferCapacity(jfloatbuf);
-        rc = vbuf->setFloatVec(native_key, (float *) bufptr, capacity, stride);
+        rc = vbuf->setFloatVec(char_key, (float *) bufptr, capacity, stride);
     }
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
@@ -174,10 +168,9 @@ Java_org_gearvrf_NativeVertexBuffer_setIntVec(JNIEnv * env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
 
     jint* attribData = env->GetIntArrayElements(jdata, 0);
-    bool rc = vbuf->setIntVec(native_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    bool rc = vbuf->setIntVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
@@ -188,9 +181,7 @@ Java_org_gearvrf_NativeVertexBuffer_isSet(JNIEnv* env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
-
-    bool rc = vbuf->isSet(native_key);
+    bool rc = vbuf->isSet(char_key);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
@@ -208,8 +199,7 @@ Java_org_gearvrf_NativeVertexBuffer_getAttributeSize(JNIEnv* env, jobject obj,
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    std::string native_key = std::string(char_key);
-    int size = vbuf->getByteSize(native_key) / sizeof(float);
+    int size = vbuf->getByteSize(char_key) / sizeof(float);
     env->ReleaseStringUTFChars(attribName, char_key);
     return size;
 }

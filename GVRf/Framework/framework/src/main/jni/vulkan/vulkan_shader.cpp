@@ -27,12 +27,12 @@
 namespace gvr {
 
 VulkanShader::VulkanShader(int id,
-               const std::string& signature,
-               const std::string& uniformDescriptor,
-               const std::string& textureDescriptor,
-               const std::string& vertexDescriptor,
-               const std::string& vertexShader,
-               const std::string& fragmentShader)
+               const char* signature,
+               const char* uniformDescriptor,
+               const char* textureDescriptor,
+               const char* vertexDescriptor,
+               const char* vertexShader,
+               const char* fragmentShader)
     : Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader) { }
 
 void VulkanShader::initialize()
@@ -47,7 +47,7 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
         samplerBinding.push_back(material_uniformBinding);
         index++;
     }
-    vkMtl.forEachTexture([this, samplerBinding, index](const std::string& texname, Texture* t) mutable
+    vkMtl.forEachTexture([this, samplerBinding, index](const char* texname, Texture* t) mutable
     {
         if (mTextures.find(texname) <= 0)
         {

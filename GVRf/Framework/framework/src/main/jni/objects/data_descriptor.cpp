@@ -12,21 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "objects/data_descriptor.h"
+#include <cstring>
 #include <sstream>
+#include <istream>
+#include "objects/data_descriptor.h"
 #include "util/gvr_log.h"
 
 namespace gvr
 {
 
-    DataDescriptor::DataDescriptor(const std::string& descriptor) :
+    DataDescriptor::DataDescriptor(const char* descriptor) :
             mTotalSize(0),
             mIsDirty(false),
             mDescriptor(descriptor)
     {
-        if (!descriptor.empty())
+        if (descriptor)
         {
-            LOGV("DataDescriptor: %s", descriptor.c_str());
+            LOGV("DataDescriptor: %s", descriptor);
             parseDescriptor();
         }
         else
@@ -37,13 +39,14 @@ namespace gvr
 
     void DataDescriptor::forEachEntry(std::function<void(const DataEntry&)> func)
     {
+        LOGV("DataDescriptor::forEachEntry %s %d entries", mDescriptor.c_str(), mLayout.size());
         for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
         {
             func(*it);
         }
     }
 
-    void DataDescriptor::forEach(std::function<void(const std::string&, const std::string&, int)> func)
+    void DataDescriptor::forEach(std::function<void(const char*, const char*, int)> func)
     {
         const char* p = mDescriptor.c_str();
         const char* type_start;
@@ -78,30 +81,64 @@ namespace gvr
                 break;
             }
             std::string name(name_start, name_size);
-            int size = calcSize(type);
-            func(name, type, size);
+            int size = calcSize(type.c_str());
+            func(name.c_str(), type.c_str(), size);
             ++index;
         }
+    }
+
+    const char* DataDescriptor::addName(const char* name, DataEntry& entry)
+    {
+        int len = strlen(name);
+        int n = mLayout.size();
+
+        if (len > 62)
+        {
+            len = 62;
+            strncpy(entry.Name, name, len);
+            entry.Name[62] = 0;
+            LOGE("DataDescriptor: %s too long, truncated to %s", name, entry.Name);
+        }
+        else
+        {
+            strcpy(entry.Name, name);
+        }
+        entry.NameLength = (char) len;
+        return entry.Name;
+    }
+
+    int DataDescriptor::findName(const char* name) const
+    {
+        int n = strlen(name);
+        for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
+        {
+            const DataEntry& entry = *it;
+            if ((entry.NameLength == n) && (strcmp(entry.Name, name) == 0))
+            {
+                return it - mLayout.begin();
+            }
+        }
+        return -1;
     }
 
     void  DataDescriptor::parseDescriptor()
     {
         int index = 0;
-        forEach([this, index](const std::string& name, const std::string& type, int size) mutable
+        forEach([this, index](const char* name, const char* type, int size) mutable
         {
             // check if it is array
             int array_size = 1;
-            const char* p = name.c_str();
-            int i = name.find('[');
+            const char* p = name;
+            const char* bracket = strchr(name, '[');
 
-            if (name.empty())
+            if (name == NULL)
             {
                 LOGE("UniformBlock: SYNTAX ERROR: expecting uniform name\n");
                 return;
             }
-            if (i > 0)
+            if (bracket)
             {
-                p += i + 1;
+                p += (bracket - name) + 1;
                 while (std::isdigit(*p))
                 {
                     array_size = array_size * 10 + (*p - '0');
@@ -111,25 +148,21 @@ namespace gvr
             }
             DataEntry entry;
             short byteSize = calcSize(type);
-            short offset = mTotalSize;
 
             entry.Type = makeShaderType(type, byteSize, array_size);
             byteSize *= array_size;
             entry.IsSet = false;
-            entry.Name = name;
+            entry.IsDynamic = false;
+            entry.IsInt = type[0] == 'i';
             entry.Index = index++;
-            entry.Offset = offset;
+            entry.Offset = mTotalSize;
             entry.Size = byteSize;
 
             if (byteSize == 0)
                 return;
-            if ((offset + byteSize - (offset & ~0xF)) > 4 * sizeof(float))
-            {
-                offset = offset + 15 & ~0x0F;
-            }
+            addName(name, entry);
             mLayout.push_back(entry);
-            LOGV("UniformBlock: %s offset=%d size=%d\n", name.c_str(), entry.Offset, entry.Size);
-            offset += entry.Size;
+            LOGV("DataDescriptor: %s offset=%d size=%d\n", name, entry.Offset, entry.Size);
             mTotalSize = entry.Offset + entry.Size;
         });
         if (mTotalSize > 0)
@@ -138,7 +171,7 @@ namespace gvr
         }
     }
 
-    std::string DataDescriptor::makeShaderType(const std::string& type, int byteSize, int arraySize)
+    std::string DataDescriptor::makeShaderType(const char* type, int byteSize, int arraySize)
     {
         std::ostringstream stream;
 
@@ -168,51 +201,76 @@ namespace gvr
         return stream.str();
     }
 
-    short DataDescriptor::calcSize(const std::string &type) const
+    short DataDescriptor::calcSize(const char* type)
     {
-        if (type == "float") return sizeof(float);
-        if (type == "float3") return 3 * sizeof(float);
-        if (type == "float4") return 4 * sizeof(float);
-        if (type == "float2") return 2 * sizeof(float);
-        if (type == "int") return sizeof(int);
-        if (type == "int2") return 2 * sizeof(int);
-        if (type == "int3") return 3 * sizeof(int);
-        if (type == "int4") return 4 * sizeof(int);
-        if (type == "float2") return 2 * sizeof(int);
-        if (type == "mat4") return 16 * sizeof(float);
-        if (type == "mat3") return 12 * sizeof(float);
-        LOGE("DataDescriptor: SYNTAX ERROR: unknown type %s\n", type.c_str());
+        int size = 1;
+        int n = strlen(type);
+
+        if (strncmp(type, "float", 5) == 0)
+        {
+            std::istringstream is(type + 5);
+            is >> size;
+            return size * sizeof(float);
+        }
+        else if (strncmp(type, "int", 3) == 0)
+        {
+            std::istringstream is(type + 3);
+            is >> size;
+            return size * sizeof(int);
+        }
+        else if ((strncmp(type, "mat", 3) == 0) && (n <= 4))
+        {
+            if (type[3] == '3')
+            {
+                return 12 * sizeof(float);
+            }
+            else if (type[3] == '4')
+            {
+                return 16 * sizeof(float);
+            }
+        }
+        LOGE("DataDescriptor: SYNTAX ERROR: unknown type %s\n", type);
         return 0;
     }
 
-    const DataDescriptor::DataEntry* DataDescriptor::find(const std::string &name) const
+    /*
+     * This function is used inside the renderer so it is optimized
+     * by checking the length of the entry name first before doing
+     * the string compare. This works better for names which have
+     * common prefixes.
+     */
+    const DataDescriptor::DataEntry* DataDescriptor::find(const char* name) const
     {
-        for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
+        if (name == nullptr)
         {
-            if (it->IsSet && (it->Name == name))
-            {
-                return &(*it);
-            }
+            return nullptr;
+        }
+        int i = findName(name);
+        if (i >= 0)
+        {
+            return &mLayout[i];
         }
         return nullptr;
     }
 
-    DataDescriptor::DataEntry* DataDescriptor::find(const std::string &name)
+    DataDescriptor::DataEntry* DataDescriptor::find(const char* name)
     {
-        for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
+        if (name == nullptr)
         {
-            if (it->Name == name)
-            {
-                return &(*it);
-            }
+            return nullptr;
+        }
+        int i = findName(name);
+        if (i >= 0)
+        {
+            return &mLayout[i];
         }
         return nullptr;
     }
 
-    int DataDescriptor::getByteSize(const std::string &name) const
+    int DataDescriptor::getByteSize(const char* name) const
     {
         const DataEntry* e = find(name);
-        return e ? e->Size : 0;
+        return (e && e->IsSet) ? e->Size : 0;
     }
 
 }

@@ -29,7 +29,7 @@ namespace gvr {
     class VulkanMaterial : public ShaderData
     {
     public:
-        VulkanMaterial(const std::string& descriptor) : ShaderData(descriptor), uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo") { }
+        VulkanMaterial(const char* descriptor) : ShaderData(descriptor), uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo") { }
 
         virtual int render(Shader* shader, Renderer* renderer);
         virtual UniformBlock& uniforms() { return uniforms_; }

@@ -30,7 +30,7 @@
 
 namespace gvr
 {
-    ShaderData *GLRenderer::createMaterial(const std::string &desc)
+    ShaderData *GLRenderer::createMaterial(const char* desc)
     {
         return new GLMaterial(desc);
     }
@@ -58,8 +58,8 @@ namespace gvr
         glClear(mask);
     }
 
-    UniformBlock *GLRenderer::createUniformBlock(const std::string &desc, int binding,
-                                                 const std::string &name)
+    UniformBlock *GLRenderer::createUniformBlock(const char* desc, int binding,
+                                                 const char* name)
     {
         return new GLUniformBlock(desc, binding, name);
     }
@@ -121,18 +121,18 @@ namespace gvr
         return tex;
     }
 
-    Shader *GLRenderer::createShader(int id, const std::string &signature,
-                                     const std::string &uniformDescriptor,
-                                     const std::string &textureDescriptor,
-                                     const std::string &vertexDescriptor,
-                                     const std::string &vertexShader,
-                                     const std::string &fragmentShader)
+    Shader *GLRenderer::createShader(int id, const char* signature,
+                                     const char* uniformDescriptor,
+                                     const char* textureDescriptor,
+                                     const char* vertexDescriptor,
+                                     const char* vertexShader,
+                                     const char* fragmentShader)
     {
         return new GLShader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor,
                             vertexShader, fragmentShader);
     }
 
-    VertexBuffer* GLRenderer::createVertexBuffer(const std::string& desc, int vcount)
+    VertexBuffer* GLRenderer::createVertexBuffer(const char* desc, int vcount)
     {
         return new GLVertexBuffer(desc, vcount);
     }
@@ -146,7 +146,7 @@ namespace gvr
 
     GLRenderer::GLRenderer() : transform_ubo_(nullptr)
     {
-        std::string desc;
+        const char* desc;
 
         if (use_multiview)
             desc =
@@ -562,7 +562,7 @@ namespace gvr
                 ShaderData *bbox_material = new GLMaterial("");
                 RenderPass *pass = new RenderPass();
                 GLShader *bboxShader = reinterpret_cast<GLShader *>(rstate.shader_manager
-                        ->findShader(std::string("GVRBoundingBoxShader")));
+                        ->findShader("GVRBoundingBoxShader"));
                 pass->set_shader(bboxShader->getProgramId());
                 pass->set_material(bbox_material);
                 bounding_box_render_data->set_mesh(bounding_box_mesh);
@@ -627,6 +627,7 @@ namespace gvr
          */
         if (curr_material)
         {
+            LOGV("Renderer::renderMesh using material %s", curr_material->getDescriptor());
             if (curr_material->updateGPU(this) >= 0)
             {
                 shader = rstate.shader_manager->getShader(curr_material->getNativeShader());
@@ -668,7 +669,7 @@ namespace gvr
         {
             LOGE("Error detected in Renderer::renderRenderData; name : %s, error : %s",
                  render_data->owner_object()->name().c_str(), error.c_str());
-            shader = rstate.shader_manager->findShader(std::string("GVRErrorShader"));
+            shader = rstate.shader_manager->findShader("GVRErrorShader");
             shader->useShader();
         }
         if ((drawMode == GL_LINE_STRIP) ||

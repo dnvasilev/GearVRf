@@ -47,12 +47,12 @@ class GLShader : public Shader
  * @see ShaderManager::addShader
  */
 public:
-    explicit GLShader(int id, const std::string& signature,
-            const std::string& uniformDescriptor,
-            const std::string& textureDescriptor,
-            const std::string& vertexDescriptor,
-            const std::string& vertexShader,
-            const std::string& fragmentShader);
+    explicit GLShader(int id, const char* signature,
+            const char* uniformDescriptor,
+            const char* textureDescriptor,
+            const char* vertexDescriptor,
+            const char* vertexShader,
+            const char* fragmentShader);
     virtual ~GLShader();
 
     virtual bool useShader();

@@ -32,7 +32,7 @@ namespace gvr
     class GLMaterial : public ShaderData
     {
     public:
-        GLMaterial(const std::string& descriptor)
+        GLMaterial(const char* descriptor)
         : ShaderData(descriptor),
           uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
         {
