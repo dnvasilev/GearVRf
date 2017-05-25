@@ -19,6 +19,7 @@ import static org.gearvrf.utility.Assert.*;
 
 import java.nio.CharBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +31,7 @@ import org.gearvrf.utility.Log;
 /**
  * Describes an indexed triangle mesh as a set of shared vertices with integer
  * indices for each triangle.
- * 
+ *
  * Usually each mesh vertex may have a positions, normal and texture coordinate.
  * Skinned mesh vertices will also have bone weights and indices.
  * If the mesh uses a normal map for lighting, it will have tangents
@@ -69,7 +70,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * <code>
      *     { x0, y0, z0, x1, y1, z1, x2, y2, z2, ... }
      * </code>
-     * 
+     *
      * @return Array with the packed vertex data.
      */
     public float[] getVertices() {
@@ -81,12 +82,12 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * {@code float} triplet:
      * <p>
      * <code>{ x0, y0, z0, x1, y1, z1, x2, y2, z2, ...}</code>
-     * 
+     *
      * @param vertices
      *            Array containing the packed vertex data.
      */
     public void setVertices(float[] vertices) {
-        mVertices.setFloatVec("a_position", vertices);
+        mVertices.setFloatArray("a_position", vertices);
     }
 
     public GVRVertexBuffer getVertexBuffer() { return mVertices; }
@@ -114,11 +115,11 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * a packed {@code float} triplet:
      * <p>
      * <code>{ x0, y0, z0, x1, y1, z1, x2, y2, z2, ...}</code>
-     * 
+     *
      * @return Array with the packed normal data.
      */
     public float[] getNormals() {
-        return mVertices.getFloatVec("a_normal").array();
+        return mVertices.getFloatArray("a_normal");
     }
 
     /**
@@ -126,12 +127,12 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * a packed {@code float} triplet:
      * <p>
      * <code>{ x0, y0, z0, x1, y1, z1, x2, y2, z2, ...}</code>
-     * 
+     *
      * @param normals
      *            Array containing the packed normal data.
      */
     public void setNormals(float[] normals) {
-        mVertices.setFloatVec("a_normal", normals);
+        mVertices.setFloatArray("a_normal", normals);
     }
 
     /**
@@ -139,11 +140,11 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * represented as a packed {@code float} pair:
      * <p>
      * <code>{ u0, v0, u1, v1, u2, v2, ...}</code>
-     * 
+     *
      * @return Array with the packed texture coordinate data.
      */
     public float[] getTexCoords() {
-        return mVertices.getFloatVec("a_texcoord").array();
+        return mVertices.getFloatArray("a_texcoord");
     }
 
     /**
@@ -151,7 +152,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * represented as a packed {@code float} pair:
      * <p>
      * <code>{ u0, v0, u1, v1, u2, v2, ...}</code>
-     * 
+     *
      * @param texCoords
      *            Array containing the packed texture coordinate data.
      */
@@ -163,7 +164,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     public void setTexCoords(float [] texCoords, int index)
     {
         String key = (index > 0) ? ("a_texcoord" + index) : "a_texcoord";
-        mVertices.setFloatVec(key, texCoords);
+        mVertices.setFloatArray(key, texCoords);
     }
 
     /**
@@ -174,7 +175,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * <code>
      * { t0[0], t0[1], t0[2], t1[0], t1[1], t1[2], ...}
      * </code>
-     * 
+     *
      * @return char array with the packed triangle index data.
      *
      */
@@ -190,7 +191,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * <code>
      * { t0[0], t0[1], t0[2], t1[0], t1[1], t1[2], ...}
      * </code>
-     * 
+     *
      * @param triangles
      *            Array containing the packed triangle index data.
      */
@@ -217,7 +218,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     /**
      * Get the vertex indices of the mesh. The indices for each
      * vertex to be referenced.
-     * 
+     *
      * @return int array with the packed index data.
      */
     public int[] getIndices() {
@@ -227,7 +228,7 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     /**
      * Sets the vertex indices of the mesh. The indices for each
      * vertex.
-     * 
+     *
      * @param indices
      *            int array containing the packed index data.
      */
@@ -284,13 +285,25 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     /**
      * Get the array of {@code float} values associated with the vertex attribute
      * {@code key}.
-     * 
+     *
      * @param key   Name of the shader attribute
      * @return Array of {@code float} values containing the vertex data for the named channel.
      */
-    public float[] getFloatVec(String key)
+    public float[] getFloatArray(String key)
     {
         return mVertices.getFloatArray(key);
+    }
+
+    /**
+     * Get the array of {@code integer} values associated with the vertex attribute
+     * {@code key}.
+     *
+     * @param key   Name of the shader attribute
+     * @return Array of {@code integer} values containing the vertex data for the named channel.
+     */
+    public int[] getIntArray(String key)
+    {
+        return mVertices.getIntArray(key);
     }
 
     /**
@@ -298,25 +311,51 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
      * {@code key}.
      *
      * @param key      Name of the vertex attribute
-     * @param vector   Data to bind to the shader attribute.
+     * @param arr      Data to bind to the shader attribute.
      * @throws IllegalArgumentException if int array is wrong size
      */
-    public void setIntVec(String key, int[] vector)
+    public void setIntArray(String key, int[] arr)
     {
-        mVertices.setIntVec(key, vector);
+        mVertices.setIntArray(key, arr);
+    }
+
+    /**
+     * Bind a buffer of {@code float} values to the vertex attribute
+     * {@code key}.
+     *
+     * @param key   Name of the vertex attribute
+     * @param buf   Data buffer to bind to the shader attribute.
+     * @throws IllegalArgumentException if attribute name not in descriptor or float buffer is wrong size
+     */
+    public void setIntVec(String key, IntBuffer buf)
+    {
+        mVertices.setIntVec(key, buf);
     }
 
     /**
      * Bind an array of {@code float} values to the vertex attribute
      * {@code key}.
      *
-     * @param key           Name of the vertex attribute
-     * @param floatVector   Data to bind to the shader attribute.
+     * @param key   Name of the vertex attribute
+     * @param arr   Data to bind to the shader attribute.
      * @throws IllegalArgumentException if attribute name not in descriptor or float array is wrong size
      */
-    public void setFloatVec(String key, float[] floatVector)
+    public void setFloatArray(String key, float[] arr)
     {
-        mVertices.setFloatVec(key, floatVector);
+        mVertices.setFloatArray(key, arr);
+    }
+
+    /**
+     * Bind a buffer of {@code float} values to the vertex attribute
+     * {@code key}.
+     *
+     * @param key   Name of the vertex attribute
+     * @param buf   Data buffer to bind to the shader attribute.
+     * @throws IllegalArgumentException if attribute name not in descriptor or float buffer is wrong size
+     */
+    public void setFloatVec(String key, FloatBuffer buf)
+    {
+        mVertices.setFloatVec(key, buf);
     }
 
     /**
@@ -347,10 +386,10 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     public boolean hasAttribute(String key) {
     	return mVertices.hasAttribute(key);
     }
-    
+
     /**
      * Constructs a {@link GVRMesh mesh} that contains this mesh.
-     * 
+     *
      * <p>
      * In previous versions of GearVRF this was used with the {@link GVRPicker},
      * and the {@link GVREyePointeeHolder} which required you to pass a
