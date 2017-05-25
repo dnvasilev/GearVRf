@@ -214,12 +214,14 @@ public class GVRSpotLight extends GVRPointLight
         {
             changed = true;
             setVec3("world_direction", mNewDir.x, mNewDir.y, mNewDir.z);
+            mOldDir.set(mNewDir);
             mChanged.set(false);
         }
         if ((mOldPos.x != mNewPos.x) || (mOldPos.y != mNewPos.y) || (mOldPos.z != mNewPos.z))
         {
             changed = true;
             setVec3("world_position", mNewPos.x, mNewPos.y, mNewPos.z);
+            mOldPos.set(mNewPos);
             mChanged.set(false);
         }
         GVRShadowMap shadowMap = (GVRShadowMap) getComponent(GVRShadowMap.getComponentType());

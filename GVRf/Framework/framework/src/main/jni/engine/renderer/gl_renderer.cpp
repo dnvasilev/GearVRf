@@ -615,7 +615,8 @@ namespace gvr
 
     void GLRenderer::renderMesh(RenderState &rstate, RenderData *render_data)
     {
-        int indexCount = render_data->mesh()->getIndexCount();
+        Mesh* mesh = render_data->mesh();
+        int indexCount = mesh->getIndexCount();
         ShaderData* curr_material = rstate.material_override;
         Shader* shader = nullptr;
 
@@ -625,12 +626,18 @@ namespace gvr
          * If updateGPU returns -1, some textures are not ready
          * yet and we do not render this mesh.
          */
-        if (curr_material)
+        if (rstate.shadow_map && curr_material)
         {
-            LOGV("Renderer::renderMesh using material %s", curr_material->getDescriptor());
+            const char* depthShaderName = mesh->hasBones() ? "GVRDepthShader$a_bone_weights$a_bone_indices" : "GVRDepthShader";
+            shader = rstate.shader_manager->findShader(depthShaderName);
+
+            if (shader == nullptr)
+            {
+                LOGE("Renderer::renderMesh cannot find depth shader %s", depthShaderName);
+                return;
+            }
             if (curr_material->updateGPU(this) >= 0)
             {
-                shader = rstate.shader_manager->getShader(curr_material->getNativeShader());
                 numberTriangles += indexCount;
                 numberDrawCalls++;
                 set_face_culling(render_data->pass(0)->cull_face());

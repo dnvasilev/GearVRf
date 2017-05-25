@@ -300,7 +300,7 @@ public class GVRShader
      *            material to use with the shader
      * @return ID of vertex/fragment shader set
      */
-    public int bindShader(GVRContext context, GVRShaderData material)
+    public int bindShader(GVRContext context, GVRShaderData material, String vertexDesc)
     {
         String signature = getClass().getSimpleName();
         GVRShaderManager shaderManager = context.getMaterialShaderManager();

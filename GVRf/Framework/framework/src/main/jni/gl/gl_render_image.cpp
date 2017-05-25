@@ -32,6 +32,7 @@ GLRenderImage::GLRenderImage(int width, int height, int layers)
     mHeight = height;
     mDepth = layers;
     mType = (layers > 1) ? Image::ImageType::ARRAY : Image::ImageType::BITMAP;
+    mState = HAS_DATA;
 }
 
 GLRenderImage::GLRenderImage(int width, int height, int color_format, const TextureParameters* texparams)
@@ -42,6 +43,8 @@ GLRenderImage::GLRenderImage(int width, int height, int color_format, const Text
     mHeight = height;
     mDepth = 1;
     mType = Image::ImageType::BITMAP;
+    mState = HAS_DATA;
+
     if (texparams)
     {
         updateTexParams(mTexParams);

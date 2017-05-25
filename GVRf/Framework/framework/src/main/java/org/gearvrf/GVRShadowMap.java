@@ -200,7 +200,9 @@ public class GVRShadowMap extends GVRRenderTarget
 
     /**
      * Gets the shadow material used in constructing shadow maps.
-     *
+     * <p>
+     * Adds the shadow mapping depth shaders to the shader manager.
+     * There are two variants - one for skinned and one for non-skinned meshes.
      * @return shadow map material
      */
     static GVRMaterial getShadowMaterial(GVRContext ctx)
@@ -210,7 +212,8 @@ public class GVRShadowMap extends GVRRenderTarget
             GVRShaderId depthShader = ctx.getMaterialShaderManager().getShaderType(GVRDepthShader.class);
             sShadowMaterial = new GVRMaterial(ctx, depthShader);
             GVRShader shaderTemplate = depthShader.getTemplate(ctx);
-            shaderTemplate.bindShader(ctx, sShadowMaterial);
+            shaderTemplate.bindShader(ctx, sShadowMaterial, "float3 a_position float3 a_normal");
+            shaderTemplate.bindShader(ctx, sShadowMaterial, "float3 a_position float3 a_normal float4 a_bone_weights int4 a_bone_indices");
         }
         return sShadowMaterial;
     }

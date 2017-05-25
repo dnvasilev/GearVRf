@@ -197,13 +197,16 @@ void GLRenderTexture::generateRenderTextureLayer(GLenum depth_format, int width,
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, image->getId(), 0, layer_index_);
     checkGLError("RenderTexture::generateRenderTextureLayer");
     int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if ((fboStatus == GL_FRAMEBUFFER_COMPLETE) && depth_format_)
+    if (fboStatus == GL_FRAMEBUFFER_COMPLETE)
     {
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, depth_format_, GL_RENDERBUFFER,
-                                  renderTexture_gl_render_buffer_->id());
+        if (depth_format_)
+        {
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, depth_format_, GL_RENDERBUFFER,
+                                      renderTexture_gl_render_buffer_->id());
+        }
         return;
     }
-    LOGE("RenderTexture::generateRenderTextureLayer Could not bind framebuffer: %d", fboStatus);
+    LOGE("RenderTexture::generateRenderTextureLayer Could not bind texture %d to framebuffer: %d", image->getId(), fboStatus);
     switch (fboStatus)
     {
         case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
@@ -283,6 +286,7 @@ void GLRenderTexture::beginRendering()
     bind();
     if (mImage->getDepth() > 1)
     {
+        LOGV("GLRenderTexture::beginRendering layer=%d", layer_index_);
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mImage->getId(), 0, layer_index_);
     }
     glViewport(0, 0, width, height);

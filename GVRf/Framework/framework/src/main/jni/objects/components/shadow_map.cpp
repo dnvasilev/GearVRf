@@ -14,15 +14,15 @@
  */
 #include "shadow_map.h"
 #include "gl/gl_render_texture.h"
-#include "gl/gl_render_image.h"
 
 namespace gvr {
 
     ShadowMap::ShadowMap(ShaderData* mtl)
             : RenderTarget(nullptr),
-              mLayerIndex(-1)
+              mLayerIndex(-1),
+              mShadowMaterial(mtl)
     {
-        mRenderState.material_override = mtl;
+
     }
 
     ShadowMap::~ShadowMap()
@@ -44,6 +44,7 @@ namespace gvr {
 
         if (rtex)
         {
+            LOGV("ShadowMap::setLayerIndex %d", layerIndex);
             rtex->bindFrameBufferToLayer(mLayerIndex);
         }
     }
@@ -63,6 +64,8 @@ namespace gvr {
         RenderTarget::beginRendering();
         mRenderState.render_mask = 1;
         mRenderState.shadow_map = true;
+        mRenderState.material_override = mShadowMaterial;
+        LOGV("ShadowMap::beginRendering %s", mRenderState.material_override->getDescriptor());
     }
 
 }

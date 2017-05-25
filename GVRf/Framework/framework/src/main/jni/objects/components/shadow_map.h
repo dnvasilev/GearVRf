@@ -33,8 +33,8 @@ class GLFrameBuffer;
         void bindTexture(int loc, int texture_index);
 
     protected:
-        int     mLayerIndex;
-        bool    mFBOInit = false;
+        int         mLayerIndex;
+        ShaderData* mShadowMaterial;
     };
 }
 #endif

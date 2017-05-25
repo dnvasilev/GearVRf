@@ -74,7 +74,6 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
     protected String mUniformDescriptor = null;
     protected String mVertexDescriptor = null;
     protected boolean mCastShadow = false;
-    static protected GVRMaterial sShadowMaterial = null;
 
     public GVRLightBase(GVRContext gvrContext, GVRSceneObject parent)
     {
