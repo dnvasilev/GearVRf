@@ -325,7 +325,7 @@ public final class GVRAssetLoader {
                                                  "onTextureLoaded", new Object[] { mContext, texture, texFile });
             synchronized (mNumTextures)
             {
-                Log.e(TAG, "ASSET: successfully loaded texture %s %d", texFile, mNumTextures);
+                Log.e(TAG, "ASSET: Texture: successfully loaded texture %s %d", texFile, mNumTextures);
                 if (mNumTextures >= 1)
                 {
                     --mNumTextures;
@@ -390,7 +390,8 @@ public final class GVRAssetLoader {
                     {
                         return;
                     }
-                } else
+                }
+                else
                 {
                     return;
                 }
