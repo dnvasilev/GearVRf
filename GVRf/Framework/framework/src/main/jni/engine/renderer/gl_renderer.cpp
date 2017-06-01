@@ -30,9 +30,9 @@
 
 namespace gvr
 {
-    ShaderData *GLRenderer::createMaterial(const char* desc)
+    ShaderData *GLRenderer::createMaterial(const char* uniform_desc, const char* texture_desc)
     {
-        return new GLMaterial(desc);
+        return new GLMaterial(uniform_desc, texture_desc);
     }
 
     RenderData *GLRenderer::createRenderData()
@@ -154,10 +154,9 @@ namespace gvr
         else
             desc =
                     " mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; float u_right;";
-        transform_ubo_ =
-                reinterpret_cast<GLUniformBlock *>(createUniformBlock(desc, TRANSFORM_UBO_INDEX,
-                                                                      "Transform_ubo"
-                ));
+        transform_ubo_ = reinterpret_cast<GLUniformBlock *>
+            (createUniformBlock(desc, TRANSFORM_UBO_INDEX,"Transform_ubo"));
+        transform_ubo_->useGPUBuffer(false);
     }
 
     void GLRenderer::renderCamera(Scene *scene, Camera *camera, int framebufferId, int viewportX,
@@ -559,7 +558,7 @@ namespace gvr
                 //Setup basic bounding box and material
                 RenderData *bounding_box_render_data(createRenderData());
                 Mesh *bounding_box_mesh = render_data->mesh()->createBoundingBox();
-                ShaderData *bbox_material = new GLMaterial("");
+                ShaderData *bbox_material = new GLMaterial("", "");
                 RenderPass *pass = new RenderPass();
                 GLShader *bboxShader = reinterpret_cast<GLShader *>(rstate.shader_manager
                         ->findShader("GVRBoundingBoxShader"));
@@ -698,8 +697,10 @@ namespace gvr
         {
             if (shader->useTransformBuffer())
             {
-                updateTransforms(rstate, getTransformUbo(), render_data->owner_object()->transform());
-                getTransformUbo()->bindBuffer(shader, this);
+                UniformBlock* transformBlock = getTransformUbo();
+                updateTransforms(rstate, transformBlock, render_data->owner_object()->transform());
+                static_cast<GLShader*>(shader)->findTransforms(transformBlock);
+                transformBlock->bindBuffer(shader, this);
             }
             if (shader->useLights())
             {
