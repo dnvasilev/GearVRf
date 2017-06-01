@@ -428,7 +428,7 @@ RenderData* Renderer::post_effect_render_data()
 
 void Renderer::updateTransforms(RenderState& rstate, UniformBlock* transform_ubo, Transform* model)
 {
-    rstate.uniforms.u_model = model->getModelMatrix();
+    rstate.uniforms.u_model = model ? model->getModelMatrix() : glm::mat4();
     rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
     transform_ubo->setMat4("u_model", rstate.uniforms.u_model);
 

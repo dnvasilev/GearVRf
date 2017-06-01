@@ -286,7 +286,7 @@ void GLShader::findUniforms(GLMaterial* material)
 
 void GLShader::findTransforms(UniformBlock* transforms)
 {
-    if (transforms->usesGPUBuffer() && (mTransformLocs.size() == 0))
+    if (!transforms->usesGPUBuffer() && (mTransformLocs.size() == 0))
     {
         mTransformLocs.resize(transforms->getNumEntries(), -1);
         transforms->forEachEntry([this](const DataDescriptor::DataEntry &entry) mutable

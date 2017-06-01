@@ -666,6 +666,7 @@ namespace gvr
         GLMaterial* material = static_cast<GLMaterial*>(curr_material);
         GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
         int drawMode = render_data->draw_mode();
+        Transform* model = render_data->owner_object() ? render_data->owner_object()->transform() : nullptr;
 
         try
         {
@@ -698,7 +699,7 @@ namespace gvr
             if (shader->useTransformBuffer())
             {
                 UniformBlock* transformBlock = getTransformUbo();
-                updateTransforms(rstate, transformBlock, render_data->owner_object()->transform());
+                updateTransforms(rstate, transformBlock, model);
                 static_cast<GLShader*>(shader)->findTransforms(transformBlock);
                 transformBlock->bindBuffer(shader, this);
             }

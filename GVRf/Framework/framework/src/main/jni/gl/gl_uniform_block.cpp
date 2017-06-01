@@ -50,8 +50,8 @@ namespace gvr {
                 if (Shader::LOG_SHADER)
                     LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName(), getTotalSize());
             }
+            checkGLError("GLUniformBlock::updateGPU");
         }
-        checkGLError("GLUniformBlock::updateGPU");
         return true;
     }
 
