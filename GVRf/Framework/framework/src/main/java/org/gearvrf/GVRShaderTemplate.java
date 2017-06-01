@@ -368,6 +368,8 @@ public class GVRShaderTemplate extends GVRShader
         }
         combinedSource = combinedSource.replace("@ShaderName", getClass().getSimpleName());
         combinedSource = combinedSource.replace("@LIGHTSOURCES", lightShaderSource);
+        combinedSource = combinedSource.replace("$MATERIAL_UBO", material.makeShaderLayout());
+
         if (type.equals("Vertex"))
         {
             String texcoordSource = assignTexcoords(material);
@@ -731,7 +733,7 @@ public class GVRShaderTemplate extends GVRShader
         structDesc += "};\n";
         return structDesc;
     }
- 
+
     private String makeVertexOutputs(String descriptor, String baseName, String prefix)
     {
         Pattern pattern = Pattern.compile("[ ]*([a-zA-Z0-9_]+)[ ]+([A-Za-z0-9_]+)[,;:]*");

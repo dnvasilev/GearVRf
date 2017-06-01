@@ -36,7 +36,7 @@ namespace gvr
         : ShaderData(descriptor),
           uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
         {
-
+            uniforms_.useGPUBuffer(false);
         }
 
         virtual UniformBlock& uniforms()

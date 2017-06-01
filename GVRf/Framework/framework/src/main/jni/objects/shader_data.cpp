@@ -19,6 +19,13 @@
 
 namespace gvr {
 
+    ShaderData::ShaderData(const char* descriptor) :
+            mNativeShader(0),
+            mLock()
+    {
+
+    }
+
     Texture* ShaderData::getTexture(const char* key) const
     {
         for (auto it = mNames.begin(); it < mNames.end(); ++it)
@@ -61,6 +68,11 @@ namespace gvr {
             const std::string& name = mNames[it - mTextures.begin()];
             func(name.c_str(), *it);
         }
+    }
+
+    std::string ShaderData::makeShaderLayout()
+    {
+        return uniforms().makeShaderLayout();
     }
 
     int ShaderData::getByteSize(const char* name) const

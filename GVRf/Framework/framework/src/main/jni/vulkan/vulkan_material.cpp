@@ -17,6 +17,13 @@
 
 namespace gvr
 {
+    VulkanMaterial::VulkanMaterial(const char* descriptor)
+     : ShaderData(descriptor),
+       uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
+    {
+        uniforms_.useGPUBuffer(true);
+    }
+
     int VulkanMaterial::render(Shader *shader, Renderer *unused)
     {
         if (uniforms_.isDirty())

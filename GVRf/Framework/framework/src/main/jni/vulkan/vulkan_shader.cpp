@@ -43,7 +43,7 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
 {
     if (getUniformDescriptor().getNumEntries() > 0)
     {
-        VkDescriptorSetLayoutBinding &material_uniformBinding = vkMtl.getVulkanUniforms().getDescriptor()->getLayoutBinding();
+        VkDescriptorSetLayoutBinding &material_uniformBinding = reinterpret_cast<VulkanUniformBlock&>(vkMtl.uniforms()).getVulkanDescriptor()->getLayoutBinding();
         samplerBinding.push_back(material_uniformBinding);
         index++;
     }

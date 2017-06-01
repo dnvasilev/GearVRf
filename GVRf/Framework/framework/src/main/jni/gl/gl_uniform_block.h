@@ -36,7 +36,7 @@ public:
     virtual ~GLUniformBlock();
 
     /**
-     * Copy the data from the uniform block into OpenGL.
+     * Copy the data from CPU into the OpenGL uniform buffer.
      */
     virtual bool updateGPU(Renderer*);
 

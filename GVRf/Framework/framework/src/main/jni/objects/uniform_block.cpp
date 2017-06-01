@@ -24,6 +24,7 @@ namespace gvr
             DataDescriptor(descriptor),
             mBlockName(blockName),
             mOwnData(false),
+            mUseBuffer(true),
             mBindingPoint(bindingPoint),
             mUniformData(NULL)
     {
@@ -274,12 +275,25 @@ namespace gvr
     std::string UniformBlock::makeShaderLayout()
     {
         std::ostringstream stream;
-        stream << "uniform " << getBlockName() << "{" << std::endl;
-        DataDescriptor::forEach([&stream](const char* name, const char* type, int size) mutable
+        if (mUseBuffer)
         {
-            stream << "   " << type << name << ";" << std::endl;
-        });
-        stream << "}" << std::endl;
+            stream << "uniform " << getBlockName() << " {" << std::endl;
+            DataDescriptor::forEachEntry([&stream](const DataEntry& entry) mutable
+            {
+                stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+            });
+            stream << "};" << std::endl;
+        }
+        else
+        {
+            DataDescriptor::forEachEntry([&stream, this](const DataEntry& entry) mutable
+            {
+                if (entry.IsSet)
+                {
+                    stream << "uniform " << entry.Type << entry.Name << ";" << std::endl;
+                }
+            });
+        }
         return stream.str();
     }
 

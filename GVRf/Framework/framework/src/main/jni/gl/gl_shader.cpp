@@ -177,7 +177,29 @@ bool GLShader::useShader()
     }
     if (LOG_SHADER) LOGV("SHADER: rendering with program %d", programID);
     glUseProgram(programID);
+    if (mUniformLocs.size() == 0)
+    {
+        bindUniforms();
+    }
     return true;
+}
+
+int GLShader::getUniformLoc(int index) const
+{
+    if (index < mUniformLocs.size())
+    {
+        return mUniformLocs[index];
+    }
+    return -1;
+}
+
+void GLShader::bindUniforms()
+{
+    mUniformDesc.forEachEntry([this](const DataDescriptor::DataEntry& entry) mutable
+    {
+        int loc = glGetUniformLocation(getProgramId(), entry.Name);
+        mUniformLocs[entry.Index] = loc;
+    });
 }
 
 int GLShader::bindTextures(GLMaterial* material)

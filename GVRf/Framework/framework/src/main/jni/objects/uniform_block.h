@@ -65,6 +65,18 @@ public:
         return mBindingPoint;
     }
 
+    /**
+     * Enables or disabled the use of a GPU uniform buffer.
+      */
+    void useGPUBuffer(bool flag)    { mUseBuffer = true; }
+
+    /**
+     * Determines if a GPU buffer is used for this uniform block
+     * or if it uses immediate mode to update the GPU.
+     * @return true if GPU buffer used, else false
+     */
+    bool usesGPUBuffer() const      { return mUseBuffer; }
+
      /**
      * Get the name of the uniform block.
      * This name should be set by the caller to be the same
@@ -270,7 +282,10 @@ public:
     virtual bool getIntVec(const char* name, int* val, int n) const;
 
     /**
-     * Copy the data from the uniform block into the GPU.
+     * Copy the data from the CPU into the GPU.
+     * If useGPUBuffer is enabled, the data is copied into a uniform
+     * buffer in the GPU. Otherwise immediate mode is used to
+     * copy the data to the graphics driver.
      */
     virtual bool updateGPU(Renderer*) = 0;
 
@@ -327,10 +342,11 @@ protected:
     char* getData(const char* name, int& bytesize);
     const char* getData(const char* name, int& bytesize) const;
 
-    int         mBindingPoint;   // shader binding point
-    bool        mOwnData;        // true if this uniform owns its data block
-    std::string mBlockName;      // name of the block in the shader
-    char*       mUniformData;    // -> data block with uniform values
+    int          mBindingPoint;      // shader binding point
+    unsigned int mOwnData : 1;      // true if this uniform block owns its data
+    unsigned int mUseBuffer : 1;    // true if this uniform block uses a GPU buffer
+    std::string  mBlockName;         // name of the block in the shader
+    char*        mUniformData;       // -> data block with uniform values
 };
 
 }

@@ -37,7 +37,6 @@ public:
      */
     struct DataEntry
     {
-        std::string Type;           // type of the entry
         short Index;                // 0-based index in descriptor order
         short Offset;               // offset in bytes from the top of the uniform block
         short Size;                 // byte size of uniform entry
@@ -45,7 +44,8 @@ public:
         unsigned int IsInt : 1;     // true if the entry represents an integer, false for float
         unsigned int IsDynamic : 1; // true if the entry changes frequently, else false
         char NameLength;            // length of the name
-        char Name[63];              // name of the entry
+        char Name[64];              // name of the entry
+        std::string Type;           // type of the entry
     };
 
 public:

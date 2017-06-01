@@ -652,7 +652,7 @@ namespace gvr {
 #ifndef ENABLE_TEXTURE
     void VulkanCore::InitLayoutRenderData(VulkanMaterial& vkMtl, VulkanData& vkdata, Shader* shader) {
         VkResult ret = VK_SUCCESS;
-        VulkanDescriptor* transform = vkdata.getTransformUbo().getDescriptor();
+        VulkanDescriptor* transform = vkdata.getTransformUbo().getVulkanDescriptor();
         VkDescriptorSetLayoutBinding &transform_uniformBinding = transform->getLayoutBinding();
       //  VulkanMaterial* vkMtl = dynamic_cast<VulkanMaterial*>(rdata->material(0));
         VkDescriptorSetLayoutBinding uniformAndSamplerBinding[3] = {};
@@ -663,7 +663,7 @@ namespace gvr {
         uniformAndSamplerBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uniformAndSamplerBinding[0].pImmutableSamplers = nullptr;
         uniformAndSamplerBinding[0] = transform_uniformBinding;
-        VulkanDescriptor *material_descriptor = vkMtl.getVulkanUniforms().getDescriptor();
+        VulkanDescriptor *material_descriptor = reinterpret_cast<VulkanUniformBlock&>(vkMtl.uniforms()).getVulkanDescriptor();
         VkDescriptorSetLayoutBinding &material_uniformBinding = material_descriptor->getLayoutBinding();
 
         uniformAndSamplerBinding[1] = material_uniformBinding;
@@ -1446,7 +1446,7 @@ namespace gvr {
 
      //   VulkanMaterial* vkMtl = dynamic_cast<VulkanMaterial*>(rdata->material(0));
         transform_desc.dstSet = descriptorSet;
-        VkWriteDescriptorSet& mat_desc = vkmtl.getVulkanUniforms().getDescriptorSet();
+        VkWriteDescriptorSet& mat_desc = reinterpret_cast<VulkanUniformBlock&>(vkmtl.uniforms()).getDescriptorSet();
         //VkWriteDescriptorSet &write1 = mat_desc->getDescriptorSet();
         mat_desc.dstSet = descriptorSet;
         VkWriteDescriptorSet writes[3] = {};

@@ -29,23 +29,27 @@ namespace gvr {
 
     bool GLUniformBlock::updateGPU(Renderer* unused)
     {
-        if (mBindingPoint < 0)
+        if (mUseBuffer)             // use a uniform buffer?
         {
-            return false;
-        }
-        if (GLBuffer == 0)
-        {
-            glGenBuffers(1, &GLBuffer);
-            glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
-            glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
-            mIsDirty = true;
-        }
-        if (mIsDirty)
-        {
-            glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
-            glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
-            mIsDirty = false;
-            if (Shader::LOG_SHADER) LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName(), getTotalSize());
+            if (mBindingPoint < 0)
+            {
+                return false;
+            }
+            if (GLBuffer == 0)
+            {
+                glGenBuffers(1, &GLBuffer);
+                glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);
+                glBufferData(GL_UNIFORM_BUFFER, getTotalSize(), NULL, GL_DYNAMIC_DRAW);
+                mIsDirty = true;
+            }
+            if (mIsDirty)
+            {
+                glBindBufferBase(GL_UNIFORM_BUFFER, mBindingPoint, GLBuffer);
+                glBufferSubData(GL_UNIFORM_BUFFER, GLOffset, getTotalSize(), getData());
+                mIsDirty = false;
+                if (Shader::LOG_SHADER)
+                    LOGV("UniformBlock::updateGPU %s size %d\n", getBlockName(), getTotalSize());
+            }
         }
         checkGLError("GLUniformBlock::updateGPU");
         return true;
@@ -54,7 +58,43 @@ namespace gvr {
     bool GLUniformBlock::bindBuffer(Shader* shader, Renderer* unused)
     {
         GLShader* glshader = static_cast<GLShader*>(shader);
-        if (GLBuffer > 0)
+
+        if (!mUseBuffer)
+        {
+            DataDescriptor::forEachEntry([this, glshader](const DataEntry& e) mutable
+            {
+                int loc = glshader->getUniformLoc(e.Index);
+                if (e.IsInt)
+                {
+                    const int* data = reinterpret_cast<const int*>(getData());
+
+                    switch (e.Size)
+                    {
+                        case 1: glUniform1iv(loc, 1, data); break;
+                        case 2: glUniform2iv(loc, 1, data); break;
+                        case 3: glUniform3iv(loc, 1, data); break;
+                        case 4: glUniform4iv(loc, 1, data); break;
+                        default: glUniform1iv(loc, e.Size, data); break;
+                    }
+                }
+                else
+                {
+                    const float* data = reinterpret_cast<const float*>(getData());
+
+                    switch (e.Size)
+                    {
+                        case 1: glUniform1fv(loc, 1, data); break;
+                        case 2: glUniform2fv(loc, 1, data); break;
+                        case 3: glUniform3fv(loc, 1, data); break;
+                        case 4: glUniform4fv(loc, 1, data); break;
+                        case 16: glUniformMatrix4fv(loc, 1, false, data); break;
+                        case 12: glUniformMatrix3x4fv(loc, 1, false, data); break;
+                        default: glUniform1fv(loc, e.Size, data); break;
+                    }
+                }
+            });
+        }
+        else if (GLBuffer > 0)
         {
             GLuint blockIndex = glGetUniformBlockIndex(glshader->getProgramId(), getBlockName());
             glBindBuffer(GL_UNIFORM_BUFFER, GLBuffer);

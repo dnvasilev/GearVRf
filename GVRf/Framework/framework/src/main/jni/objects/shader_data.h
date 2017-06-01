@@ -40,12 +40,10 @@ class Texture;
 class ShaderData : public HybridObject
 {
 public:
-    ShaderData(const char* descriptor) :
-            mNativeShader(0),
-            mLock()
-    {
+    static const int MATERIAL_LOCATION = 20;
+//    static const int MATERIAL_LOCATION = -1;
 
-    }
+    ShaderData(const char* descriptor);
 
     virtual ~ShaderData() { }
 
@@ -60,29 +58,30 @@ public:
         dirty(NATIVE_SHADER);
     }
 
-    Texture* getTexture(const char* key) const;
-    void setTexture(const char* key, Texture* texture);
-    void forEachTexture(std::function< void(const char* texname, Texture* tex) > func);
-    int getByteSize(const char* name) const;
     const char* getDescriptor() const;
-    bool getFloat(const char* name, float& v) const;
-    bool getInt(const char* name, int& v) const;
-    bool  setInt(const char* name, int val);
-    bool  setFloat(const char* name, float val);
-    bool  setIntVec(const char* name, const int* val, int n);
-    bool  setFloatVec(const char* name, const float* val, int n);
-    bool  getFloatVec(const char* name, float* val, int n);
-    bool  getIntVec(const char* name, int* val, int n);
-    bool  setVec2(const char* name, const glm::vec2& v);
-    bool  setVec3(const char* name, const glm::vec3& v);
-    bool  setVec4(const char* name, const glm::vec4& v);
-    bool  setMat4(const char* name, const glm::mat4& m);
-    void add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
-    void add_dirty_flags(const std::unordered_set<std::shared_ptr<u_short>>& dirty_flags);
-    void dirty(DIRTY_BITS bit);
-    bool hasTexture(const char* key) const;
-    bool hasUniform(const char* key) const;
+    Texture* getTexture(const char* key) const;
+    void    setTexture(const char* key, Texture* texture);
+    void    forEachTexture(std::function< void(const char* texname, Texture* tex) > func);
+    int     getByteSize(const char* name) const;
+    bool    getFloat(const char* name, float& v) const;
+    bool    getInt(const char* name, int& v) const;
+    bool    setInt(const char* name, int val);
+    bool    setFloat(const char* name, float val);
+    bool    setIntVec(const char* name, const int* val, int n);
+    bool    setFloatVec(const char* name, const float* val, int n);
+    bool    getFloatVec(const char* name, float* val, int n);
+    bool    getIntVec(const char* name, int* val, int n);
+    bool    setVec2(const char* name, const glm::vec2& v);
+    bool    setVec3(const char* name, const glm::vec3& v);
+    bool    setVec4(const char* name, const glm::vec4& v);
+    bool    setMat4(const char* name, const glm::mat4& m);
+    void    add_dirty_flag(const std::shared_ptr<u_short>& dirty_flag);
+    void    add_dirty_flags(const std::unordered_set<std::shared_ptr<u_short>>& dirty_flags);
+    void    dirty(DIRTY_BITS bit);
+    bool    hasTexture(const char* key) const;
+    bool    hasUniform(const char* key) const;
     virtual int updateGPU(Renderer* renderer);
+    std::string makeShaderLayout();
     u_int32_t getNumTextures() { return mTextures.size(); }
     virtual UniformBlock&   uniforms() = 0;
     virtual const UniformBlock& uniforms() const = 0;

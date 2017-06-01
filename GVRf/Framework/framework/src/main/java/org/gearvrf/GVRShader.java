@@ -249,6 +249,7 @@ public class GVRShader
         }
         String vshader = getSegment("VertexTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
         String fshader = getSegment("FragmentTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
+
         vertexShaderSource.append(vshader);
         fragmentShaderSource.append(fshader);
         int nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,

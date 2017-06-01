@@ -91,6 +91,10 @@ public class GVRShaderData extends GVRHybridObject
                                          mShaderId.getNativeShader(gvrContext, shaderManager));
     }
 
+    /**
+     * Get the shader type for this material.
+     * @return GVRShaderId designating the shader this material uses.
+     */
     public GVRShaderId getShaderType()
     {
         return mShaderId;
@@ -357,6 +361,12 @@ public class GVRShaderData extends GVRHybridObject
         }
         return null;
     }
+
+    /**
+     * Construct a string describing the shader layout of this material.
+     * @return shader layout string
+     */
+    String makeShaderLayout() { return NativeShaderData.makeShaderLayout(getNative()); }
 }
 
 class NativeShaderData {
@@ -398,4 +408,6 @@ class NativeShaderData {
             float y1, float z1, float w1, float x2, float y2, float z2,
             float w2, float x3, float y3, float z3, float w3, float x4,
             float y4, float z4, float w4);
+
+    static native String makeShaderLayout(long shaderData);
 }

@@ -74,9 +74,11 @@ public:
 
     void convertToGLShaders();
     int bindTextures(GLMaterial* material);
+    int getUniformLoc(int index) const;
 
 protected:
     void initialize();
+    void bindUniforms();
 
 private:
     GLShader(const GLShader& shader);
@@ -86,6 +88,7 @@ private:
 
     GLProgram* mProgram;
     std::vector<int> mTextureLocs;
+    std::vector<int> mUniformLocs;
 };
 
 }

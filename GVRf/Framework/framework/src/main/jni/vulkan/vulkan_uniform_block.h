@@ -58,7 +58,7 @@ namespace gvr {
         virtual bool bindBuffer(Shader*, Renderer*) { };
         virtual std::string makeShaderLayout();
 
-        VulkanDescriptor* getDescriptor();
+        VulkanDescriptor* getVulkanDescriptor();
         void createDescriptorWriteInfo(int binding_index,int stageFlags, bool sampler=false);
         GVR_Uniform& getBuffer() { return m_bufferInfo; }
 
@@ -80,6 +80,6 @@ namespace gvr {
   //  inline VulkanDescriptor::VulkanDescriptor( VulkanUniformBlock* ubo) { }
     inline VulkanDescriptor::~VulkanDescriptor() { }
 
-    inline VulkanDescriptor* VulkanUniformBlock::getDescriptor() { return vk_descriptor; }
+    inline VulkanDescriptor* VulkanUniformBlock::getVulkanDescriptor() { return vk_descriptor; }
 }
 #endif
