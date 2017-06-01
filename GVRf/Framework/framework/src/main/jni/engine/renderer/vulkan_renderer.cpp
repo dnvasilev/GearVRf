@@ -32,9 +32,9 @@
 #include "vulkan/vk_bitmap_image.h"
 
 namespace gvr {
-    ShaderData* VulkanRenderer::createMaterial(const char* desc)
+    ShaderData* VulkanRenderer::createMaterial(const char* uniform_desc, const char* texture_desc)
     {
-        return new VulkanMaterial(desc);
+        return new VulkanMaterial(uniform_desc, texture_desc);
     }
 
     RenderData* VulkanRenderer::createRenderData()

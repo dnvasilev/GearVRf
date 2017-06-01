@@ -116,7 +116,7 @@ public:
                         RenderTexture* post_effect_render_texture_b) {};
     void makeShadowMaps(Scene* scene, ShaderManager* shader_manager){}
     void set_face_culling(int cull_face){}
-    virtual ShaderData* createMaterial(const char* desc);
+    virtual ShaderData* createMaterial(const char* uniform_desc, const char* texture_desc);
     virtual RenderData* createRenderData();
     virtual UniformBlock* createUniformBlock(const char* desc, int binding, const char* name);
     Image* createImage(int type, int format);

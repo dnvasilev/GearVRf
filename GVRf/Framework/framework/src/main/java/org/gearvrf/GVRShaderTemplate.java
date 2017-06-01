@@ -325,7 +325,7 @@ public class GVRShaderTemplate extends GVRShader
         {
             throw new IllegalArgumentException(type + "Template segment missing - cannot make shader");
         }
-        String combinedSource = template.replace("$TRANSFORM_UBO", sTransformUBOCode);
+        String combinedSource = replaceTransforms(template);
         boolean useLights = (lightlist != null) && (lightlist.length > 0);
         String lightShaderSource = "";
 

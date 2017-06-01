@@ -229,7 +229,6 @@ namespace gvr
                 return 16 * sizeof(float);
             }
         }
-        LOGE("DataDescriptor: SYNTAX ERROR: unknown type %s\n", type);
         return 0;
     }
 

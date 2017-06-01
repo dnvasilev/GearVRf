@@ -19,34 +19,56 @@
 
 namespace gvr
 {
-
+/**
+ * Binds the textures and uniforms in this material to the
+ * shader being used for rendering. All materials used by a
+ * shader will have the same ordering of uniforms and textures
+ * in their descriptors. This is the ordering used by the
+ * GLShader::getUniformLoc and GLShader::getTextureLoc.
+ * @param shader    GLShader being used by this material
+ * @param renderer  GLRenderer used to render
+ * @return last texture unit used, -1 if a texture was not ready
+ * @see GLShader::getUniformLoc GLShader::getTextureLoc GLShader::findUniforms
+ */
     int GLMaterial::bindToShader(Shader* shader, Renderer* renderer)
     {
         GLShader* glshader = static_cast<GLShader*>(shader);
-        int texIndex = glshader->bindTextures(this);
-        if (texIndex >= 0)
+        int index = 0;
+        int texUnit = 0;
+        bool fail = false;
+        glshader->findUniforms(this);
+        forEachTexture([fail, texUnit, glshader, this, index](const char* texname, Texture* tex) mutable
+        {
+            int loc = glshader->getTextureLoc(index++);
+            if (loc == -1)
+            {
+                return;
+            }
+            if (tex && tex->getImage())
+            {
+                GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
+                int texid = image->getId();
+
+                LOGV("ShaderData::bindTexture index=%d loc=%d id=%d", texUnit, loc, texid);
+                glActiveTexture(GL_TEXTURE0 + texUnit);
+                glBindTexture(image->getTarget(), texid);
+                glUniform1i(loc, texUnit);
+                checkGLError("GLMaterial::bindTexture");
+            }
+            else
+            {
+                LOGV("ShaderData::bindTexture texture %s at loc=%d not ready", texname, loc);
+                fail = true;
+            }
+        });
+        if (!fail)
         {
            // std::string s = uniforms_.toString();
             uniforms_.bindBuffer(shader, renderer);
+            return texUnit;
         }
-        return texIndex;
+        return -1;
     }
 
-    bool GLMaterial::bindTexture(Texture* tex, int texUnit, int loc)
-    {
-        if (tex && tex->getImage())
-        {
-            GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
-            int texid = image->getId();
-
-            LOGV("ShaderData::bindTexture index=%d loc=%d id=%d", texUnit, loc, texid);
-            glActiveTexture(GL_TEXTURE0 + texUnit);
-            glBindTexture(image->getTarget(), texid);
-            glUniform1i(loc, texUnit);
-            checkGLError("GLMaterial::bindTexture");
-            return true;
-        }
-        return false;
-    }
 }
 

@@ -26,7 +26,7 @@ namespace gvr
 {
     extern "C" {
         JNIEXPORT jlong JNICALL
-        Java_org_gearvrf_NativeShaderData_ctor(JNIEnv* env, jobject obj, jstring jdescriptor);
+        Java_org_gearvrf_NativeShaderData_ctor(JNIEnv* env, jobject obj, jstring udesc, jstring tdesc);
 
         JNIEXPORT jint JNICALL
         Java_org_gearvrf_NativeShaderData_getNativeShader(
@@ -116,12 +116,14 @@ namespace gvr
     };
 
     JNIEXPORT jlong JNICALL
-    Java_org_gearvrf_NativeShaderData_ctor(JNIEnv* env, jobject obj, jstring jdescriptor)
+    Java_org_gearvrf_NativeShaderData_ctor(JNIEnv* env, jobject obj, jstring junidesc, jstring jtexdesc)
     {
-        const char* char_desc = env->GetStringUTFChars(jdescriptor, 0);
+        const char* uni_desc = env->GetStringUTFChars(junidesc, 0);
+        const char* tex_desc = env->GetStringUTFChars(jtexdesc, 0);
         Renderer* renderer = Renderer::getInstance();
-        ShaderData* shaderData = renderer->createMaterial(char_desc);
-        env->ReleaseStringUTFChars(jdescriptor, char_desc);
+        ShaderData* shaderData = renderer->createMaterial(uni_desc, tex_desc);
+        env->ReleaseStringUTFChars(junidesc, uni_desc);
+        env->ReleaseStringUTFChars(jtexdesc, tex_desc);
         return reinterpret_cast<jlong>(shaderData);
     }
 

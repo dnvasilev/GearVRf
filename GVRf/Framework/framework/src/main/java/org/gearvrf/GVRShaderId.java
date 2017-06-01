@@ -39,6 +39,12 @@ public class GVRShaderId {
         mShaderTemplate = template;
     }
 
+    /**
+     * Gets the string describing the uniforms used by shaders of this type.
+     * @param ctx GVFContext shader is associated with
+     * @return uniform descriptor string
+     * @see #getTemplate(GVRContext) GVRShader#getUniformDescriptor()
+     */
     String getUniformDescriptor(GVRContext ctx)
     {
         if (mShaderTemplate == null)
@@ -48,6 +54,27 @@ public class GVRShaderId {
         return mShaderTemplate.getUniformDescriptor();
     }
 
+    /**
+     * Gets the string describing the textures used by shaders of this type.
+     * @param ctx GVFContext shader is associated with
+     * @return texture descriptor string
+     * @see #getTemplate(GVRContext) GVRShader#getTextureDescriptor()
+     */
+    String getTextureDescriptor(GVRContext ctx)
+    {
+        if (mShaderTemplate == null)
+        {
+            mShaderTemplate = makeTemplate(ID, ctx);
+        }
+        return mShaderTemplate.getTextureDescriptor();
+    }
+
+    /**
+     * Gets the Java subclass of GVRShader which implements
+     * this shader type.
+     * @param ctx GVRContext shader is associated with
+     * @return GVRShader class implementing the shader type
+     */
     GVRShader getTemplate(GVRContext ctx)
     {
         if (mShaderTemplate == null)
@@ -57,11 +84,24 @@ public class GVRShaderId {
         return mShaderTemplate;
     }
 
+    /**
+     * Links a specific GVRShader Java class to this shader ID.
+     * This should only ever be called once.
+     * @param shader Java shader class implementing this shader type
+     */
     void setTemplate(GVRShader shader)
     {
         mShaderTemplate = shader;
     }
 
+    /**
+     * Gets the native shader ID for this shader, if it exists.
+     * If a shader does not have any variants, it will have a native
+     * shader ID. Usually this is only true for post effect shaders.
+     * @param ctx       GVRContext this shader is used with
+     * @param manager   shader manager that owns the shader
+     * @return native shader ID, -1 if none
+     */
     int getNativeShader(GVRContext ctx, GVRShaderManager manager)
     {
         if (mNativeShader == 0)
@@ -75,6 +115,13 @@ public class GVRShaderId {
         return mNativeShader;
     }
 
+    /**
+     * Instantiates an instance of input Java shader class,
+     * which must be derived from GVRShader or GVRShaderTemplate.
+     * @param id        Java class which implements shaders of this type.
+     * @param ctx       GVRContext shader belongs to
+     * @return GVRShader subclass which implements this shader type
+     */
     GVRShader makeTemplate(Class<? extends GVRShader> id, GVRContext ctx)
     {
         try

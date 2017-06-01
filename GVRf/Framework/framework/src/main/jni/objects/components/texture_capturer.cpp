@@ -35,7 +35,7 @@ TextureCapturer::TextureCapturer(ShaderManager *shaderManager)
         , mCapturerObject(0)
 {
     Renderer* renderer = Renderer::getInstance();
-    mMaterial = renderer->createMaterial("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent");
+    mMaterial = renderer->createMaterial("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent", "");
     mMaterial->setTexture("diffuseTexture", mRenderTexture);
 
     // OpenGL default

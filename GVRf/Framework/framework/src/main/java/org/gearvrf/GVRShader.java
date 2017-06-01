@@ -84,6 +84,22 @@ public class GVRShader
             + "     float u_right;\n"
             + "};\n";
 
+    protected static String sTransformUniformCode = "// Transform_ubo implemented as uniforms\n"
+            + " #ifdef HAS_MULTIVIEW\n"
+            + "    uniform mat4 u_view_[2];\n"
+            + "    uniform mat4 u_mvp_[2];\n"
+            + "    uniform mat4 u_mv_[2];\n"
+            + "    uniform mat4 u_mv_it_[2];\n"
+            + " #else\n"
+            + "    uniform mat4 u_view;\n"
+            + "    uniform mat4 u_mvp;\n"
+            + "    uniform mat4 u_mv;\n"
+            + "    uniform mat4 u_mv_it;\n"
+            + " #endif\n"
+            + "    uniform mat4 u_model;\n"
+            + "    uniform mat4 u_view_i;\n"
+            + "    uniform float u_right;\n";
+
     /**
      * Construct a shader using GLSL version 100.
      * To make a shader for another version use the other form of the constructor.
@@ -247,8 +263,8 @@ public class GVRShader
             vertexShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
             fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
         }
-        String vshader = getSegment("VertexTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
-        String fshader = getSegment("FragmentTemplate").replace("$TRANSFORM_UBO", sTransformUBOCode);
+        String vshader = replaceTransforms(getSegment("VertexTemplate"));
+        String fshader = replaceTransforms(getSegment("FragmentTemplate"));
 
         vertexShaderSource.append(vshader);
         fragmentShaderSource.append(fshader);
@@ -345,6 +361,17 @@ public class GVRShader
     }
 
     /**
+     * Replaces $TRANSFORM_UBO in shader source with the
+     * proper transform uniform declarations.
+     * @param code shader source code
+     * @return shader source with transform uniform declarations added
+     */
+    protected String replaceTransforms(String code)
+    {
+        return code.replace("$TRANSFORM_UBO", sTransformUniformCode);
+    }
+
+    /**
      * Get the designated shader segment.
      *
      * @param name
@@ -377,7 +404,7 @@ public class GVRShader
             throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
     }
 
-    boolean isImplemented(String methodName, Class<?> ...paramTypes)
+    private boolean isImplemented(String methodName, Class<?> ...paramTypes)
     {
         try
         {
@@ -398,7 +425,7 @@ public class GVRShader
         }
     }
 
-    void bindCalcMatrixMethod(GVRShaderManager shaderManager, int nativeShader)
+    protected void bindCalcMatrixMethod(GVRShaderManager shaderManager, int nativeShader)
     {
         if (isImplemented("calcMatrix", FloatBuffer.class, FloatBuffer.class))
         {

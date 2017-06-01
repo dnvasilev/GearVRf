@@ -43,7 +43,7 @@ public:
     static const int MATERIAL_LOCATION = 20;
 //    static const int MATERIAL_LOCATION = -1;
 
-    ShaderData(const char* descriptor);
+    ShaderData(const char* texture_desc);
 
     virtual ~ShaderData() { }
 
@@ -58,7 +58,8 @@ public:
         dirty(NATIVE_SHADER);
     }
 
-    const char* getDescriptor() const;
+    const char* getUniformDescriptor() const;
+    const char* getTextureDescriptor() const;
     Texture* getTexture(const char* key) const;
     void    setTexture(const char* key, Texture* texture);
     void    forEachTexture(std::function< void(const char* texname, Texture* tex) > func);
@@ -94,7 +95,8 @@ private:
 
 protected:
     int mNativeShader;
-    std::vector<std::string> mNames;
+    std::string mTextureDesc;
+    std::vector<std::string> mTextureNames;
     std::vector<Texture*> mTextures;
     std::mutex mLock;
     std::unordered_set<std::shared_ptr<u_short>> mDirtyFlags;

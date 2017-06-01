@@ -63,7 +63,7 @@ namespace gvr {
         {
             DataDescriptor::forEachEntry([this, glshader](const DataEntry& e) mutable
             {
-                int loc = glshader->getUniformLoc(e.Index);
+                int loc = (mBindingPoint == TRANSFORM_UBO_INDEX) ? glshader->getTransformLoc(e.Index) : glshader->getUniformLoc(e.Index);
                 if (e.IsInt)
                 {
                     const int* data = reinterpret_cast<const int*>(getData());
@@ -115,8 +115,7 @@ namespace gvr {
 
     std::string GLUniformBlock::makeShaderLayout()
     {
-        std::string layout("layout (std140) ");
-        return layout + UniformBlock::makeShaderLayout();
+        return UniformBlock::makeShaderLayout();
     }
 
     void GLUniformBlock::dump(GLuint programID, int blockIndex)

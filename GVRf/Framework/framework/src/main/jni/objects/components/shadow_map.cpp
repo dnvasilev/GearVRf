@@ -65,7 +65,7 @@ namespace gvr {
         mRenderState.render_mask = 1;
         mRenderState.shadow_map = true;
         mRenderState.material_override = mShadowMaterial;
-        LOGV("ShadowMap::beginRendering %s", mRenderState.material_override->getDescriptor());
+        LOGV("ShadowMap::beginRendering %s", mRenderState.material_override->getUniformDescriptor());
     }
 
 }

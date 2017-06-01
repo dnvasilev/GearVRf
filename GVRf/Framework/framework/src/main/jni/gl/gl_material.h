@@ -32,9 +32,9 @@ namespace gvr
     class GLMaterial : public ShaderData
     {
     public:
-        GLMaterial(const char* descriptor)
-        : ShaderData(descriptor),
-          uniforms_(descriptor, MATERIAL_UBO_INDEX, "Material_ubo")
+        GLMaterial(const char* uniform_desc, const char* texture_desc)
+        : ShaderData(texture_desc),
+          uniforms_(uniform_desc, MATERIAL_UBO_INDEX, "Material_ubo")
         {
             uniforms_.useGPUBuffer(false);
         }
@@ -65,8 +65,6 @@ namespace gvr
 
     protected:
         GLUniformBlock uniforms_;
-
-        int bindTextures(Shader *shader);
     };
 }
 

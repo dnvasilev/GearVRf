@@ -277,7 +277,7 @@ namespace gvr
         std::ostringstream stream;
         if (mUseBuffer)
         {
-            stream << "uniform " << getBlockName() << " {" << std::endl;
+            stream << "layout (std140) uniform " << getBlockName() << " {" << std::endl;
             DataDescriptor::forEachEntry([&stream](const DataEntry& entry) mutable
             {
                 stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
@@ -290,7 +290,7 @@ namespace gvr
             {
                 if (entry.IsSet)
                 {
-                    stream << "uniform " << entry.Type << entry.Name << ";" << std::endl;
+                    stream << "uniform " << entry.Type << " " << entry.Name << ";" << std::endl;
                 }
             });
         }

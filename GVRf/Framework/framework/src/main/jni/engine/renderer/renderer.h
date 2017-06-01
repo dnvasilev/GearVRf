@@ -118,7 +118,7 @@ public:
         delete instance;
          instance = NULL;
      }
-     virtual ShaderData* createMaterial(const char* desc) = 0;
+     virtual ShaderData* createMaterial(const char* uniform_desc, const char* texture_desc) = 0;
      virtual RenderData* createRenderData() = 0;
      virtual UniformBlock* createUniformBlock(const char* desc, int, const char* name) = 0;
      virtual Image* createImage(int type, int format) = 0;

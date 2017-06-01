@@ -18,21 +18,36 @@
 #include "shader_data.h"
 
 namespace gvr {
-
-    ShaderData::ShaderData(const char* descriptor) :
+/**
+ * Constructs a bnse material.
+ * The material contains a UniformBlock describing the possible uniforms
+ * that can be used by this material. It also maintains the list of
+ * possible textures in the order specified by the descriptor.
+ * All materials which use the same shader will have the same ordering
+ * of uniforms and textures in their descriptors.
+ * @param uniform_desc  string describing uniforms used by this material
+ * @param texture_desc  string describing textures used by this material
+ */
+    ShaderData::ShaderData(const char* texture_desc) :
             mNativeShader(0),
+            mTextureDesc(texture_desc),
             mLock()
     {
-
+        DataDescriptor texdesc(texture_desc);
+        texdesc.forEach([this](const char* name, const char* type, int size) mutable
+        {
+            mTextureNames.push_back(name);
+            mTextures.push_back(nullptr);
+        });
     }
 
     Texture* ShaderData::getTexture(const char* key) const
     {
-        for (auto it = mNames.begin(); it < mNames.end(); ++it)
+        for (auto it = mTextureNames.begin(); it < mTextureNames.end(); ++it)
         {
             if (*it == key)
             {
-                return mTextures[it - mNames.begin()];
+                return mTextures[it - mTextureNames.begin()];
             }
         }
         return NULL;
@@ -41,20 +56,17 @@ namespace gvr {
     void ShaderData::setTexture(const char* key, Texture* texture)
     {
         std::lock_guard<std::mutex> lock(mLock);
-        for (auto it = mNames.begin(); it < mNames.end(); ++it)
+        for (auto it = mTextureNames.begin(); it < mTextureNames.end(); ++it)
         {
             if (*it == key)
             {
-                dirty(MOD_TEXTURE);
-                mTextures[it - mNames.begin()] = texture;
+                int i = it - mTextureNames.begin();
+                Texture* oldtex = mTextures[i];
+                dirty(oldtex ? MOD_TEXTURE : NEW_TEXTURE);
+                mTextures[i] = texture;
                 return;
             }
         }
-        dirty(NEW_TEXTURE);
-        mNames.push_back(key);
-        mTextures.push_back(texture);
-        //By the time the texture is being set to its attaching material, it is ready
-        //This is guaranteed by upper java layer scheduling
     }
 
     /**
@@ -65,7 +77,7 @@ namespace gvr {
         std::lock_guard<std::mutex> lock(mLock);
         for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
         {
-            const std::string& name = mNames[it - mTextures.begin()];
+            const std::string& name = mTextureNames[it - mTextures.begin()];
             func(name.c_str(), *it);
         }
     }
@@ -80,9 +92,14 @@ namespace gvr {
         return uniforms().getByteSize(name);
     }
 
-    const char* ShaderData::getDescriptor() const
+    const char* ShaderData::getUniformDescriptor() const
     {
         return uniforms().getDescriptor();
+    }
+
+    const char* ShaderData::getTextureDescriptor() const
+    {
+        return mTextureDesc.c_str();
     }
 
     bool ShaderData::getFloat(const char* name, float& v) const
@@ -174,7 +191,7 @@ namespace gvr {
 
     bool ShaderData::hasTexture(const char* key) const
     {
-        for (auto it = mNames.begin(); it < mNames.end(); ++it)
+        for (auto it = mTextureNames.begin(); it < mTextureNames.end(); ++it)
         {
             if (*it == key)
             {
@@ -189,27 +206,35 @@ namespace gvr {
         return (uniforms().getByteSize(key) > 0);
     }
 
+    /**
+     * Updates the values of the uniforms and textures
+     * by copying the relevant data from the CPU to the GPU.
+     * This function operates independently of the shader,
+     * so it cannot tell if a texture the shader requires
+     * is missing.
+     * @param renderer
+     * @return 1 = success, -1 texture not ready, 0 uniforms failed to load
+     */
     int ShaderData::updateGPU(Renderer* renderer)
     {
         std::lock_guard<std::mutex> lock(mLock);
         for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
         {
             Texture *tex = *it;
-            const std::string& name = mNames[it - mTextures.begin()];
-            if (tex == NULL)
+
+            if (tex != NULL)
             {
-                LOGV("ShaderData::updateGPU %s is null", name.c_str());
-                return -1;
-            }
-            bool ready = tex->isReady();
-            if (Shader::LOG_SHADER)
-            {
-                LOGV("ShaderData::updateGPU %s is %s", name.c_str(),
-                     ready ? "ready" : "not ready");
-            }
-            if ((tex == NULL) || !ready)
-            {
-                return -1;
+                bool ready = tex->isReady();
+                if (Shader::LOG_SHADER)
+                {
+                    const std::string& name = mTextureNames[it - mTextures.begin()];
+                    LOGV("ShaderData::updateGPU %s is %s", name.c_str(),
+                         ready ? "ready" : "not ready");
+                }
+                if (!ready)
+                {
+                    return -1;
+                }
             }
         }
         if (uniforms().updateGPU(renderer))

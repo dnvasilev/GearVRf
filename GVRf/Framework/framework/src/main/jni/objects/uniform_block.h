@@ -68,7 +68,7 @@ public:
     /**
      * Enables or disabled the use of a GPU uniform buffer.
       */
-    void useGPUBuffer(bool flag)    { mUseBuffer = true; }
+    void useGPUBuffer(bool flag)    { mUseBuffer = flag; }
 
     /**
      * Determines if a GPU buffer is used for this uniform block
