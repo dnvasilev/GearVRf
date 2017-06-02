@@ -56,7 +56,12 @@ namespace gvr
 
         virtual int bindToShader(Shader* shader, Renderer* renderer);
 
-        void forEachEntry(std::function< void(const DataDescriptor::DataEntry&) > func)
+        void forEachEntry(std::function< void(const DataDescriptor::DataEntry&) > func) const
+        {
+            return uniforms_.forEachEntry(func);
+        }
+
+        void forEachEntry(std::function< void(DataDescriptor::DataEntry&) > func)
         {
             return uniforms_.forEachEntry(func);
         }

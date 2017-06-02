@@ -72,7 +72,7 @@ namespace gvr {
     /**
      * Visits each texture in the material and calls the given function.
      */
-    void ShaderData::forEachTexture(std::function< void(const char* texname, Texture* tex) > func)
+    void ShaderData::forEachTexture(std::function< void(const char* texname, Texture* tex) > func) const
     {
         std::lock_guard<std::mutex> lock(mLock);
         for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
@@ -81,6 +81,7 @@ namespace gvr {
             func(name.c_str(), *it);
         }
     }
+
 
     std::string ShaderData::makeShaderLayout()
     {

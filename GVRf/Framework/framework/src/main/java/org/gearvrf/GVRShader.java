@@ -368,7 +368,8 @@ public class GVRShader
      */
     protected String replaceTransforms(String code)
     {
-        return code.replace("$TRANSFORM_UBO", sTransformUniformCode);
+        //return code.replace("$TRANSFORM_UBO", sTransformUniformCode);
+        return code.replace("$TRANSFORM_UBO", sTransformUBOCode);
     }
 
     /**

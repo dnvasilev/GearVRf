@@ -62,7 +62,7 @@ public:
     const char* getTextureDescriptor() const;
     Texture* getTexture(const char* key) const;
     void    setTexture(const char* key, Texture* texture);
-    void    forEachTexture(std::function< void(const char* texname, Texture* tex) > func);
+    void    forEachTexture(std::function< void(const char* texname, Texture* tex) > func) const;
     int     getByteSize(const char* name) const;
     bool    getFloat(const char* name, float& v) const;
     bool    getInt(const char* name, int& v) const;
@@ -83,7 +83,7 @@ public:
     bool    hasUniform(const char* key) const;
     virtual int updateGPU(Renderer* renderer);
     std::string makeShaderLayout();
-    u_int32_t getNumTextures() { return mTextures.size(); }
+    u_int32_t getNumTextures() const { return mTextures.size(); }
     virtual UniformBlock&   uniforms() = 0;
     virtual const UniformBlock& uniforms() const = 0;
 
@@ -98,7 +98,7 @@ protected:
     std::string mTextureDesc;
     std::vector<std::string> mTextureNames;
     std::vector<Texture*> mTextures;
-    std::mutex mLock;
+    mutable std::mutex mLock;
     std::unordered_set<std::shared_ptr<u_short>> mDirtyFlags;
 };
 

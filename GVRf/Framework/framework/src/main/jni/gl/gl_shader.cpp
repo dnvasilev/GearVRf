@@ -187,11 +187,15 @@ bool GLShader::useShader()
  * @return GL shader location, -1 if shader does not use the uniform
  * @see GLMaterial::bindToShader ShaderData::getUniformDescriptor
  */
-int GLShader::getUniformLoc(int index) const
+int GLShader::getUniformLoc(int index, int bindingPoint) const
 {
-    if (index < mUniformLocs.size())
+    if (bindingPoint <= BONES_UBO_INDEX)
     {
-        return mUniformLocs[index];
+        const std::vector<int>& locs = mShaderLocs[bindingPoint];
+        if (index < locs.size())
+        {
+            return locs[index];
+        }
     }
     return -1;
 }
@@ -205,30 +209,14 @@ int GLShader::getUniformLoc(int index) const
  */
 int GLShader::getTextureLoc(int index) const
 {
-    if (index < mUniformLocs.size())
+    if (index < mTextureLocs.size())
     {
-        return mUniformLocs[index];
+        return mTextureLocs[index];
     }
     return -1;
 }
 
-/**
- * Gets the GL shader location of a texture based on its index
- * in the Material texture descriptor.
- * @param index 0-based texture index
- * @return GL shader location, -1 if shader does not use the texture
- * @see #findTransforms
- */
-int GLShader::getTransformLoc(int index) const
-{
-    if (index < mTransformLocs.size())
-    {
-        return mTransformLocs[index];
-    }
-    return -1;
-}
-
-/**
+    /**
  * Finds the shader locations of all uniforms and textures from a given material.
  * The input material descriptor has all the possible textures and uniforms
  * that can be used by this shader. (Any material used with this shader
@@ -245,23 +233,21 @@ int GLShader::getTransformLoc(int index) const
  * @param material  can be any Material which uses this shader
  * @see #getUniformLoc
  */
-void GLShader::findUniforms(GLMaterial* material)
+void GLShader::findUniforms(const DataDescriptor& desc, int bindingPoint)
 {
-    int texUnit = 0;
+    std::vector<int>& uniformLocs = mShaderLocs[bindingPoint];
 
-    if ((mUniformLocs.size() > 0) || (mTextureLocs.size() > 0))
+    if (uniformLocs.size() > 0)
     {
-       return;
+        return;
     }
-    mUniformLocs.resize(material->getNumUniforms(), -1);
-    mTextureLocs.resize(material->getNumTextures(), -1);
-
-    material->forEachEntry([this](const DataDescriptor::DataEntry& entry) mutable
+    uniformLocs.resize(desc.getNumEntries(), -1);
+    desc.forEachEntry([&](const DataDescriptor::DataEntry& entry) mutable
     {
         int loc = glGetUniformLocation(getProgramId(), entry.Name);
         if (loc >= 0)
         {
-            mUniformLocs[entry.Index] = loc;
+            uniformLocs[entry.Index] = loc;
             LOGV("SHADER: program %d uniform %s loc %d", getProgramId(), entry.Name, loc);
         }
         else
@@ -269,7 +255,40 @@ void GLShader::findUniforms(GLMaterial* material)
             LOGE("SHADER: uniform %s has no location in shader %d", entry.Name, getProgramId());
         }
     });
-    material->forEachTexture([this, texUnit](const char* texname, Texture* tex) mutable
+    checkGLError("GLShader::findUniforms");
+}
+
+/**
+ * Finds the shader locations of all textures from a given material.
+ * The input material descriptor has all the possible textures
+ * that can be used by this shader. (Any material used with this shader
+ * will have the same descriptor.)
+ *
+ * This function uses the descriptor of the input material to find and save
+ * the GL shader locations of each texture. The locations are
+ * saved into mTextureLocs which has an
+ * entry for each texture in the input material
+ * (not just the ones used by this shader). If the shader does not
+ * reference a particular texture, that location will be -1.
+ * This function must be called after the GL shader program has
+ * been selected as the current program.
+ * @param material  can be any Material which uses this shader
+ * @see #getTextureLoc
+ */
+void GLShader::findTextures(const GLMaterial& material)
+{
+    int texUnit = 0;
+
+    if (mTextureLocs.size() > 0)
+    {
+       return;
+    }
+    if (!material.uniforms().usesGPUBuffer())
+    {
+        findUniforms(material.uniforms(), MATERIAL_UBO_INDEX);
+    }
+    mTextureLocs.resize(material.getNumTextures(), -1);
+    material.forEachTexture([this, texUnit](const char* texname, Texture* tex) mutable
     {
         int loc = glGetUniformLocation(getProgramId(), texname);
         if (loc >= 0)
@@ -282,23 +301,7 @@ void GLShader::findUniforms(GLMaterial* material)
             LOGE("SHADER: texture %s has no location in shader %d", texname, getProgramId());
         }
     });
+    checkGLError("GLShader::findTextures");
 }
 
-void GLShader::findTransforms(UniformBlock* transforms)
-{
-    if (!transforms->usesGPUBuffer() && (mTransformLocs.size() == 0))
-    {
-        mTransformLocs.resize(transforms->getNumEntries(), -1);
-        transforms->forEachEntry([this](const DataDescriptor::DataEntry &entry) mutable
-        {
-            int loc = glGetUniformLocation(getProgramId(), entry.Name);
-            if (loc >= 0)
-            {
-                mTransformLocs[entry.Index] = loc;
-                LOGV("SHADER: program %d uniform %s loc %d",
-                      getProgramId(), entry.Name, loc);
-            }
-        });
-    }
-}
 } /* namespace gvr */

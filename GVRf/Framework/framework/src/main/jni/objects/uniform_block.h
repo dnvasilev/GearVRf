@@ -26,8 +26,8 @@
 
 #define TRANSFORM_UBO_INDEX 0
 #define MATERIAL_UBO_INDEX  1
-#define SAMPLER_UBO_INDEX   2
-#define BONES_UBO_INDEX     3
+#define BONES_UBO_INDEX     2
+#define SAMPLER_UBO_INDEX   3
 
 namespace gvr {
 class SceneObject;

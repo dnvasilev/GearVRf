@@ -61,37 +61,62 @@ namespace gvr {
 
         if (!mUseBuffer)
         {
+            if (!mIsDirty)
+            {
+                return true;
+            }
+            mIsDirty = false;
             DataDescriptor::forEachEntry([this, glshader](const DataEntry& e) mutable
             {
-                int loc = (mBindingPoint == TRANSFORM_UBO_INDEX) ? glshader->getTransformLoc(e.Index) : glshader->getUniformLoc(e.Index);
+                if (!e.IsSet)
+                {
+                    return;
+                }
+                int loc = glshader->getUniformLoc(e.Index, getBindingPoint());
+                if (loc < 0)
+                {
+                    return;
+                }
+                int elemsize = e.Size / e.Count;
+                const char* data = reinterpret_cast<const char*>(getData());
+                data += e.Offset;
                 if (e.IsInt)
                 {
-                    const int* data = reinterpret_cast<const int*>(getData());
 
-                    switch (e.Size)
+                    elemsize /= sizeof(int);
+                    switch (elemsize)
                     {
-                        case 1: glUniform1iv(loc, 1, data); break;
-                        case 2: glUniform2iv(loc, 1, data); break;
-                        case 3: glUniform3iv(loc, 1, data); break;
-                        case 4: glUniform4iv(loc, 1, data); break;
-                        default: glUniform1iv(loc, e.Size, data); break;
+                        case 1: glUniform1iv(loc, e.Count, (const int*) data); break;
+                        case 2: glUniform2iv(loc, e.Count, (const int*) data); break;
+                        case 3: glUniform3iv(loc, e.Count, (const int*) data); break;
+                        case 4: glUniform4iv(loc, e.Count, (const int*) data); break;
+                        default: LOGE("UniformBlock: ERROR invalid integer vector size %d", elemsize); break;
+                    }
+                }
+                else if (e.IsMatrix)
+                {
+                    elemsize /= sizeof(float);
+                    switch (elemsize)
+                    {
+                        case 12: glUniformMatrix3x4fv(loc, e.Count, false, (const float*) data); break;
+                        case 16: glUniformMatrix4fv(loc, e.Count, false, (const float*) data); break;
+                        default: LOGE("UniformBlock: ERROR invalid integer matrix size %d", elemsize); break;
                     }
                 }
                 else
                 {
-                    const float* data = reinterpret_cast<const float*>(getData());
-
-                    switch (e.Size)
+                    elemsize /= sizeof(float);
+                    switch (elemsize)
                     {
-                        case 1: glUniform1fv(loc, 1, data); break;
-                        case 2: glUniform2fv(loc, 1, data); break;
-                        case 3: glUniform3fv(loc, 1, data); break;
-                        case 4: glUniform4fv(loc, 1, data); break;
-                        case 16: glUniformMatrix4fv(loc, 1, false, data); break;
-                        case 12: glUniformMatrix3x4fv(loc, 1, false, data); break;
-                        default: glUniform1fv(loc, e.Size, data); break;
+                        case 1: glUniform1fv(loc, e.Count, (const float*) data); break;
+                        case 2: glUniform2fv(loc, e.Count, (const float*) data); break;
+                        case 3: glUniform3fv(loc, e.Count, (const float*) data); break;
+                        case 4: glUniform4fv(loc, e.Count, (const float*) data); break;
+                        default: LOGE("UniformBlock: ERROR invalid float vector size %d", elemsize); break;
                     }
                 }
+                LOGV("SHADER: UniformBlock::bindBuffer %s loc=%d size=%d", e.Name, loc, elemsize);
+                checkGLError("GLUniformBlock::bindBuffer");
             });
         }
         else if (GLBuffer > 0)

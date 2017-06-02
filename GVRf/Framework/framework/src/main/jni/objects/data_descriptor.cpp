@@ -37,7 +37,16 @@ namespace gvr
         }
     }
 
-    void DataDescriptor::forEachEntry(std::function<void(const DataEntry&)> func)
+    void DataDescriptor::forEachEntry(std::function<void(DataEntry&)> func)
+    {
+        LOGV("DataDescriptor::forEachEntry %s %d entries", mDescriptor.c_str(), mLayout.size());
+        for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
+        {
+            func(*it);
+        }
+    }
+
+    void DataDescriptor::forEachEntry(std::function<void(const DataEntry&)> func) const
     {
         LOGV("DataDescriptor::forEachEntry %s %d entries", mDescriptor.c_str(), mLayout.size());
         for (auto it = mLayout.begin(); it != mLayout.end(); ++it)
@@ -152,8 +161,10 @@ namespace gvr
             entry.Type = makeShaderType(type, byteSize, array_size);
             byteSize *= array_size;
             entry.IsSet = false;
+            entry.Count = array_size;
             entry.IsDynamic = false;
             entry.IsInt = type[0] == 'i';
+            entry.IsMatrix = type[0] == 'm';
             entry.Index = index++;
             entry.Offset = mTotalSize;
             entry.Size = byteSize;

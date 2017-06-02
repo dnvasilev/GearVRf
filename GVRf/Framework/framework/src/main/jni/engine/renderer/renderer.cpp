@@ -146,10 +146,11 @@ bool isRenderPassEqual(RenderData* rdata1, RenderData* rdata2){
 }
 
 void Renderer::cull(Scene *scene, Camera *camera,
-        ShaderManager* shader_manager) {
+        ShaderManager* shader_manager)
+{
 
-    if (camera->owner_object() == 0
-            || camera->owner_object()->transform() == nullptr) {
+    if (camera->owner_object() == 0 || camera->owner_object()->transform() == nullptr)
+    {
         return;
     }
     int nlights = scene->getLightList().size();

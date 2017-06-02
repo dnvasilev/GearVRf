@@ -37,11 +37,13 @@ public:
      */
     struct DataEntry
     {
-        short Index;                // 0-based index in descriptor order
+        char Index;                 // 0-based index in descriptor order
+        char Count;                 // number of elements
         short Offset;               // offset in bytes from the top of the uniform block
-        short Size;                 // byte size of uniform entry
+        short Size;                 // total byte size of uniform entry
         unsigned int IsSet : 1;     // true if the entry has been set, else false
         unsigned int IsInt : 1;     // true if the entry represents an integer, false for float
+        unsigned int IsMatrix : 1;  // true if the entry represents a matrix
         unsigned int IsDynamic : 1; // true if the entry changes frequently, else false
         char NameLength;            // length of the name
         char Name[64];              // name of the entry
@@ -109,7 +111,8 @@ public:
      * Visits each entry in the descriptor and calls the given function
      * with the entry.
      */
-    void forEachEntry(std::function< void(const DataEntry&) > func);
+    void forEachEntry(std::function< void(DataEntry&) > func);
+    void forEachEntry(std::function< void(const DataEntry&) > func) const;
 
     /**
      * Look up the named uniform in the mLayout.
