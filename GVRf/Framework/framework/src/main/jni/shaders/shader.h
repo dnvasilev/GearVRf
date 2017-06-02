@@ -90,7 +90,7 @@ public:
     /*
     *  returns the string containing the texture descriptor
     */
-    const char* getTextureDescriptor()
+    const char* getTextureDescriptor() const
     {
         return mTextures.c_str();
     }
@@ -102,25 +102,30 @@ public:
         return mUniformDesc;
     }
 
-    void useTransformBuffer(bool flag)
+    void useMatrixUniforms(bool flag)
     {
-        mUseTransformBuffer = flag;
+        mUseMatrixUniforms = flag;
     }
 
-    bool useTransformBuffer()
+    bool usesMatrixUniforms() const
     {
-        return mUseTransformBuffer;
+        return mUseMatrixUniforms;
     }
 
-    bool useLights()
+    bool useLights() const
     {
         return mUseLights;
+    }
+
+    bool useMaterialGPUBuffer() const
+    {
+        return mUseMaterialGPUBuffer;
     }
 
     virtual bool useShader() = 0;
     static int calcSize(const char* type);
     void setJava(jclass shaderClass, JavaVM *javaVM);
-    bool calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize);
+    bool calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize) const;
 
 private:
     Shader(const Shader& shader);
@@ -136,8 +141,9 @@ protected:
     std::string mFragmentShader;
     std::string mTextures;
     int mId;
-    bool mUseTransformBuffer = true;
-    bool mUseLights = true;
+    bool mUseMatrixUniforms;
+    bool mUseLights;
+    bool mUseMaterialGPUBuffer;
     jclass mJavaShaderClass;
     JavaVM *mJavaVM;
     jmethodID mCalcMatrixMethod;

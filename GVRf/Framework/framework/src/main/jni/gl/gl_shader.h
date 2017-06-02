@@ -73,7 +73,7 @@ public:
     }
 
     void convertToGLShaders();
-    void findTextures(const GLMaterial& material);
+    void findTextures(GLMaterial& material);
     void findUniforms(const DataDescriptor& desc, int bindingPoint);
     int getUniformLoc(int index, int bindingPoint) const;
     int getTextureLoc(int index) const;
@@ -88,6 +88,7 @@ private:
     GLShader& operator=(GLShader&& shader);
 
     GLProgram* mProgram;
+    bool mIsReady;
     std::vector<int> mShaderLocs[BONES_UBO_INDEX + 1];
     std::vector<int> mTextureLocs;
 };

@@ -3,11 +3,8 @@ uniform samplerCube u_texture;
 in vec3 diffuse_coord;
 out vec4 fragColor;
 
-layout (std140) uniform Material_ubo
-{
-    vec3 u_color;
-    float u_opacity;
-};
+uniform vec3 u_color;
+uniform float u_opacity;
 
 void main()
 {

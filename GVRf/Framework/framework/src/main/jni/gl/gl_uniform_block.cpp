@@ -61,11 +61,6 @@ namespace gvr {
 
         if (!mUseBuffer)
         {
-            if (!mIsDirty)
-            {
-                return true;
-            }
-            mIsDirty = false;
             DataDescriptor::forEachEntry([this, glshader](const DataEntry& e) mutable
             {
                 if (!e.IsSet)

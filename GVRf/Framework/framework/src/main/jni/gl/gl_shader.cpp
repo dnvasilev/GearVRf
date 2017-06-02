@@ -31,7 +31,8 @@ namespace gvr {
                const char* vertexShader,
                const char* fragmentShader)
     : Shader(id, signature, uniformDescriptor, textureDescriptor, vertexDescriptor, vertexShader, fragmentShader),
-      mProgram(NULL)
+      mProgram(NULL),
+      mIsReady(false)
 { }
 
 
@@ -275,15 +276,20 @@ void GLShader::findUniforms(const DataDescriptor& desc, int bindingPoint)
  * @param material  can be any Material which uses this shader
  * @see #getTextureLoc
  */
-void GLShader::findTextures(const GLMaterial& material)
+void GLShader::findTextures(GLMaterial& material)
 {
     int texUnit = 0;
 
-    if (mTextureLocs.size() > 0)
+    if (mIsReady)
     {
        return;
     }
-    if (!material.uniforms().usesGPUBuffer())
+    mIsReady = true;
+    if (useMaterialGPUBuffer())
+    {
+        material.uniforms().useGPUBuffer(true);
+    }
+    else
     {
         findUniforms(material.uniforms(), MATERIAL_UBO_INDEX);
     }

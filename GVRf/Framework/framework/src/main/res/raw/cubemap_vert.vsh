@@ -2,7 +2,7 @@
 in vec3 a_position;
 out vec3 diffuse_coord;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 void main()
 {

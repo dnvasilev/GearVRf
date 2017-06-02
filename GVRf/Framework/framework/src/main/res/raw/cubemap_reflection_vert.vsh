@@ -3,7 +3,7 @@ precision highp float;
 in vec3 a_position;
 in vec3 a_normal;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 out vec3 v_viewspace_position;
 out vec3 v_viewspace_normal;

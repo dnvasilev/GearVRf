@@ -1,7 +1,7 @@
 
 in vec3 a_position;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 void main()
 {

@@ -1,9 +1,6 @@
 precision mediump float;
 
-uniform Material_ubo
-{
-    vec3 u_color;
-};
+uniform  vec3 u_color;
 
 out vec4 outColor;
 

@@ -7,7 +7,7 @@ uniform mat4 shadow_matrix;
 layout(num_views = 2) in;
 #endif
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 layout (std140) uniform Bones_ubo
 {

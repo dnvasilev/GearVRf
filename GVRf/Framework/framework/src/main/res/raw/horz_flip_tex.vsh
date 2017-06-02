@@ -2,7 +2,7 @@ in vec3 a_position;
 in vec2 a_texcoord;
 out vec2 diffuse_coord;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 void main()
 {

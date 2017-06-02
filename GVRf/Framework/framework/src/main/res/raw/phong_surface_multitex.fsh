@@ -1,15 +1,5 @@
 
-layout (std140) uniform Material_ubo
-{
-    vec4 ambient_color;
-    vec4 diffuse_color;
-    vec4 specular_color;
-    vec4 emissive_color;
-    vec3 u_color;
-    float u_opacity;
-    float specular_exponent;
-    float line_width;
-};
+@MATERIAL_UNIFORMS
 
 #ifdef HAS_ambientTexture
 in vec2 ambient_coord;

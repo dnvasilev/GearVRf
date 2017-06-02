@@ -2,29 +2,10 @@
 precision highp float;
 uniform samplerExternalOES u_texture;
 
-layout (std140) uniform Material_ubo
-{
-    vec3 u_color;
-    float u_opacity;
-};
+uniform vec3 u_color;
+uniform float u_opacity;
 
-layout (std140) uniform Transform_ubo
-{
- #ifdef HAS_MULTIVIEW
-     mat4 u_view_[2];
-     mat4 u_mvp_[2];
-     mat4 u_mv_[2];
-     mat4 u_mv_it_[2];
- #else
-     mat4 u_view;
-     mat4 u_mvp;
-     mat4 u_mv;
-     mat4 u_mv_it;
- #endif
-     mat4 u_model;
-     mat4 u_view_i;
-     vec4 u_right;
-};
+@MATRIX_UNIFORMS
 
 in vec2 diffuse_coord;
 

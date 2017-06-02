@@ -2,13 +2,10 @@
 precision highp float;
 uniform samplerCube u_texture;
 
-layout (std140) uniform Material_ubo
-{
-    vec3 u_color;
-    float u_opacity;
-};
+uniform vec3 u_color;
+uniform float u_opacity;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 in vec3 v_viewspace_position;
 in vec3 v_viewspace_normal;

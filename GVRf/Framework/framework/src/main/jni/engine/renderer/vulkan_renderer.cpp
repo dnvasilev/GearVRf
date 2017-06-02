@@ -110,7 +110,7 @@ namespace gvr {
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
 
         vkRdata->generateVbos(shader->signature(),this);
-        if (shader->useTransformBuffer())
+        if (shader->usesMatrixUniforms())
         {
             updateTransforms(rstate, &transformUBO, t);
         }

@@ -157,15 +157,6 @@ public class GVRShader
     public boolean hasVariants() { return mHasVariants; }
 
     /**
-     * Check if this shader template uses the transform uniform buffer.
-     *
-     * If a shader template declares it uses the transform uniform buffer,
-     * GearVRF will bind a uniform buffer "Transform_ubo" containing
-     * all the matrices computed by GearVRF for the shader.
-     */
-    public boolean usesTransformBuffer() { return mUsesTransformBuffer; }
-
-    /**
      * Check if this shader template uses light sources.
      *
      * If a shader template uses light sources, the specific vertex
@@ -361,15 +352,15 @@ public class GVRShader
     }
 
     /**
-     * Replaces $TRANSFORM_UBO in shader source with the
+     * Replaces @MATRIX_UNIFORMS in shader source with the
      * proper transform uniform declarations.
      * @param code shader source code
      * @return shader source with transform uniform declarations added
      */
     protected String replaceTransforms(String code)
     {
-        //return code.replace("$TRANSFORM_UBO", sTransformUniformCode);
-        return code.replace("$TRANSFORM_UBO", sTransformUBOCode);
+        return code.replace("@MATRIX_UNIFORMS", sTransformUniformCode);
+        //return code.replace("@MATRIX_UNIFORMS", sTransformUBOCode);
     }
 
     /**

@@ -6,7 +6,7 @@ layout(num_views = 2) in;
 flat out int view_id;
 #endif
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 in vec3 a_position;
 in vec2 a_texcoord;

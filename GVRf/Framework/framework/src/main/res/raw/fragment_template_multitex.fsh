@@ -5,7 +5,7 @@ precision highp float;
 
 out vec4 fragColor;
 
-$TRANSFORM_UBO
+@MATRIX_UNIFORMS
 
 in vec3 viewspace_position;
 in vec3 viewspace_normal;

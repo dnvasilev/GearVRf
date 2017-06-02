@@ -1,17 +1,10 @@
 precision highp float;
 uniform sampler2D u_texture;
 
-layout (std140) uniform Material_ubo
-{
-    vec3 u_color;
-    float u_opacity;
-};
-
-layout (std140) uniform Transform_ubo
-{
-    mat4 u_mvp;
-    vec4 u_right;
-};
+uniform vec3 u_color;
+uniform float u_opacity;
+uniform mat4 u_mvp;
+uniform vec4 u_right;
 
 in vec2 diffuse_coord;
 out vec4 outColor;

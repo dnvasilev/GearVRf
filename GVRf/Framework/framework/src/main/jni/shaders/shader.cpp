@@ -37,12 +37,17 @@ Shader::Shader(int id,
       mVertexDesc(vertexDescriptor),
       mVertexShader(vertex_shader),
       mFragmentShader(fragment_shader),
-      mUseTransformBuffer(false), mUseLights(false),
+      mUseMatrixUniforms(false),
+      mUseLights(false),
+      mUseMaterialGPUBuffer(false),
       mJavaShaderClass(0), mJavaVM(nullptr), mCalcMatrixMethod(0)
 {
     if (strstr(vertex_shader, "Transform_ubo") ||
         strstr(fragment_shader, "Transform_ubo"))
-        mUseTransformBuffer = true;
+        mUseMatrixUniforms = true;
+    if (strstr(vertex_shader, "Material_ubo") ||
+        strstr(fragment_shader, "Material_ubo"))
+        mUseMaterialGPUBuffer = true;
     if (strstr(signature, "$LIGHTSOURCES"))
         mUseLights = true;
 }
@@ -59,7 +64,7 @@ void Shader::setJava(jclass shaderClass, JavaVM *javaVM)
     }
 }
 
-bool Shader::calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize)
+bool Shader::calcMatrix(float* inputMatrices, int inputSize, float* outputMatrices, int outputSize) const
 {
     if (mJavaVM && mJavaShaderClass && mCalcMatrixMethod)
     {

@@ -368,7 +368,7 @@ public class GVRShaderTemplate extends GVRShader
         }
         combinedSource = combinedSource.replace("@ShaderName", getClass().getSimpleName());
         combinedSource = combinedSource.replace("@LIGHTSOURCES", lightShaderSource);
-        combinedSource = combinedSource.replace("$MATERIAL_UBO", material.makeShaderLayout());
+        combinedSource = combinedSource.replace("@MATERIAL_UNIFORMS", material.makeShaderLayout());
 
         if (type.equals("Vertex"))
         {

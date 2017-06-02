@@ -152,9 +152,9 @@ namespace gvr
             desc = " mat4 u_view_[2]; mat4 u_mvp_[2]; mat4 u_mv_[2]; mat4 u_mv_it_[2]; mat4 u_model; mat4 u_view_i; float u_right; ";
         else
             desc = " mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; float u_right;";
-        transform_ubo_ = reinterpret_cast<GLUniformBlock *>
-            (createUniformBlock(desc, TRANSFORM_UBO_INDEX,"Transform_ubo"));
-        //transform_ubo_->useGPUBuffer(false);
+        transform_ubo_ = reinterpret_cast<GLUniformBlock*>
+                            (createUniformBlock(desc, TRANSFORM_UBO_INDEX, "Transform_ubo"));
+        transform_ubo_->useGPUBuffer(false);
     }
 
     void GLRenderer::renderCamera(Scene *scene, Camera *camera, int framebufferId, int viewportX,
@@ -694,7 +694,7 @@ namespace gvr
         int texIndex = material->bindToShader(shader, this);
         if (texIndex >= 0)
         {
-            if (shader->useTransformBuffer())
+            if (shader->usesMatrixUniforms())
             {
                 UniformBlock* transformBlock = getTransformUbo();
                 updateTransforms(rstate, transformBlock, model);

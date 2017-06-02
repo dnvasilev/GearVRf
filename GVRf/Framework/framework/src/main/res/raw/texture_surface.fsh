@@ -4,7 +4,7 @@ uniform sampler2D diffuseTexture;
 uniform sampler2D u_texture;
 #endif
 
-$MATERIAL_UBO
+@MATERIAL_UNIFORMS
 
 struct Surface
 {
