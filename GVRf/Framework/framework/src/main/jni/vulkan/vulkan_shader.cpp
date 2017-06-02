@@ -49,7 +49,8 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
     }
     vkMtl.forEachTexture([this, samplerBinding, index](const char* texname, Texture* t) mutable
     {
-        if (mTextures.find(texname) <= 0)
+        const DataDescriptor::DataEntry* entry = mTextureDesc.find(texname);
+        if ((entry == NULL) || entry->NotUsed)
         {
             return;
         }
@@ -72,10 +73,11 @@ int VulkanShader::bindTextures(VulkanMaterial& material, std::vector<VkWriteDesc
     u_int32_t index = 0;
     std::vector<VkDescriptorImageInfo>& descriptorImageInfo = info;
 
-    material.forEachTexture([this, index, writes, descriptorImageInfo, descriptorSet](const std::string& texname, Texture* t) mutable
+    material.forEachTexture([this, index, writes, descriptorImageInfo, descriptorSet](const char* texname, Texture* t) mutable
     {
         VkTexture *tex = static_cast<VkTexture *>(t);
-        if (mTextures.find(texname) <= 0)
+        const DataDescriptor::DataEntry* e = mTextureDesc.find(texname);
+        if ((e == NULL) || e->NotUsed)
         {
             return;
         }

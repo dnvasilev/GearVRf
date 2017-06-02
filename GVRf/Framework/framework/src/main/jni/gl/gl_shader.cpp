@@ -178,6 +178,11 @@ bool GLShader::useShader()
     }
     if (LOG_SHADER) LOGV("SHADER: rendering with program %d", programID);
     glUseProgram(programID);
+    findTextures();
+    if (!useMaterialGPUBuffer())
+    {
+        findUniforms(mUniformDesc, MATERIAL_UBO_INDEX);
+    }
     return true;
 }
 
@@ -217,7 +222,7 @@ int GLShader::getTextureLoc(int index) const
     return -1;
 }
 
-    /**
+/**
  * Finds the shader locations of all uniforms and textures from a given material.
  * The input material descriptor has all the possible textures and uniforms
  * that can be used by this shader. (Any material used with this shader
@@ -245,6 +250,10 @@ void GLShader::findUniforms(const DataDescriptor& desc, int bindingPoint)
     uniformLocs.resize(desc.getNumEntries(), -1);
     desc.forEachEntry([&](const DataDescriptor::DataEntry& entry) mutable
     {
+        if (entry.NotUsed)
+        {
+            return;
+        }
         int loc = glGetUniformLocation(getProgramId(), entry.Name);
         if (loc >= 0)
         {
@@ -260,54 +269,40 @@ void GLShader::findUniforms(const DataDescriptor& desc, int bindingPoint)
 }
 
 /**
- * Finds the shader locations of all textures from a given material.
- * The input material descriptor has all the possible textures
- * that can be used by this shader. (Any material used with this shader
- * will have the same descriptor.)
+ * Finds the shader locations of all textures used by this shader.
+ * The shader's texture descriptor  has all the possible textures
+ * that can be used by this shader.
  *
- * This function uses the descriptor of the input material to find and save
- * the GL shader locations of each texture. The locations are
- * saved into mTextureLocs which has an
- * entry for each texture in the input material
+ * This function uses the texture descriptor to find and save
+ * the GL shader locations of each texture used by the shader.
+ * The locations are saved into mTextureLocs which has an
+ * entry for each texture in the descriptor
  * (not just the ones used by this shader). If the shader does not
  * reference a particular texture, that location will be -1.
  * This function must be called after the GL shader program has
  * been selected as the current program.
- * @param material  can be any Material which uses this shader
  * @see #getTextureLoc
  */
-void GLShader::findTextures(GLMaterial& material)
+void GLShader::findTextures()
 {
-    int texUnit = 0;
-
-    if (mIsReady)
+    mTextureLocs.resize(mTextureDesc.getNumEntries(), -1);
+    mTextureDesc.forEachEntry([this](const DataDescriptor::DataEntry& entry) mutable
     {
-       return;
-    }
-    mIsReady = true;
-    if (useMaterialGPUBuffer())
-    {
-        material.uniforms().useGPUBuffer(true);
-    }
-    else
-    {
-        findUniforms(material.uniforms(), MATERIAL_UBO_INDEX);
-    }
-    mTextureLocs.resize(material.getNumTextures(), -1);
-    material.forEachTexture([this, texUnit](const char* texname, Texture* tex) mutable
-    {
-        int loc = glGetUniformLocation(getProgramId(), texname);
+        if (entry.NotUsed)
+        {
+            return;
+        }
+        int loc = glGetUniformLocation(getProgramId(), entry.Name);
         if (loc >= 0)
         {
-             mTextureLocs[texUnit] = loc;
-             LOGV("SHADER: program %d texture %s loc %d", getProgramId(), texname, loc);
+            mTextureLocs[entry.Index] = loc;
+            LOGV("SHADER: program %d texture %s loc %d", getProgramId(), entry.Name, loc);
         }
         else
         {
-            LOGE("SHADER: texture %s has no location in shader %d", texname, getProgramId());
+            LOGE("SHADER: texture %s has no location in shader %d", entry.Name, getProgramId());
         }
     });
     checkGLError("GLShader::findTextures");
 }
-
 } /* namespace gvr */

@@ -162,7 +162,7 @@ namespace gvr
             byteSize *= array_size;
             entry.IsSet = false;
             entry.Count = array_size;
-            entry.IsDynamic = false;
+            entry.NotUsed = false;
             entry.IsInt = type[0] == 'i';
             entry.IsMatrix = type[0] == 'm';
             entry.Index = index++;
@@ -171,6 +171,11 @@ namespace gvr
 
             if (byteSize == 0)
                 return;
+            if (*name == '!')
+            {
+                entry.NotUsed = true;
+                ++name;
+            }
             addName(name, entry);
             mLayout.push_back(entry);
             LOGV("DataDescriptor: %s offset=%d size=%d\n", name, entry.Offset, entry.Size);

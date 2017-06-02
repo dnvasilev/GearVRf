@@ -44,7 +44,7 @@ public:
         unsigned int IsSet : 1;     // true if the entry has been set, else false
         unsigned int IsInt : 1;     // true if the entry represents an integer, false for float
         unsigned int IsMatrix : 1;  // true if the entry represents a matrix
-        unsigned int IsDynamic : 1; // true if the entry changes frequently, else false
+        unsigned int NotUsed : 1;   // true if the shader does not use this entry
         char NameLength;            // length of the name
         char Name[64];              // name of the entry
         std::string Type;           // type of the entry

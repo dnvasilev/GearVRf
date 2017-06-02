@@ -57,13 +57,18 @@ namespace gvr {
             entry.Type = makeShaderType(type, byteSize, 1);
             entry.IsSet = false;
             entry.Count = 1;
-            entry.IsDynamic = false;
+            entry.NotUsed = false;
             entry.IsInt = type[0] == 'i';
             entry.IsMatrix = false;
             entry.Size = byteSize;
             entry.Offset = mTotalSize;
             entry.Index = index++;
             mTotalSize += byteSize;
+            if (*name == '!')
+            {
+                entry.NotUsed = true;
+                ++name;
+            }
             addName(name, entry);
             mLayout.push_back(entry);
             LOGV("VertexBuffer: %s index=%d offset=%d size=%d %d entries\n",

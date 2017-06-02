@@ -33,7 +33,7 @@ Shader::Shader(int id,
                const char* fragment_shader)
     : mId(id), mSignature(signature),
       mUniformDesc(uniformDescriptor),
-      mTextures(textureDescriptor),
+      mTextureDesc(textureDescriptor),
       mVertexDesc(vertexDescriptor),
       mVertexShader(vertex_shader),
       mFragmentShader(fragment_shader),

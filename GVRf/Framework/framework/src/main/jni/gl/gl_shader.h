@@ -73,7 +73,7 @@ public:
     }
 
     void convertToGLShaders();
-    void findTextures(GLMaterial& material);
+    void findTextures();
     void findUniforms(const DataDescriptor& desc, int bindingPoint);
     int getUniformLoc(int index, int bindingPoint) const;
     int getTextureLoc(int index) const;

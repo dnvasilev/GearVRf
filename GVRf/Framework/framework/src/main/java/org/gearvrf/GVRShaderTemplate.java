@@ -258,10 +258,13 @@ public class GVRShaderTemplate extends GVRShader
         {
             type = matcher.group(1);
             name = matcher.group(2);
-            if (material.hasTexture(name))
             {
                 textureDesc.append(type);
                 textureDesc.append(' ');
+                if (!material.hasTexture(name))
+                {
+                    textureDesc.append('!');
+                }
                 textureDesc.append(name);
                 textureDesc.append(' ');
             }
@@ -271,13 +274,14 @@ public class GVRShaderTemplate extends GVRShader
         {
             type = matcher.group(1);
             name = matcher.group(2);
-            if (material.hasUniform(name))
+            uniformDesc.append(type);
+            uniformDesc.append(' ');
+            if (!material.hasUniform(name))
             {
-                uniformDesc.append(type);
-                uniformDesc.append(' ');
-                uniformDesc.append(name);
-                uniformDesc.append(' ');
+                uniformDesc.append('!');
             }
+            uniformDesc.append(name);
+            uniformDesc.append(' ');
         }
         if (meshDesc != null)
         {
@@ -286,13 +290,15 @@ public class GVRShaderTemplate extends GVRShader
             {
                 type = matcher.group(1);
                 name = matcher.group(2);
-                if (meshDesc.contains(name))
+                vertexDesc.append(type);
+                vertexDesc.append(' ');
+                if (!meshDesc.contains(name))
                 {
-                    vertexDesc.append(type);
-                    vertexDesc.append(' ');
-                    vertexDesc.append(name);
-                    vertexDesc.append(' ');
+                    vertexDesc.append('!');
                 }
+                vertexDesc.append(name);
+                vertexDesc.append(' ');
+
             }
         }
     }

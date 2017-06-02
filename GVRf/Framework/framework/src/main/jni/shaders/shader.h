@@ -88,11 +88,11 @@ public:
         return mVertexDesc;
     }
     /*
-    *  returns the string containing the texture descriptor
+    *  returns the texture descriptor
     */
-    const char* getTextureDescriptor() const
+    DataDescriptor& getTextureDescriptor()
     {
-        return mTextures.c_str();
+        return mTextureDesc;
     }
     /*
      *  returns the uniform descriptor
@@ -136,10 +136,10 @@ private:
 protected:
     DataDescriptor mUniformDesc;
     DataDescriptor mVertexDesc;
+    DataDescriptor mTextureDesc;
     std::string mSignature;
     std::string mVertexShader;
     std::string mFragmentShader;
-    std::string mTextures;
     int mId;
     bool mUseMatrixUniforms;
     bool mUseLights;
