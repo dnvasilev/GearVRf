@@ -39,6 +39,8 @@ import static org.gearvrf.utility.Assert.checkStringNotNullOrEmpty;
  * framebuffer after main rendering but before lens distortion.
  * A post effect shader can, for example, apply the same shader to each
  * eye, using different parameters for each eye.
+ *
+ * It is important to fully initialize your material before
  * @see GVRMaterial
  */
 public class GVRShaderData extends GVRHybridObject
@@ -100,6 +102,18 @@ public class GVRShaderData extends GVRHybridObject
     {
         return mShaderId;
     }
+
+    /**
+     * Gets the string describing the uniforms allowed in this material.
+     * @return string with uniform descriptor from shader
+     */
+    public String getUniformDescriptor() { return mUniformDescriptor; }
+
+    /**
+     * Gets the string describing the textures allowed in this material.
+     * @return string with texture descriptor from shader
+     */
+    public String getTextureDescriptor() { return mTextureDescriptor; }
 
     /**
      * Determine whether a named uniform is defined

@@ -50,6 +50,7 @@ Shader::Shader(int id,
         mUseMaterialGPUBuffer = true;
     if (strstr(signature, "$LIGHTSOURCES"))
         mUseLights = true;
+    LOGD("SHADER: %s\n\t%s\n\t%s\t\n%s", signature, uniformDescriptor, textureDescriptor, vertexDescriptor);
 }
 
 void Shader::setJava(jclass shaderClass, JavaVM *javaVM)

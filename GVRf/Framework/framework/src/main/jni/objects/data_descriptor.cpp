@@ -67,12 +67,18 @@ namespace gvr
         while (*p)
         {
             while (std::isspace(*p) || std::ispunct(*p))
+            {
                 ++p;
+            }
             type_start = p;
             if (*p == 0)
+            {
                 break;
-            while (std::isalnum(*p))
+            }
+            while (std::isalnum(*p))    // types are alphanumeric
+            {
                 ++p;
+            }
             type_size = p - type_start;
             if (type_size == 0)
             {
@@ -80,10 +86,18 @@ namespace gvr
             }
             std::string type(type_start, type_size);
             while (std::isspace(*p))
+            {
                 ++p;
+            }
             name_start = p;
+            if (*p == '!')              // skip leading !
+            {
+                ++p;                    // indicates unused field
+            }
             while (std::isalnum(*p) || (*p == '_'))
-                ++p;
+            {
+                ++p;                    // names are alphanumeric, _ allowed
+            }
             name_size = p - name_start;
             if (name_size == 0)
             {
@@ -169,8 +183,6 @@ namespace gvr
             entry.Offset = mTotalSize;
             entry.Size = byteSize;
 
-            if (byteSize == 0)
-                return;
             if (*name == '!')
             {
                 entry.NotUsed = true;

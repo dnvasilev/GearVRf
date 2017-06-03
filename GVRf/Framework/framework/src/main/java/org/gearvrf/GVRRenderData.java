@@ -168,7 +168,7 @@ public class GVRRenderData extends GVRJavaComponent implements IRenderable, Pret
             }
         }
         NativeRenderData.setMesh(getNative(), mesh.getNative());
-        if (oldMesh != null)
+        if ((oldMesh != null) && (oldMesh != mesh))
         {
             bindShader(getGVRContext().getMainScene());
         }
@@ -432,7 +432,7 @@ public class GVRRenderData extends GVRJavaComponent implements IRenderable, Pret
         {
             Log.e(TAG, "Trying to set material from invalid pass. Pass " + passIndex + " was not created.");
         }
-        if (oldmtl != material)
+        if ((oldmtl != null) && (oldmtl != material))
         {
             bindShader(getGVRContext().getMainScene());
         }

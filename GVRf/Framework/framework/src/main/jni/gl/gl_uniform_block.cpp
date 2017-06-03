@@ -63,13 +63,14 @@ namespace gvr {
         {
             DataDescriptor::forEachEntry([this, glshader](const DataEntry& e) mutable
             {
-                if (!e.IsSet)
+                if (!e.IsSet || e.NotUsed)
                 {
                     return;
                 }
                 int loc = glshader->getUniformLoc(e.Index, getBindingPoint());
                 if (loc < 0)
                 {
+                    LOGE("UniformBlock: %s not used by shader", e.Name);
                     return;
                 }
                 int elemsize = e.Size / e.Count;
@@ -77,7 +78,6 @@ namespace gvr {
                 data += e.Offset;
                 if (e.IsInt)
                 {
-
                     elemsize /= sizeof(int);
                     switch (elemsize)
                     {

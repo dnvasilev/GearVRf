@@ -60,27 +60,32 @@ namespace gvr {
         {
             LOGV("VertexBuffer::bindToShader find %s", e.Name);
             const DataDescriptor::DataEntry* entry = find(e.Name);
-            if ((entry != nullptr) && entry->IsSet)
+            GLint loc = glGetAttribLocation(programId, e.Name);
+
+            if (!e.NotUsed)                             // shader uses this vertex attribute?
             {
-                long offset =  entry->Offset;
-                GLint loc = glGetAttribLocation(programId, e.Name);
-                if (loc >= 0)
+                if ((entry != nullptr) && entry->IsSet) // mesh uses this vertex attribute?
                 {
-                    glEnableVertexAttribArray(loc);
-                    glVertexAttribPointer(loc, entry->Size / sizeof(float),
-                                       (entry->Type[0] == 'i') ? GL_INT : GL_FLOAT, GL_FALSE,
-                                          getTotalSize(), (GLvoid*) offset);
-                    LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %d", e.Index, e.Name, loc, entry->Offset);
-                    checkGLError("VertexBuffer::bindToShader");
+                    if (loc >= 0)                       // attribute found in shader?
+                    {
+                        glEnableVertexAttribArray(loc); // enable this attribute in GL
+                        glVertexAttribPointer(loc, entry->Size / sizeof(float),
+                                              (entry->Type[0] == 'i') ? GL_INT : GL_FLOAT, GL_FALSE,
+                                              getTotalSize(), (GLvoid*) entry->Offset);
+                        LOGV("VertexBuffer: vertex attrib #%d %s loc %d ofs %d",
+                             e.Index, e.Name, loc, entry->Offset);
+                        checkGLError("VertexBuffer::bindToShader");
+                    }
+                    else                                // mesh uses attribute but shader does not
+                    {
+                        LOGE("SHADER: vertex attribute %s has no location in shader", e.Name);
+                    }
                 }
-                else
+                else if (loc >= 0)                      // shader uses attribute but mesh does not
                 {
-                    LOGE("SHADER: vertex attribute %s has no location in shader", e.Name);
+                    glDisableVertexAttribArray(loc);
+                    LOGE("SHADER: shader needs vertex attribute %s but it is not found", e.Name);
                 }
-            }
-            else
-            {
-                LOGE("SHADER: shader needs vertex attribute %s but it is not found", e.Name);
             }
         });
     }
