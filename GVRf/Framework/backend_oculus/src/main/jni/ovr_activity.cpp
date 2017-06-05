@@ -25,7 +25,6 @@
 
 static const char* activityClassName = "org/gearvrf/GVRActivity";
 static const char* viewManagerClassName = "org/gearvrf/OvrViewManager";
-
 namespace gvr {
 
 //=============================================================================
@@ -216,7 +215,7 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
         oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye);
             int textureSwapChainIndex = frameBuffer_[eye].mTextureSwapChainIndex;
             const GLuint colorTexture = vrapi_GetTextureSwapChainHandle(frameBuffer_[eye].mColorTextureSwapChain, textureSwapChainIndex);
-#if 0
+#if 1
             if(gRenderer->isVulkanInstace()){
                 glBindTexture(GL_TEXTURE_2D,colorTexture);
                 glTexSubImage2D(   GL_TEXTURE_2D,

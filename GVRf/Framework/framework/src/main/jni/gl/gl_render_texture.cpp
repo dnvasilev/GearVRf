@@ -274,7 +274,7 @@ void GLRenderTexture::generateRenderTexture(int sample_count, int jdepth_format,
             GL_RENDERBUFFER, renderTexture_gl_color_buffer_->id());
 }
 
-void GLRenderTexture::beginRendering()
+void GLRenderTexture::beginRendering(Renderer* renderer)
 {
     if (!isReady())
     {
@@ -312,7 +312,7 @@ void GLRenderTexture::beginRendering()
     }
 }
 
-void GLRenderTexture::endRendering()
+void GLRenderTexture::endRendering(Renderer* renderer)
 {
     const int width = mImage->getWidth();
     const int height = mImage->getHeight();

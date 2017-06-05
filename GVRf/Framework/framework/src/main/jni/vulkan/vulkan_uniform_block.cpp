@@ -19,10 +19,9 @@
 
 namespace gvr {
 
-    VulkanUniformBlock::VulkanUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName)
-            : UniformBlock(descriptor.c_str(), bindingPoint, blockName.c_str()), vk_descriptor(nullptr)
+    VulkanUniformBlock::VulkanUniformBlock(const char* descriptor, int bindingPoint,const char* blockName)
+            : UniformBlock(descriptor, bindingPoint, blockName), vk_descriptor(nullptr)
     {
-        //parseDescriptor();
         vk_descriptor = new VulkanDescriptor();
     }
 
@@ -69,7 +68,7 @@ namespace gvr {
         VkDevice& device = vk->getDevice();
         VkResult ret = VK_SUCCESS;
         uint8_t *pData;
-        std::string data = toString().c_str();
+      //  std::string data = toString().c_str();
         ret = vkMapMemory(device, m_bufferInfo.mem, 0, m_bufferInfo.allocSize, 0, (void **) &pData);
         assert(!ret);
 

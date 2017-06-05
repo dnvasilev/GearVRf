@@ -22,7 +22,7 @@ namespace gvr {
 
         virtual bool    updateGPU(Renderer*, IndexBuffer*);
         virtual void    bindToShader(Shader*r, IndexBuffer*) { }
-        GVR_VK_Vertices* getVKVertices() const  { return vkVertices_; }
+        const GVR_VK_Vertices& getVKVertices() const  { return m_vertices; }
         void    generateVKBuffers(VulkanCore* vulkanCore);
 
     protected:
@@ -30,7 +30,6 @@ namespace gvr {
         VkFormat getDataType(const std::string& type);
 
         GVR_VK_Vertices m_vertices;
-        GVR_VK_Vertices* vkVertices_;
     };
 
 } // end gvrf

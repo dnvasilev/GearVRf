@@ -84,7 +84,7 @@ void RenderTarget::setTexture(RenderTexture* texture)
  * You should not call this function if there is
  * no RenderTexture.
  */
-void  RenderTarget::beginRendering()
+void  RenderTarget::beginRendering(Renderer* renderer)
 {
     mRenderState.uniforms.u_proj = mCamera->getProjectionMatrix();
     mRenderState.uniforms.u_view = mCamera->getViewMatrix();
@@ -96,9 +96,9 @@ void  RenderTarget::beginRendering()
     {
         mRenderTexture->setBackgroundColor(mCamera->background_color_r(),
                                            mCamera->background_color_g(),
-                                           mCamera->background_color_b());
+                                           mCamera->background_color_b(), mCamera->background_color_a());
     }
-    mRenderTexture->beginRendering();
+    mRenderTexture->beginRendering(renderer);
     checkGLError("RenderTarget::beginRendering");
 }
 
@@ -107,9 +107,9 @@ void  RenderTarget::beginRendering()
  * You should not call this function if there is
  * no RenderTexture.
  */
-void RenderTarget::endRendering()
+void RenderTarget::endRendering(Renderer* renderer)
 {
-    mRenderTexture->endRendering();
+    mRenderTexture->endRendering(renderer);
     checkGLError("RenderTarget::endRendering");
 }
 

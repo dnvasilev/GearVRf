@@ -13,17 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef VULKAN_IMAGE_H
-#define VULKAN_IMAGE_H
+#ifndef FRAMEWORK_VULKAN_IMAGE
+#define FRAMEWORK_VULKAN_IMAGE
 
+#include "vulkan_headers.h"
 #include "objects/textures/image.h"
-#include "vk_image.h"
+#include "vk_imagebase.h"
 
-namespace gvr {
-    class VulkanImage : public vkImage, public Image
+namespace gvr
+{
+    class VulkanImage : public vkImageBase, public Image
     {
     public:
         VulkanImage(int target);
+
         VulkanImage(ImageType type, int format, short width, short height);
 
         virtual bool isReady()
@@ -31,21 +34,22 @@ namespace gvr {
             return checkForUpdate(true);
         }
 
-        virtual void texParamsChanged(const TextureParameters& texparams) { }
+        virtual void texParamsChanged(const TextureParameters &texparams)
+        {
+        }
     };
 
-    inline VulkanImage::VulkanImage(int target) :
-            Image(ImageType::BITMAP, target),
-            vkImage(VK_IMAGE_VIEW_TYPE_2D)
-    { }
+    inline VulkanImage::VulkanImage(int target) : Image(ImageType::BITMAP, target),
+                                                  vkImageBase(VK_IMAGE_VIEW_TYPE_2D)
+    {
+    }
 
-    inline VulkanImage::VulkanImage(ImageType type, int format, short width, short height) :
-        Image(type, format),
-        vkImage(VK_IMAGE_VIEW_TYPE_2D)
+    inline VulkanImage::VulkanImage(ImageType type, int format, short width, short height)
+    : Image(type, format),
+      vkImageBase(VK_IMAGE_VIEW_TYPE_2D)
     {
         Image::mWidth = width;
         Image::mHeight = height;
     }
-
 }
 #endif

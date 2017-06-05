@@ -19,87 +19,110 @@
 
 #include <engine/renderer/renderer.h>
 #include <engine/renderer/vulkan_renderer.h>
-#include "vulkan/vk_texture.h"
-#include "util/jni_utils.h"
+#include "vk_bitmap_image.h"
+#include "vk_cubemap_image.h"
 
 namespace gvr {
 
-    VkSamplerAddressMode VkTexture::MapWrap[3] = { VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT };
-    VkFilter VkTexture::MapFilter[] = { VK_FILTER_NEAREST, VK_FILTER_LINEAR};
+VkSamplerAddressMode VkTexture::MapWrap[3] = { VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT };
+VkFilter VkTexture::MapFilter[] = { VK_FILTER_NEAREST, VK_FILTER_LINEAR};
 
-    // TODO: Vulkan does not have capability to generate mipmaps on its own, we need to implement this for vulkan
-    VkSamplerMipmapMode VkTexture::mipmapMode[] = { VK_SAMPLER_MIPMAP_MODE_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR};
-    VkTexture::~VkTexture()
+// TODO: Vulkan does not have capability to generate mipmaps on its own, we need to implement this for vulkan
+
+VkTexture::~VkTexture()
+{
+    // Delete texture memory code
+}
+
+bool VkTexture::isReady()
+{
+    if (!Texture::isReady())
     {
-        // Delete texture memory code
+        return false;
     }
-
-    bool VkTexture::isReady()
+    if (mTexParamsDirty)
     {
-        if (!Texture::isReady())
-        {
-            return false;
-        }
-        if (mTexParamsDirty)
-        {
-            updateSampler();
-            mTexParamsDirty = false;
-        }
-        return true;
+        updateSampler();
+        mTexParamsDirty = false;
     }
+    return true;
+}
 
-    void VkTexture::updateSampler()
+void VkTexture::updateSampler()
+{
+    int numlod = 1;
+    if (mImage)
     {
-        int numlod = 1;
-        if (mImage)
-        {
-            numlod = mImage->getLevels();
-        }
-        if (!m_sampler)
-        {
-            createSampler(numlod);
-        }
-        else
-        {
-            // TODO: select texture sampler based on texture parameters
-        }
+        numlod = mImage->getLevels();
     }
+    createSampler(numlod);
+}
+VkSampler VkTexture::getVkSampler(){
+    uint64_t index = mTexParams.getHashCode();
+    index = (index << 32) | mImage->getLevels();
+    return getSampler(index);
+}
+void VkTexture::createSampler(int maxLod) {
+    uint64_t index = mTexParams.getHashCode();
+    index = (index << 32) | maxLod;
 
-    void VkTexture::createSampler(int maxLod) {
+    VkSampler sampler = getSampler(index);
+    if(sampler != 0)
+        return;
 
-        // Sets the new MIN FILTER
-        VkFilter min_filter_type_ = MapFilter[mTexParams.getMinFilter()];
 
-        // Sets the MAG FILTER
-        VkFilter mag_filter_type_ = MapFilter[mTexParams.getMagFilter()];
+    // Sets the new MIN FILTER
+    VkFilter min_filter_type_ = MapFilter[mTexParams.getMinFilter()];
 
-        // Sets the wrap parameter for texture coordinate S
-        VkSamplerAddressMode wrap_s_type_ = MapWrap[mTexParams.getWrapU()];
+    // Sets the MAG FILTER
+    VkFilter mag_filter_type_ = MapFilter[mTexParams.getMagFilter()];
 
-        // Sets the wrap parameter for texture coordinate S
-        VkSamplerAddressMode wrap_t_type_ = MapWrap[mTexParams.getWrapV()];
+    // Sets the wrap parameter for texture coordinate S
+    VkSamplerAddressMode wrap_s_type_ = MapWrap[mTexParams.getWrapU()];
 
-        VulkanRenderer *vk_renderer = static_cast<VulkanRenderer *>(Renderer::getInstance());
+    // Sets the wrap parameter for texture coordinate S
+    VkSamplerAddressMode wrap_t_type_ = MapWrap[mTexParams.getWrapV()];
 
-        VkResult err;
+    VulkanRenderer *vk_renderer = static_cast<VulkanRenderer *>(Renderer::getInstance());
 
-        err = vkCreateSampler(vk_renderer->getDevice(), gvr::SamplerCreateInfo(min_filter_type_,
-                                                                               mag_filter_type_,
-                                                                               VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                                                                               wrap_s_type_,
-                                                                               wrap_t_type_,
-                                                                               VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                                               0.0f,
-                                                                               VK_FALSE, 0,
-                                                                               VK_FALSE,
-                                                                               VK_COMPARE_OP_NEVER,
-                                                                               0.0f, (float) maxLod,
-                                                                               VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-                                                                               VK_FALSE), NULL,
-                              &m_sampler);
+    VkResult err;
 
-        assert(!err);
+    err = vkCreateSampler(vk_renderer->getDevice(), gvr::SamplerCreateInfo(min_filter_type_,
+                                                                           mag_filter_type_,
+                                                                           VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                                                                           wrap_s_type_,
+                                                                           wrap_t_type_,
+                                                                           VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                                           0.0f,
+                                                                           VK_FALSE, 0,
+                                                                           VK_FALSE,
+                                                                           VK_COMPARE_OP_NEVER,
+                                                                           0.0f, (float) maxLod,
+                                                                           VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+                                                                           VK_FALSE), NULL,
+                          &sampler);
 
+    samplers.push_back(index);
+    samplers.push_back(sampler);
+    assert(!err);
+
+}
+const VkImageView& VkTexture::getVkImageView()
+{
+    if (mImage == NULL)
+        LOGE("GetImageView : image is NULL");
+
+    VkCubemapImage* cubemapImage;
+    VkBitmapImage* bitmapImage;
+    switch(mImage->getType()){
+
+        case Image::ImageType::CUBEMAP:
+            cubemapImage = reinterpret_cast<VkCubemapImage*>(mImage);
+            return cubemapImage->getVkImageView();
+
+        case Image::ImageType::BITMAP:
+            bitmapImage = reinterpret_cast<VkBitmapImage*>(mImage);
+            return bitmapImage->getVkImageView();
     }
-
+}
 }

@@ -20,7 +20,7 @@
 #include <android/bitmap.h>
 #include "engine/renderer/renderer.h"
 #include "engine/renderer/vulkan_renderer.h"
-#include "vulkan/vk_bitmap_image.h"
+#include "vk_bitmap_image.h"
 
 std::map<int, VkFormat> compressed_formats = {
         {0x93B0,                        VK_FORMAT_ASTC_4x4_UNORM_BLOCK},
@@ -47,7 +47,7 @@ std::map<int, VkFormat> compressed_formats = {
 
 namespace gvr {
     VkBitmapImage::VkBitmapImage(int format) :
-            vkImage(VK_IMAGE_VIEW_TYPE_2D),
+            vkImageBase(VK_IMAGE_VIEW_TYPE_2D),
             BitmapImage(format)
     { }
 

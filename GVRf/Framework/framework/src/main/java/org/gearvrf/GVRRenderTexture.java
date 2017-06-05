@@ -111,13 +111,6 @@ public class GVRRenderTexture extends GVRTexture {
         return mHeight;
     }
 
-    void beginRendering() {
-        NativeRenderTexture.beginRendering(getNative());
-    }
-
-    void endRendering() {
-        NativeRenderTexture.endRendering(getNative());
-    }
 
     /**
      * Return the render texture.
@@ -157,9 +150,6 @@ class NativeRenderTexture {
 
     static native long ctorArray(int width, int height, int samples, int layers);
 
-    static native void beginRendering(long ptr);
-
-    static native void endRendering(long ptr);
 
     static native boolean readRenderResult(long ptr, int[] readbackBuffer);
 

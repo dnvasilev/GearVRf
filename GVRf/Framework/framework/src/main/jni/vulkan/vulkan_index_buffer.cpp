@@ -61,7 +61,6 @@ namespace gvr {
         GVR_VK_CHECK(!err);
         err = vkMapMemory(device, mem_staging_indi, 0, indexBufferSize, 0, &data);
         GVR_VK_CHECK(!err);
-        //memcpy(data, indexBuffer.data(), indexBufferSize);
         memcpy(data, mIndexData, indexBufferSize);
         vkUnmapMemory(device, mem_staging_indi);
 

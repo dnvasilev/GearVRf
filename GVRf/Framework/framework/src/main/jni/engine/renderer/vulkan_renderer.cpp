@@ -19,6 +19,7 @@
 
 #include <vulkan/vulkan_index_buffer.h>
 #include <vulkan/vulkan_vertex_buffer.h>
+#include <vulkan/vk_cubemap_image.h>
 #include "renderer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -109,7 +110,7 @@ namespace gvr {
         UniformBlock& transformUBO = vkRdata->getTransformUbo();
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
 
-        vkRdata->generateVbos(shader->signature(),this);
+       // vkRdata->generateVbos(shader->signature(),this);
         if (shader->useTransformBuffer())
         {
             updateTransforms(rstate, &transformUBO, t);
@@ -123,7 +124,7 @@ namespace gvr {
 
             // if texture or binding, material is changed, call this
             if(vkRdata->isDirty(0xFFFF))
-                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, transformUBO, shader);
+                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, &transformUBO, shader);
         }
         vkRdata->createPipeline(shader,this);
         shader->useShader();
@@ -171,8 +172,8 @@ namespace gvr {
             renderWithShader(rstate, shader, rdata, curr_material);
             allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }
-        vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, swapChainIndex, render_data_vector,camera);
-        vulkanCore_->DrawFrameForRenderData(swapChainIndex);
+        vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, render_data_vector,camera);
+        vulkanCore_->DrawFrameForRenderData();
     }
 
 

@@ -36,7 +36,7 @@ Shader::Shader(int id,
       mTextures(textureDescriptor),
       mVertexDesc(vertexDescriptor),
       mVertexShader(vertex_shader),
-      mFragmentShader(fragment_shader),
+      mFragmentShader(fragment_shader), shaderDirty(true),
       mUseTransformBuffer(false), mUseLights(false),
       mJavaShaderClass(0), mJavaVM(nullptr), mCalcMatrixMethod(0)
 {

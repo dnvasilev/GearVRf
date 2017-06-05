@@ -21,6 +21,7 @@
 #include "objects/textures/render_texture.h"
 
 namespace gvr {
+class Renderer;
 class GLFrameBuffer;
 
     class ShadowMap : public RenderTarget
@@ -28,7 +29,7 @@ class GLFrameBuffer;
     public:
         ShadowMap(ShaderData* mtl);
         ~ShadowMap();
-        virtual void  beginRendering();
+        virtual void  beginRendering(Renderer* renderer);
         void setLayerIndex(int layerIndex);
         void bindTexture(int loc, int texture_index);
 

@@ -116,6 +116,12 @@ public:
     {
         return mUseLights;
     }
+    bool isShaderDirty(){
+        return  shaderDirty;
+    }
+    void setShaderDirty(bool flag){
+        shaderDirty = flag;
+    }
 
     virtual bool useShader() = 0;
     static int calcSize(const char* type);
@@ -129,6 +135,7 @@ private:
     Shader& operator=(Shader&& shader);
 
 protected:
+    bool shaderDirty = true;
     DataDescriptor mUniformDesc;
     DataDescriptor mVertexDesc;
     std::string mSignature;

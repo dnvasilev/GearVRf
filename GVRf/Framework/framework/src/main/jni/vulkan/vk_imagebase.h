@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef FRAMEWORK_VK_IMAGE_H
-#define FRAMEWORK_VK_IMAGE_H
+#ifndef FRAMEWORK_VK_IMAGEBASE
+#define FRAMEWORK_VK_IMAGEBASE
 
 #include <vector>
 #include <memory>
 #include "vulkan_wrapper.h"
-
 namespace gvr {
     struct ImageInfo
     {
@@ -30,14 +29,26 @@ namespace gvr {
         bool isCompressed;
     };
 
-    class vkImage
-    {
+    enum ImageType{
+        COLOR_IMAGE = 1, DEPTH_IMAGE = 2
+    };
+
+
+class vkImageBase
+{
     public:
-        vkImage(VkImageViewType type) : outBuffer(new VkBuffer),imageType(type), size(0), format_(VK_FORMAT_R8G8B8A8_UNORM), usage_flags_(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-        { }
-        vkImage(VkImageViewType type, VkFormat format, int width, int height, int depth, VkImageUsageFlags flags, VkImageLayout imageLayout )
-                : imageType(type), outBuffer(new VkBuffer), size(0), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout)
-        { }
+    vkImageBase(VkImageViewType type) : outBuffer(new VkBuffer),imageType(type), size(0), format_(VK_FORMAT_R8G8B8A8_UNORM), usage_flags_(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT),mSampleCount(1)
+    { }
+    vkImageBase(VkImageViewType type, VkFormat format, int width, int height, int depth, VkImageUsageFlags flags, VkImageLayout imageLayout)
+    : mLayers(1),imageType(type), outBuffer(new VkBuffer), size(0), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout), mSampleCount(1)
+    { }
+
+    vkImageBase(VkImageViewType type, VkFormat format, int width, int height, int depth, VkImageUsageFlags flags, VkImageLayout imageLayout, int sample_count)
+    :mLayers(1), imageType(type), outBuffer(new VkBuffer), size(0), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout), mSampleCount(sample_count)
+    { }
+    vkImageBase(VkImageViewType type, VkFormat format, int width, int height, int depth, VkImageUsageFlags flags, VkImageLayout imageLayout, int layers, int sample_count )
+    :imageType(type), outBuffer(new VkBuffer), mLayers(layers) ,size(0), format_(format), usage_flags_(flags), width_(width), height_(height), depth_(depth), imageLayout(imageLayout), mSampleCount(sample_count)
+    { }
         void createImageView(bool host_accessible);
         int updateVkImage(uint64_t texSize, std::vector<void*>& pixels,std::vector<ImageInfo>& bitmapInfos, std::vector<VkBufferImageCopy>& bufferCopyRegions, VkImageViewType target, VkFormat internalFormat, bool isCubemap = false, int mipLevels =1,VkImageCreateFlags flags=0);
         int updateMipVkImage(uint64_t texSize, std::vector<void*>& pixels,std::vector<ImageInfo>& bitmapInfos, std::vector<VkBufferImageCopy>& bufferCopyRegions, VkImageViewType target, VkFormat internalFormat, int mipLevels =1,VkImageCreateFlags flags=0);
@@ -72,12 +83,11 @@ namespace gvr {
         VkImageLayout imageLayout;
         VkImageView imageView;
         VkFormat format_;
-        int width_, height_, depth_;
+        int mSampleCount;
+        int width_, height_, depth_ ,  mLayers;;
         VkImageUsageFlags usage_flags_;
         std::unique_ptr<VkBuffer> outBuffer;
         VkDeviceSize size;
-    };
+};
 }
-#endif //FRAMEWORK_VK_IMAGE_H
-
-
+#endif
