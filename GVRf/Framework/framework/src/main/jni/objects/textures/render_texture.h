@@ -25,7 +25,7 @@
 #include "objects/textures/texture.h"
 
 namespace gvr {
-
+class Renderer;
 class RenderTexture : public Texture
 {
 public:
@@ -52,8 +52,8 @@ public:
     virtual int height() const { return mImage->getHeight(); }
     virtual unsigned int getFrameBufferId() const = 0;
     virtual void bind() = 0;
-    virtual void beginRendering() = 0;
-    virtual void endRendering() = 0;
+    virtual void beginRendering(Renderer*) = 0;
+    virtual void endRendering(Renderer*) = 0;
 
     // Start to read back texture in the background. It can be optionally called before
     // readRenderResult() to read pixels asynchronously. This function returns immediately.
@@ -64,12 +64,13 @@ public:
     virtual bool readRenderResult(unsigned int *readback_buffer, long capacity) = 0;
 
     void useStencil(bool useFlag) { mUseStencil = useFlag; }
-    void setBackgroundColor(float r, float g, float b)
+    void setBackgroundColor(float r, float g, float b, float a)
     {
         mBackColor[0] = r;
         mBackColor[1] = g;
         mBackColor[2] = b;
-        mBackColor[3] = 1.0f;
+        mBackColor[3] = a;
+
     }
 private:
     RenderTexture(const RenderTexture&);

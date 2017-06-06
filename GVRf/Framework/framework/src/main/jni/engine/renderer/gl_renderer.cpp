@@ -286,7 +286,7 @@ namespace gvr
             (post_effect_render_texture_a == nullptr))
         {
             saveRenderTexture->useStencil(useStencilBuffer_);
-            renderTarget->beginRendering();
+            renderTarget->beginRendering(this);
             for (auto it = render_data_vector.begin();
                  it != render_data_vector.end();
                  ++it)
@@ -297,7 +297,7 @@ namespace gvr
                     GL(renderRenderData(rstate, rdata));
                 }
             }
-            renderTarget->endRendering();
+            renderTarget->endRendering(this);
         }
         else
         {
@@ -305,7 +305,7 @@ namespace gvr
 
             renderTexture->useStencil(useStencilBuffer_);
             renderTarget->setTexture(renderTexture);
-            renderTarget->beginRendering();
+            renderTarget->beginRendering(this);
             for (auto it = render_data_vector.begin();
                  it != render_data_vector.end();
                  ++it)
@@ -318,7 +318,7 @@ namespace gvr
             }
             GL(glDisable(GL_DEPTH_TEST));
             GL(glDisable(GL_CULL_FACE));
-            renderTarget->endRendering();
+            renderTarget->endRendering(this);
             for (int i = 0; i < post_effects.size() - 1; ++i)
             {
                 if (i % 2 == 0)
@@ -330,14 +330,14 @@ namespace gvr
                     renderTexture = post_effect_render_texture_b;
                 }
                 renderTarget->setTexture(renderTexture);
-                renderTarget->beginRendering();
+                renderTarget->beginRendering(this);
                 GL(renderPostEffectData(rstate, renderTexture, post_effects[i]));
-                renderTarget->endRendering();
+                renderTarget->endRendering(this);
             }
             renderTarget->setTexture(saveRenderTexture);
-            renderTarget->beginRendering();
+            renderTarget->beginRendering(this);
             GL(renderPostEffectData(rstate, renderTexture, post_effects.back()));
-            renderTarget->endRendering();
+            renderTarget->endRendering(this);
         }
         GL(glDisable(GL_DEPTH_TEST));
         GL(glDisable(GL_CULL_FACE));

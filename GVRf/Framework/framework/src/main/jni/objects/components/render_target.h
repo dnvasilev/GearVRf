@@ -29,7 +29,7 @@ class ShaderManager;
 class Scene;
 class RenderTexture;
 class GLTexture;
-
+class Renderer;
 /**
  * A render target is a component which allows the scene to be rendered
  * into a texture from the viewpoint of a particular scene object.
@@ -51,8 +51,8 @@ public:
     RenderTexture*  getTexture() const { return mRenderTexture; }
     void            setTexture(RenderTexture* texture);
     RenderState&    getRenderState() { return mRenderState; }
-    virtual void    beginRendering();
-    virtual void    endRendering();
+    virtual void    beginRendering(Renderer* renderer);
+    virtual void    endRendering(Renderer* renderer);
     static long long getComponentType() { return COMPONENT_TYPE_RENDER_TARGET; }
 
 private:

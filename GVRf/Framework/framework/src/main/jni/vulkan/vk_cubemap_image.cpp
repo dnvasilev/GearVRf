@@ -18,16 +18,15 @@
  ***************************************************************************/
 
 #include <cmath>
-#include "../vulkan/vk_cubemap_image.h"
-#include "../engine/renderer/renderer.h"
-#include "../engine/renderer/vulkan_renderer.h"
-#include "../util/jni_utils.h"
-
-#include "../util/scope_exit.h"
+#include "vulkan/vk_cubemap_image.h"
+#include "engine/renderer/renderer.h"
+#include "engine/renderer/vulkan_renderer.h"
+#include "util/jni_utils.h"
+#include "util/scope_exit.h"
 
 namespace gvr {
     VkCubemapImage::VkCubemapImage(int format) :
-            vkImage(VK_IMAGE_VIEW_TYPE_CUBE),
+            vkImageBase(VK_IMAGE_VIEW_TYPE_CUBE),
             CubemapImage(format)
     { }
 

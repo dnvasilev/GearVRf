@@ -10,8 +10,8 @@
 
 namespace gvr {
     VulkanVertexBuffer::VulkanVertexBuffer(const char* layout_desc, int vertexCount)
-    : VertexBuffer(layout_desc, vertexCount),
-      vkVertices_(new GVR_VK_Vertices())
+    : VertexBuffer(layout_desc, vertexCount)
+      //vkVertices_(new GVR_VK_Vertices())
     {
         m_vertices.vi_bindings = NULL;
         m_vertices.vi_attrs = NULL;
@@ -47,7 +47,7 @@ namespace gvr {
         if (!isDirty())
             return;
         m_vertices.vi_bindings = new VkVertexInputBindingDescription[1];
-        m_vertices.vi_attrs = new VkVertexInputAttributeDescription[mLayout.size()];
+        m_vertices.vi_attrs = new VkVertexInputAttributeDescription[mLayout.size() -1];
         VkResult   err;
         bool   pass;
 
@@ -58,7 +58,7 @@ namespace gvr {
         VkDevice& device = vulkanCore->getDevice();
         VkBufferCreateInfo bufferCreateInfo = {};
         int bufferByteSize = getVertexCount() * mTotalSize;
-
+      //  bufferByteSize = 20 * sizeof(float);
         VkCommandBuffer trnCmdBuf;
         vulkanCore->createTransientCmdBuffer(trnCmdBuf);
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -90,23 +90,20 @@ namespace gvr {
         err = vkCreateBuffer(device, gvr::BufferCreateInfo(bufferByteSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), nullptr, &buf_staging_vert);
         GVR_VK_CHECK(!err);
 
-        //err = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
         err = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &mem_staging_vert);
         GVR_VK_CHECK(!err);
 
         // Now we need to map the memory of this new allocation so the CPU can edit it.
         void *data;
-        //err = vkMapMemory(m_device, m_vertices.mem, 0, memoryAllocateInfo.allocationSize, 0, &data);
+
         err = vkMapMemory(device, mem_staging_vert, 0, memoryAllocateInfo.allocationSize, 0, &data);
         GVR_VK_CHECK(!err);
 
         // Copy our triangle verticies and colors into the mapped memory area.
-        //memcpy(data, vb, sizeof(vb));
         memcpy(data, mVertexData, bufferByteSize);
 
         // Unmap the memory back from the CPU.
         vkUnmapMemory(device, mem_staging_vert);
-        //vkUnmapMemory(m_device, m_vertices.mem);
         err = vkBindBufferMemory(device, buf_staging_vert, mem_staging_vert, 0);
         GVR_VK_CHECK(!err);
 
@@ -148,25 +145,26 @@ namespace gvr {
         // check this
         m_vertices.vi.vertexBindingDescriptionCount = 1;
         m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size();
+        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size() - 1;
         m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
         m_vertices.vi_bindings[0].binding = 0;
-        m_vertices.vi_bindings[0].stride = bufferByteSize;
+        m_vertices.vi_bindings[0].stride = 32;
         m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         LOGE("attrMapping.size() %d, total_size= %d", mLayout.size(), bufferByteSize);
         int i = 0;
         forEachEntry([this, i](const DataEntry& e) mutable
         {
-            if (e.IsSet)
+            if (e.IsSet && std::strstr(e.Name, "normal") == NULL)
             {
                 m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
                 m_vertices.vi_attrs[i].location = e.Index;
-                LOGE("location %d attrMapping[i].offset %d", e.Index, e.Offset);
+                LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
                 m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
                 m_vertices.vi_attrs[i].offset = e.Offset;
+                i++;
             }
         });
-        vkFreeCommandBuffers(device, vulkanCore->getTransientCmdPool(), 1, &trnCmdBuf);
+
         mIsDirty = false;
     }
 

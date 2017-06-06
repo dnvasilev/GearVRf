@@ -19,16 +19,15 @@
 #ifndef FRAMEWORK_VK_FLOAT_IMAGE_H
 #define FRAMEWORK_VK_FLOAT_IMAGE_H
 
-#include "../objects/textures/float_image.h"
-#include "vulkan/vulkan.h"
-#include "vk_image.h"
+#include "vulkan_headers.h"
+#include "objects/textures/float_image.h"
 #include "../util/jni_utils.h"
 
 namespace gvr {
-    class VkFloatImage : public vkImage, public FloatImage
+    class VkFloatImage : public vkImageBase, public FloatImage
     {
     public:
-        VkFloatImage() : FloatImage(), vkImage(VK_IMAGE_VIEW_TYPE_2D)
+        VkFloatImage() : FloatImage(), vkImageBase(VK_IMAGE_VIEW_TYPE_2D)
         { }
 
         virtual int getId() { return 0; }

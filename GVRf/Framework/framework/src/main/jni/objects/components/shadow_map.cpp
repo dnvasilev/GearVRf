@@ -16,7 +16,7 @@
 #include "gl/gl_render_texture.h"
 
 namespace gvr {
-
+class Renderer;
     ShadowMap::ShadowMap(ShaderData* mtl)
             : RenderTarget(nullptr),
               mLayerIndex(-1),
@@ -59,9 +59,9 @@ namespace gvr {
         }
     }
 
-    void  ShadowMap::beginRendering()
+    void  ShadowMap::beginRendering(Renderer* renderer)
     {
-        RenderTarget::beginRendering();
+        RenderTarget::beginRendering(renderer);
         mRenderState.render_mask = 1;
         mRenderState.shadow_map = true;
         mRenderState.material_override = mShadowMaterial;

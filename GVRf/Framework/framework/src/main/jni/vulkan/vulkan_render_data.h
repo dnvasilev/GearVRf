@@ -25,6 +25,7 @@
 #include "vulkan_headers.h"
 #include "vulkan_shader.h"
 #include "vulkan_vertex_buffer.h"
+#include "vulkan_index_buffer.h"
 
 typedef unsigned long Long;
 namespace gvr
@@ -126,6 +127,8 @@ namespace gvr
         void generateVbos(const std::string& descriptor, VulkanRenderer* renderer){
             VulkanVertexBuffer* vbuf = static_cast<VulkanVertexBuffer*>(mesh_->getVertexBuffer());
             vbuf->generateVKBuffers(renderer->getCore());
+             VulkanIndexBuffer* ibuf = reinterpret_cast< VulkanIndexBuffer*>(mesh_->getIndexBuffer());
+            ibuf->generateVKBuffers(renderer->getCore());
         }
 
         bool       uniform_dirty;

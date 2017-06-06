@@ -18,10 +18,10 @@
 
 #include <vector>
 #include "objects/textures/cubemap_image.h"
-#include "vk_image.h"
+#include "vulkan_headers.h"
 
 namespace gvr {
-    class VkCubemapImage : public vkImage, public CubemapImage
+    class VkCubemapImage : public vkImageBase, public CubemapImage
     {
     public:
         VkCubemapImage(int format);

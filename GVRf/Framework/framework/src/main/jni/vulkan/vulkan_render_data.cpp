@@ -21,6 +21,7 @@ namespace gvr
 {
 void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
 {
+/*
     VulkanShader* vkshader = reinterpret_cast<VulkanShader*>(shader);
     VulkanRenderer* vkrender = reinterpret_cast<VulkanRenderer*>(renderer);
     VulkanCore* vkcore = vkrender->getCore();
@@ -39,6 +40,8 @@ void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
         vkcore->InitPipelineForRenderData(vkverts, this, vkshader->getVkVertexShader(), vkshader->getVkFragmentShader());
         uniform_dirty = false;
     }
+
+  */
 }
 
     void VulkanRenderData::createPipeline(Shader* shader, VulkanRenderer* renderer){
@@ -47,12 +50,12 @@ void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
 
         generateVbos(shader->signature(),renderer);
         VulkanVertexBuffer* vbuf = static_cast<VulkanVertexBuffer*>(mesh_->getVertexBuffer());
-        GVR_VK_Vertices* vertices = vbuf->getVKVertices();
+        const GVR_VK_Vertices& vertices = vbuf->getVKVertices();
         VulkanShader* vk_shader = static_cast<VulkanShader*>(shader);
 
         // TODO: if viewport, vertices, shader, draw_mode, blending or depth state changes, we need to re-create the pipeline
         if(isHashCodeDirty() || isDirty(0xFFFF)){
-            renderer->getCore()->InitPipelineForRenderData(*vertices,this, vk_shader->getVkVertexShader(),vk_shader->getVkFragmentShader());
+            renderer->getCore()->InitPipelineForRenderData(vertices,this, vk_shader->getVkVertexShader(),vk_shader->getVkFragmentShader());
             getHashCode();
             setDirty(false);
         }

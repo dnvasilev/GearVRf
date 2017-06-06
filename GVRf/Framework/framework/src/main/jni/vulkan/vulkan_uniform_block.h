@@ -20,6 +20,7 @@
 
 namespace gvr {
     class VulkanUniformBlock;
+    class VulkanCore;
 
     class VulkanDescriptor
     {
@@ -52,10 +53,9 @@ namespace gvr {
     class VulkanUniformBlock : public UniformBlock
     {
     public:
-        VulkanUniformBlock(const std::string& descriptor, int bindingPoint, const std::string& blockName);
-
+        VulkanUniformBlock(const char* descriptor, int bindingPoint,const char* blockName);
+        bool bindBuffer(Shader*, Renderer*) {}
         virtual bool updateGPU(Renderer*);
-        virtual bool bindBuffer(Shader*, Renderer*) { };
         virtual std::string makeShaderLayout();
 
         VulkanDescriptor* getVulkanDescriptor();

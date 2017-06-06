@@ -53,7 +53,7 @@ class IndexBuffer;
 class UniformBlock;
 class Image;
 class Texture;
-
+extern uint8_t *oculusTexData;
 /*
  * These uniforms are commonly used in shaders.
  * They are calculated by the GearVRF renderer.

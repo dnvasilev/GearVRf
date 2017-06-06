@@ -21,10 +21,10 @@ namespace gvr {
         virtual bool    updateGPU(Renderer*);
         virtual bool    bindBuffer(Shader*)  { return true; }
         const GVR_VK_Indices& getVKIndices() const { return m_indices; }
-
+        void    generateVKBuffers(VulkanCore* vulkanCore);
     protected:
         void    freeGPUResources();
-        void    generateVKBuffers(VulkanCore* vulkanCore);
+
         VkFormat getDataType(const std::string& type);
 
         GVR_VK_Indices m_indices;

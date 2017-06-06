@@ -30,7 +30,7 @@
 
 namespace gvr {
 class GLRenderImage;
-
+class Renderer;
 class GLRenderTexture : public RenderTexture
 {
 public:
@@ -53,8 +53,8 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, renderTexture_gl_frame_buffer_->id());
     }
 
-    virtual void beginRendering();
-    virtual void endRendering();
+    virtual void beginRendering(Renderer*);
+    virtual void endRendering(Renderer*);
     virtual bool isReady();
 
     // Start to read back texture in the background. It can be optionally called before

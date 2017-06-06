@@ -16,12 +16,11 @@
 #ifndef FRAMEWORK_VKBITMAPIMAGE_H
 #define FRAMEWORK_VKBITMAPIMAGE_H
 
-
+#include "vulkan_headers.h"
 #include "objects/textures/bitmap_image.h"
-#include "vk_image.h"
 
 namespace gvr {
-    class VkBitmapImage : public vkImage, public BitmapImage
+    class VkBitmapImage : public vkImageBase, public BitmapImage
     {
     public:
         VkBitmapImage(int format);

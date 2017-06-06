@@ -116,6 +116,12 @@ public:
     {
         return mUseLights;
     }
+    bool isShaderDirty(){
+        return  shaderDirty;
+    }
+    void setShaderDirty(bool flag){
+        shaderDirty = flag;
+    }
 
     bool useMaterialGPUBuffer() const
     {
@@ -134,6 +140,7 @@ private:
     Shader& operator=(Shader&& shader);
 
 protected:
+    bool shaderDirty = true;
     DataDescriptor mUniformDesc;
     DataDescriptor mVertexDesc;
     DataDescriptor mTextureDesc;
