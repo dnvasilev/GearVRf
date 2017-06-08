@@ -33,14 +33,14 @@ namespace gvr
     int GLMaterial::bindToShader(Shader* shader, Renderer* renderer)
     {
         GLShader* glshader = static_cast<GLShader*>(shader);
-        int index = 0;
+        int index = -1;
         int texUnit = 0;
         bool fail = false;
 
         uniforms().useGPUBuffer(shader->useMaterialGPUBuffer());
-        forEachTexture([fail, texUnit, glshader, this, index](const char* texname, Texture* tex) mutable
+        forEachTexture([fail, &texUnit, glshader, this, &index](const char* texname, Texture* tex) mutable
         {
-            int loc = glshader->getTextureLoc(index++);
+            int loc = glshader->getTextureLoc(++index);
             if (loc == -1)
             {
                 return;
@@ -50,10 +50,10 @@ namespace gvr
                 GLImageTex* image = static_cast<GLImageTex*>(tex->getImage());
                 int texid = image->getId();
 
-                LOGV("ShaderData::bindTexture index=%d loc=%d id=%d", texUnit, loc, texid);
+                LOGV("ShaderData::bindTexture index=%d texUnit=%d loc=%d id=%d", index, texUnit, loc, texid);
                 glActiveTexture(GL_TEXTURE0 + texUnit);
                 glBindTexture(image->getTarget(), texid);
-                glUniform1i(loc, texUnit);
+                glUniform1i(loc, texUnit++);
                 checkGLError("GLMaterial::bindTexture");
             }
             else
