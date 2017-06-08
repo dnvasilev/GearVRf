@@ -49,14 +49,14 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
     protected GVRTextureParameters mTextureParams;
     private volatile int mTextureId;
     private final ReentrantLock mLock;
-    private final Condition mCondition;
+    public String mTexCoordAttr;
+    public String mShaderVar;
 
     public GVRTexture(GVRContext gvrContext)
     {
         super(gvrContext, NativeTexture.constructor());
         mImage = null;
         mLock = new ReentrantLock();
-        mCondition = mLock.newCondition();
         mTextureParams = null;
         mTextureId = 0;
     }
@@ -66,7 +66,6 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
         super(gvrContext, ptr);
         mImage = null;
         mLock = new ReentrantLock();
-        mCondition = mLock.newCondition();
         mTextureParams = null;
         mTextureId = 0;
     }
@@ -77,7 +76,6 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
         mImage = null;
         mTextureId = 0;
         mLock = new ReentrantLock();
-        mCondition = mLock.newCondition();
         updateTextureParameters(texparams);
     }
 
@@ -203,6 +201,43 @@ public class GVRTexture extends GVRHybridObject implements GVRAndroidResource.Te
     public GVRImage getImage()
     {
         return mImage;
+    }
+
+
+    /**
+     * Designate the vertex attribute and shader variable for the texture coordinates
+     * associated with this texture.
+     *
+     * @param texCoordAttr  name of vertex attribute with texture coordinates.
+     * @param shaderVarName name of shader variable to get texture coordinates.
+     */
+    public void setTexCoord(String texCoordAttr, String shaderVarName)
+    {
+        mTexCoordAttr = texCoordAttr;
+        mShaderVar = shaderVarName;
+    }
+
+    /**
+     * Gets the name of the vertex attribute containing the texture
+     * coordinates for this texture.
+     *
+     * @return name of texture coordinate vertex attribute
+     */
+    public String getTexCoordAttr()
+    {
+        return mTexCoordAttr;
+    }
+
+
+    /**
+     * Gets the name of the shader variable to get the texture
+     * coordinates for this texture.
+     *
+     * @return name of shader variable
+     */
+    public String getTexCoordShaderVar()
+    {
+        return mShaderVar;
     }
 
 }

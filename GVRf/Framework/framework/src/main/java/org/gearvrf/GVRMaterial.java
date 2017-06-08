@@ -518,46 +518,6 @@ public class GVRMaterial extends  GVRShaderData
     }
 
 
-    public void setTexture(String key, GVRTexture texture) {
-        checkStringNotNullOrEmpty("key", key);
-        synchronized (textures)
-        {
-            TextureInfo tinfo = textures.get(key);
-            if (tinfo == null)
-            {
-                tinfo = new TextureInfo();
-                textures.put(key, tinfo);
-            }
-            if (texture != null)
-            {
-                tinfo.Texture = texture;
-            NativeShaderData.setTexture(getNative(), key, texture.getNative());
-            }
-        }
-    }
-
-    /**
-     *  Designate the vertex attribute and shader variable for the texture coordinates
-     *  associated with the named texture.
-     * @param texName name of texture
-     * @param texCoordAttr name of vertex attribute with texture coordinates.
-     * @param shaderVarName name of shader variable to get texture coordinates.
-     */
-    public void setTexCoord(String texName, String texCoordAttr, String shaderVarName)
-    {
-        synchronized (textures)
-        {
-            TextureInfo tinfo = textures.get(texName);
-            if (tinfo == null)
-            {
-                tinfo = new TextureInfo();
-                textures.put(texName, tinfo);
-            }
-            tinfo.TexCoordAttr = texCoordAttr;
-            tinfo.ShaderVar = shaderVarName;
-        }
-    }
-
     /**
      * Gets the line width for line drawing.
      * 
