@@ -32,17 +32,17 @@ namespace gvr {
         }
     }
 
-    bool VulkanVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf)
+    bool VulkanVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf, Shader* shader)
     {
         VulkanRenderer* vkrender = reinterpret_cast<VulkanRenderer*>(renderer);
-        generateVKBuffers(vkrender->getCore());
+        generateVKBuffers(vkrender->getCore(),shader);
         if (ibuf)
         {
             ibuf->updateGPU(renderer);
         }
     }
 
-    void VulkanVertexBuffer::generateVKBuffers(VulkanCore* vulkanCore)
+    void VulkanVertexBuffer::generateVKBuffers(VulkanCore* vulkanCore, Shader* shader)
     {
         if (!isDirty())
             return;
@@ -148,10 +148,43 @@ namespace gvr {
         m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size() - 1;
         m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
         m_vertices.vi_bindings[0].binding = 0;
-        m_vertices.vi_bindings[0].stride = 32;
+
         m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         LOGE("attrMapping.size() %d, total_size= %d", mLayout.size(), bufferByteSize);
         int i = 0;
+        int stride = 0;
+        forEachEntry([this, i, &stride](const DataEntry& e) mutable {
+            if (e.IsSet){
+                stride += e.Size;
+            }
+        });
+
+        m_vertices.vi_bindings[0].stride = 32;
+
+   /*     shader->getVertexDescriptor().forEachEntry([this, &i](const DataDescriptor::DataEntry &e)
+        {
+            LOGV("VertexBuffer::bindToShader find %s", e.Name);
+            const DataDescriptor::DataEntry* entry = find(e.Name);
+            if (!e.NotUsed)                             // shader uses this vertex attribute?
+            {
+                if ((entry != nullptr) && entry->IsSet) // mesh uses this vertex attribute?
+                {
+                    m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+                    m_vertices.vi_attrs[i].location = e.Index;
+                    LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
+                    m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
+                    m_vertices.vi_attrs[i].offset = e.Offset;
+                    i++;
+                }
+                else                                // mesh uses attribute but shader does not
+                {
+                    LOGE("entry is not present");
+
+                }
+
+            }
+        });
+*/
         forEachEntry([this, i](const DataEntry& e) mutable
         {
             if (e.IsSet && std::strstr(e.Name, "normal") == NULL)

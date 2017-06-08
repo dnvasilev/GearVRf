@@ -90,7 +90,7 @@ namespace gvr {
         });
     }
 
-    bool GLVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf)
+    bool GLVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf, Shader* shader)
     {
         std::lock_guard<std::mutex> lock(mLock);
         const float* vertexData = getVertexData();

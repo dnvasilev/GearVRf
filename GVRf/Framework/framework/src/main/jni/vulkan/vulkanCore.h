@@ -63,7 +63,7 @@ struct TextureObject{
 };
 
 class Scene;
-
+class ShaderManager;
 class RenderData;
 class VulkanRenderData;
 class Camera;
@@ -75,7 +75,7 @@ class Shader;
 class VKFramebuffer;
 extern uint8_t *oculusTexData;
 class VkRenderTexture;
-
+class VulkanShader;
 class VulkanCore {
 public:
     // Return NULL if Vulkan inititialisation failed. NULL denotes no Vulkan support for this device.
@@ -95,7 +95,7 @@ public:
 
 
     void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors,
-                                     std::vector<RenderData *> &render_data_vector, Camera*);
+                                     std::vector<RenderData *> &render_data_vector, Camera*, ShaderManager*);
 
     void DrawFrameForRenderData();
     int getCurrentSwapChainIndx(){
@@ -109,7 +109,7 @@ public:
     }
     int AcquireNextImage();
 
-    void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, std::vector<uint32_t> &vs, std::vector<uint32_t> &fs);
+    void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader);
 
     VkShaderModule CreateShaderModuleAscii(const uint32_t *code, uint32_t size);
 

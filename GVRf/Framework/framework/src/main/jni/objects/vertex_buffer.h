@@ -134,7 +134,7 @@ namespace gvr {
         bool            getInfo(const char* attributeName, int& index, int& offset, int& size) const;
         void            getBoundingVolume(BoundingVolume& bv) const;
         void            setBoneData(VertexBoneData& boneData);
-        virtual bool    updateGPU(Renderer*, IndexBuffer*) = 0;
+        virtual bool    updateGPU(Renderer*, IndexBuffer*, Shader*) = 0;
         virtual void    bindToShader(Shader* shader, IndexBuffer* ibuf) = 0;
         void            dump() const;
 

@@ -638,7 +638,7 @@ namespace gvr
                 numberTriangles += indexCount;
                 numberDrawCalls++;
                 set_face_culling(render_data->pass(0)->cull_face());
-                render_data->updateGPU(this);
+                render_data->updateGPU(this, shader);
                 GL(renderMaterialShader(rstate, render_data, curr_material, shader));
             }
             return;
@@ -722,7 +722,7 @@ namespace gvr
         }
         if (shaderData->updateGPU(this) >= 0)
         {
-            renderData->updateGPU(this);
+            renderData->updateGPU(this,shader);
             renderMaterialShader(rstate, renderData, shaderData, shader);
         }
     }

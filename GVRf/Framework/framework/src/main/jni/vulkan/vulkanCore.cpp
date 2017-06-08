@@ -23,7 +23,6 @@
 #include "vulkan/vk_framebuffer.h"
 #include "vulkan/vk_render_to_texture.h"
 
-#define ENABLE_TEXTURE
 #define QUEUE_INDEX_MAX 99999
 #define VERTEX_BUFFER_BIND_ID 0
 std::string data_frag = std::string("") +
@@ -530,7 +529,7 @@ namespace gvr {
         bool transformUboPresent = shader->usesMatrixUniforms();
         VulkanShader* vk_shader = reinterpret_cast<VulkanShader*>(shader);
         if (!shader->isShaderDirty()) {
-            vkdata.setPipelineLayout(reinterpret_cast<VulkanShader *>(shader)->getPipelineLayout());
+          //  vkdata.setPipelineLayout(reinterpret_cast<VulkanShader *>(shader)->getPipelineLayout());
             return;
         }
 
@@ -561,7 +560,7 @@ namespace gvr {
                                      nullptr, &pipelineLayout);
         GVR_VK_CHECK(!ret);
         shader->setShaderDirty(false);
-        vkdata.setPipelineLayout(pipelineLayout);
+
     }
 
     void VulkanCore::InitUniformBuffers() {
@@ -757,47 +756,6 @@ namespace gvr {
         */
     }
 
-/*  void VulkanCore::CreateShaderModule(VkShaderModule& module, std::vector <uint32_t> code, uint32_t size) {
-      VkResult err;
-
-      // Creating a shader is very simple once it's in memory as compiled SPIR-V.
-      VkShaderModuleCreateInfo moduleCreateInfo = {};
-      moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-      moduleCreateInfo.pNext = nullptr;
-      moduleCreateInfo.codeSize = size * sizeof(unsigned int);
-      moduleCreateInfo.pCode = code.data();
-      moduleCreateInfo.flags = 0;
-      err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(code.data(), size *
-                                                                                    sizeof(unsigned int)),
-                                 nullptr, &module);
-      GVR_VK_CHECK(!err);
-  }
-*/
-
-    VkShaderModule VulkanCore::CreateShaderModule(std::vector<uint32_t> code, uint32_t size) {
-        VkShaderModule module;
-        VkResult err;
-
-        err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(code.data(), size *
-                                                                                      sizeof(unsigned int)),
-                                   nullptr, &module);
-        GVR_VK_CHECK(!err);
-
-        return module;
-    }
-
-
-    VkShaderModule VulkanCore::CreateShaderModuleAscii(const uint32_t *code, uint32_t size) {
-        VkShaderModule module;
-        VkResult err;
-
-        err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(code, size), nullptr,
-                                   &module);
-        GVR_VK_CHECK(!err);
-
-        return module;
-    }
-
 /*
  * Compile Vulkan Shader
  * shaderTypeID 1 : Vertex Shader
@@ -845,14 +803,21 @@ namespace gvr {
         // We define two shader stages: our vertex and fragment shader.
         // they are embedded as SPIR-V into a header file for ease of deployment.
         VkShaderModule module;
-        module = CreateShaderModule(result_vert, result_vert.size());
+        VkResult err;
+
+        err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(result_vert.data(), result_vert.size() *
+                                                                                      sizeof(unsigned int)),
+                                   nullptr, &module);
+        GVR_VK_CHECK(!err);
         gvr::PipelineShaderStageCreateInfo shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, VK_SHADER_STAGE_VERTEX_BIT,
                 module, "main");
         shaderStages[0] = *shaderStageInfo;
 
-
-        module = CreateShaderModule(result_frag, result_frag.size());
+        err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(result_frag.data(), result_frag.size() *
+                                                                                             sizeof(unsigned int)),
+                                   nullptr, &module);
+        GVR_VK_CHECK(!err);
         shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, VK_SHADER_STAGE_FRAGMENT_BIT,
                 module, "main");
@@ -879,10 +844,9 @@ namespace gvr {
 
     }
 
-    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata,
-                                               std::vector<uint32_t> &vs,
-                                               std::vector<uint32_t> &fs) {
+    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader) {
         VkResult err;
+
 
         // The pipeline contains all major state for rendering.
 
@@ -908,19 +872,20 @@ namespace gvr {
         scissor.extent.height = m_height;
         scissor.offset.x = 0;
         scissor.offset.y = 0;
+
 #if  1
         std::vector<uint32_t> result_vert = CompileShader("VulkanVS", VERTEX_SHADER,
                                                           vertexShaderData);//vs;//
         std::vector<uint32_t> result_frag = CompileShader("VulkanFS", FRAGMENT_SHADER,
                                                           data_frag);//fs;//
 #else
-        std::vector<uint32_t> result_vert = vs;
-    std::vector<uint32_t> result_frag = fs;
+        std::vector<uint32_t> result_vert = shader->getVkVertexShader();
+        std::vector<uint32_t> result_frag = shader->getVkFragmentShader();
 #endif
         // We define two shader stages: our vertex and fragment shader.
         // they are embedded as SPIR-V into a header file for ease of deployment.
         VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-        VkShaderModule module = CreateShaderModule(result_vert, result_vert.size());
+  /*      VkShaderModule module = CreateShaderModule(result_vert, result_vert.size());
         gvr::PipelineShaderStageCreateInfo shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, VK_SHADER_STAGE_VERTEX_BIT,
                 module, "main");
@@ -931,14 +896,15 @@ namespace gvr {
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, VK_SHADER_STAGE_FRAGMENT_BIT,
                 module, "main");
         shaderStages[1] = *shaderStageInfo;
-
-
+*/
+        InitShaders(shaderStages,vertexShaderData,data_frag);
         // Out graphics pipeline records all state information, including our renderpass
         // and pipeline layout. We do not have any dynamic state in this example.
         VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
         pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineCreateInfo.layout = rdata->getVkData().m_pipelineLayout;
-        //   pipelineCreateInfo.layout = vkShader->getPipelineLayout();
+        //pipelineCreateInfo.layout = rdata->getVkData().m_pipelineLayout;
+
+        pipelineCreateInfo.layout = shader->getPipelineLayout();
         pipelineCreateInfo.pVertexInputState = &vi;
         pipelineCreateInfo.pInputAssemblyState = gvr::PipelineInputAssemblyStateCreateInfo(
                 getTopology(rdata->draw_mode()));
@@ -1088,7 +1054,7 @@ namespace gvr {
 
     void VulkanCore::BuildCmdBufferForRenderData(std::vector<VkDescriptorSet> &allDescriptors,
                                                  std::vector<RenderData *> &render_data_vector,
-                                                 Camera *camera) {
+                                                 Camera *camera, ShaderManager* shader_manager) {
         // For the triangle sample, we pre-record our command buffer, as it is static.
         // We have a buffer per swap chain image, so loop over the creation process.
         VkCommandBuffer &cmdBuffer = *(swapChainCmdBuffer[imageIndex]);
@@ -1130,10 +1096,12 @@ namespace gvr {
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                               rdata->getVkData().m_pipeline);
 
+            VulkanShader *shader = reinterpret_cast<VulkanShader*>(shader_manager->getShader(rdata->get_shader()));
+
             //bind out descriptor set, which handles our uniforms and samplers
             if (!rdata->isDescriptorSetNull())
                 vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        rdata->getVkData().m_pipelineLayout, 0, 1,
+                                        shader->getPipelineLayout(), 0, 1,
                                         &allDescriptors[j], 0, NULL);
 
             // Bind our vertex buffer, with a 0 offset.
@@ -1149,7 +1117,8 @@ namespace gvr {
             // Bind triangle index buffer
             VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
             vkCmdBindIndexBuffer(cmdBuffer, ind.buffer, 0, indexType);
-            vkCmdDrawIndexed(cmdBuffer, ind.count, 1, 0, 0, 1);    }
+            vkCmdDrawIndexed(cmdBuffer, ind.count, 1, 0, 0, 1);
+        }
 
         mRenderTexture[imageIndex]->endRendering(Renderer::getInstance());
 

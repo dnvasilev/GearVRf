@@ -172,7 +172,7 @@ namespace gvr {
             renderWithShader(rstate, shader, rdata, curr_material);
             allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }
-        vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, render_data_vector,camera);
+        vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, render_data_vector,camera, shader_manager);
         vulkanCore_->DrawFrameForRenderData();
     }
 

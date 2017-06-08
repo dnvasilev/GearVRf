@@ -139,7 +139,7 @@ public:
         return mesh_;
     }
 
-    virtual bool updateGPU(Renderer*);
+    virtual bool updateGPU(Renderer*,Shader*);
     void set_mesh(Mesh* mesh);
 
     void add_pass(RenderPass* render_pass);

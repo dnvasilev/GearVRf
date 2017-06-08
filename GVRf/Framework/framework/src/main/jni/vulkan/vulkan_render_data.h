@@ -49,11 +49,6 @@ namespace gvr
             return vk_descriptor;
         }
 
-        VkPipelineLayout &getPipelineLayout()
-        {
-            return m_pipelineLayout;
-        }
-
         VkDescriptorSetLayout &getDescriptorLayout()
         {
             return m_descriptorLayout;
@@ -77,12 +72,6 @@ namespace gvr
         void setDescriptorSetNull(bool flag){
             descriptorSetNull = flag;
         }
-        void setPipelineLayout(VkPipelineLayout& pipelineLayout){
-            m_pipelineLayout = pipelineLayout;
-        }
-        VkPipelineLayout m_pipelineLayout;
-        // Vulkan
-        GVR_Uniform m_modelViewMatrixUniform;
 
         VkPipeline m_pipeline;
         VkDescriptorSet m_descriptorSet;
@@ -124,9 +113,9 @@ namespace gvr
         void setDescriptorSetNull(bool flag){
             vkData.setDescriptorSetNull(flag);
         }
-        void generateVbos(const std::string& descriptor, VulkanRenderer* renderer){
+        void generateVbos(const std::string& descriptor, VulkanRenderer* renderer, Shader* shader){
             VulkanVertexBuffer* vbuf = static_cast<VulkanVertexBuffer*>(mesh_->getVertexBuffer());
-            vbuf->generateVKBuffers(renderer->getCore());
+            vbuf->generateVKBuffers(renderer->getCore(),shader);
              VulkanIndexBuffer* ibuf = reinterpret_cast< VulkanIndexBuffer*>(mesh_->getIndexBuffer());
             ibuf->generateVKBuffers(renderer->getCore());
         }

@@ -20,10 +20,10 @@ namespace gvr {
         VulkanVertexBuffer(const char* layout_desc, int vertexCount);
         virtual ~VulkanVertexBuffer();
 
-        virtual bool    updateGPU(Renderer*, IndexBuffer*);
+        virtual bool    updateGPU(Renderer*, IndexBuffer*, Shader*);
         virtual void    bindToShader(Shader*r, IndexBuffer*) { }
         const GVR_VK_Vertices& getVKVertices() const  { return m_vertices; }
-        void    generateVKBuffers(VulkanCore* vulkanCore);
+        void    generateVKBuffers(VulkanCore* vulkanCore, Shader* shader);
 
     protected:
         void    freeGPUResources();
