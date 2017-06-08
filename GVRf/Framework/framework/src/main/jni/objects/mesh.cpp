@@ -263,22 +263,36 @@ namespace gvr
         mVertices->forAllVertices(attrName, func);
     }
 
-    void Mesh::forAllTriangles(std::function<void(int iter, const float *V1,
-                                                  const float *V2, const float *V3)> func) const
+    void Mesh::forAllTriangles(std::function<void(int iter, const float *v1,
+                                                  const float *v2, const float *v3)> func) const
     {
         int n = getIndexCount();
         const float* vertData = mVertices->getVertexData();
-        const unsigned int* intData = reinterpret_cast<const unsigned int*>(mIndices->getIndexData());
         const float *V1;
         const float *V2;
         const float *V3;
         int stride = mVertices->getVertexSize();
-        for (int i = 0; i < n; i += 3)
+        if (mIndices->getIndexSize() == 2)
         {
-            V1 = vertData + intData[i] * stride;
-            V2 = vertData + intData[i + 1] * stride;
-            V3 = vertData + intData[i + 2] * stride;
-            func(i / 3, V1, V2, V3);
+            const unsigned short* intData = reinterpret_cast<const unsigned short*>(mIndices->getIndexData());
+            for (int i = 0; i < n; i += 3)
+            {
+                V1 = vertData + (stride * *intData++);
+                V2 = vertData + (stride * *intData++);
+                V3 = vertData + (stride * *intData++);
+                func(i / 3, V1, V2, V3);
+            }
+        }
+        else
+        {
+            const unsigned int* intData = mIndices->getIndexData();
+            for (int i = 0; i < n; i += 3)
+            {
+                V1 = vertData + (stride * *intData++);
+                V2 = vertData + (stride * *intData++);
+                V3 = vertData + (stride * *intData++);
+                func(i / 3, V1, V2, V3);
+            }
         }
     }
 

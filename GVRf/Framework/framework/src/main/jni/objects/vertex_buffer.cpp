@@ -417,7 +417,7 @@ namespace gvr {
     bool VertexBuffer::forAllVertices(std::function<void(int iter, const float* vertex)> func) const
     {
         std::lock_guard<std::mutex> lock(mLock);
-        const float*    data = reinterpret_cast<float*>(mVertexData);
+        const float*    data = reinterpret_cast<const float*>(mVertexData);
         int             stride = getVertexSize();
 
         if (data == NULL)

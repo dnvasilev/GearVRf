@@ -58,7 +58,7 @@ public class GVRShaderData extends GVRHybridObject
         public String ShaderVar;
     }
 
-    final protected Map<String, TextureInfo> textures = new HashMap();
+    final protected Map<String, GVRTexture> textures = new HashMap();
 
     /**
      * Initialize a post effect, with a shader id.
@@ -161,12 +161,7 @@ public class GVRShaderData extends GVRHybridObject
      */
     public GVRTexture getTexture(String key)
     {
-        TextureInfo tinfo = textures.get(key);
-        if (tinfo != null)
-        {
-            return tinfo.Texture;
-        }
-        return null;
+        return textures.get(key);
     }
 
     /**
@@ -180,15 +175,9 @@ public class GVRShaderData extends GVRHybridObject
         checkStringNotNullOrEmpty("key", key);
         synchronized (textures)
         {
-            TextureInfo tinfo = textures.get(key);
-            if (tinfo == null)
-            {
-                tinfo = new TextureInfo();
-                textures.put(key, tinfo);
-            }
+            textures.put(key, texture);
             if (texture != null)
             {
-                tinfo.Texture = texture;
                 NativeShaderData.setTexture(getNative(), key, texture.getNative());
             }
         }
@@ -331,14 +320,11 @@ public class GVRShaderData extends GVRHybridObject
     {
         synchronized (textures)
         {
-            GVRShaderData.TextureInfo tinfo = textures.get(texName);
-            if (tinfo == null)
+            GVRTexture tex = textures.get(texName);
+            if (tex != null)
             {
-                tinfo = new GVRShaderData.TextureInfo();
-                textures.put(texName, tinfo);
+                tex.setTexCoord(texCoordAttr, shaderVarName);
             }
-            tinfo.TexCoordAttr = texCoordAttr;
-            tinfo.ShaderVar = shaderVarName;
         }
     }
 
@@ -351,14 +337,13 @@ public class GVRShaderData extends GVRHybridObject
      */
     public String getTexCoordAttr(String texName)
     {
-        GVRShaderData.TextureInfo tinfo = textures.get(texName);
-        if (tinfo != null)
+        GVRTexture tex = textures.get(texName);
+        if (tex != null)
         {
-            return tinfo.TexCoordAttr;
+            return tex.getTexCoordAttr();
         }
         return null;
     }
-
 
     /**
      * Gets the name of the shader variable to get the texture
@@ -369,10 +354,10 @@ public class GVRShaderData extends GVRHybridObject
      */
     public String getTexCoordShaderVar(String texName)
     {
-        GVRShaderData.TextureInfo tinfo = textures.get(texName);
-        if (tinfo != null)
+        GVRTexture tex = textures.get(texName);
+        if (tex != null)
         {
-            return tinfo.ShaderVar;
+            return tex.getTexCoordShaderVar();
         }
         return null;
     }
