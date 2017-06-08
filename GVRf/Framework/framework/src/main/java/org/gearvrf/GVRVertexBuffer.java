@@ -196,7 +196,10 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
                 throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
             }
         }
-        throw new UnsupportedOperationException("FloatBuffer type not supported");
+        else
+        {
+            throw new UnsupportedOperationException("FloatBuffer type not supported. must be direct or have backing array");
+        }
     }
 
     /**

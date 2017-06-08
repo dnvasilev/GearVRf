@@ -98,8 +98,6 @@ namespace gvr {
         dest = reinterpret_cast<unsigned int*>(mIndexData);
         memcpy(dest, src, srcSize * sizeof(int));
         mIsDirty = true;
-        LOGE("Dump IndexBuffer:");
-        dump();
         return true;
     }
 
