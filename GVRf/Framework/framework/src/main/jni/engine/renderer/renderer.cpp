@@ -36,7 +36,7 @@ Renderer::Renderer() : numberDrawCalls(0),
                        numLights(0),
                        batch_manager(nullptr),
                        post_effect_render_data_(nullptr){
-    if(do_batching && !gRenderer->isVulkanInstace()) {
+    if(do_batching && !gRenderer->isVulkanInstance()) {
         batch_manager = new BatchManager(BATCH_SIZE, MAX_INDICES);
     }
 }
@@ -165,7 +165,7 @@ void Renderer::cull(Scene *scene, Camera *camera,
     // Note: this needs to be scaled to sort on N states
     state_sort();
 
-    if (do_batching && !gRenderer->isVulkanInstace())
+    if (do_batching && !gRenderer->isVulkanInstance())
     {
         batch_manager->batchSetup(render_data_vector);
     }
@@ -216,7 +216,7 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
 
 void Renderer::renderRenderDataVector(RenderState &rstate) {
 
-    if (!do_batching || gRenderer->isVulkanInstace() ) {
+    if (!do_batching || gRenderer->isVulkanInstance() ) {
         for (auto it = render_data_vector.begin();
                 it != render_data_vector.end(); ++it) {
             GL(renderRenderData(rstate, *it));

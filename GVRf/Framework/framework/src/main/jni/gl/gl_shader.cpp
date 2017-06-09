@@ -305,4 +305,30 @@ void GLShader::findTextures()
     });
     checkGLError("GLShader::findTextures");
 }
+
+std::string GLShader::makeLayout(const DataDescriptor& desc, const char* blockName, bool useGPUBuffer)
+{
+    std::ostringstream stream;
+    if (useGPUBuffer)
+    {
+        stream << "\nlayout (std140) uniform " << blockName << " {" << std::endl;
+        desc.forEachEntry([&stream](const DataDescriptor::DataEntry& entry) mutable
+        {
+            stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+        });
+        stream << "};" << std::endl;
+    }
+    else
+    {
+        desc.forEachEntry([&stream](const DataDescriptor::DataEntry& entry) mutable
+        {
+            if (entry.IsSet)
+            {
+                stream << "uniform " << entry.Type << " " << entry.Name << ";" << std::endl;
+            }
+        });
+    }
+    return stream.str();
+}
+
 } /* namespace gvr */

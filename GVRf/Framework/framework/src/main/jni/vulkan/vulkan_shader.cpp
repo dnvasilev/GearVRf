@@ -137,4 +137,23 @@ VulkanShader::~VulkanShader() { }
         std::vector<uint32_t> result(module.cbegin(), module.cend());
         return result;
     }
+
+    std::string VulkanShader::makeLayout(const DataDescriptor& desc, const char* blockName, bool useGPUBuffer)
+    {
+        std::ostringstream stream;
+        if (useGPUBuffer)
+        {
+            stream << "layout (binding = 1) uniform " << blockName << " {" << std::endl;
+        }
+        else
+        {
+            stream << "layout (std340, push_constant) uniform PushConstants {" << std::endl;
+        }
+        desc.forEachEntry([&stream](const DataDescriptor::DataEntry& entry) mutable
+        {
+            stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+        });
+        stream << "};" << std::endl;
+        return stream.str();
+    }
 } /* namespace gvr */

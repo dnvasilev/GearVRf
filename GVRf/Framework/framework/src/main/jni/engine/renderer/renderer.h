@@ -94,7 +94,7 @@ public:
         numberDrawCalls = 0;
         numberTriangles = 0;
     }
-    bool isVulkanInstace(){
+    bool isVulkanInstance(){
         return isVulkan_;
     }
     void freeBatch(Batch* batch){

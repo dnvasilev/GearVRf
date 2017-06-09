@@ -77,6 +77,7 @@ public:
     void findUniforms(const DataDescriptor& desc, int bindingPoint);
     int getUniformLoc(int index, int bindingPoint) const;
     int getTextureLoc(int index) const;
+    static std::string makeLayout(const DataDescriptor& desc, const char* blockName, bool useGPUBuffer);
 
 protected:
     void initialize();

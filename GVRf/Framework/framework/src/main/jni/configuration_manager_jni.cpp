@@ -66,7 +66,7 @@ namespace gvr {
     }
     JNIEXPORT bool JNICALL Java_org_gearvrf_GVRContext_isVulkanInstance(JNIEnv *env, jobject obj){
         Renderer* renderer = Renderer::getInstance();
-        return renderer->isVulkanInstace();
+        return renderer->isVulkanInstance();
     }
     }
 }
