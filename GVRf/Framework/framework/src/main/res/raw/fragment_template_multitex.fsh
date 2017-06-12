@@ -1,21 +1,21 @@
-precision highp float;
-#ifdef HAS_MULTIVIEW
-	flat in int view_id;
-#endif
 
-out vec4 fragColor;
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+precision highp float;
+
+layout(location = 0) out vec4 fragColor;
 
 @MATRIX_UNIFORMS
 
-in vec3 viewspace_position;
-in vec3 viewspace_normal;
-in vec4 local_position;
-in vec4 proj_position;
-in vec3 view_direction;
-in vec2 diffuse_coord;
+layout(location = 1) in vec3 viewspace_position;
+layout(location = 2) in vec3 viewspace_normal;
+layout(location = 3) in vec4 local_position;
+layout(location = 0) in vec3 view_direction;
+layout(location = 4) in vec2 diffuse_coord;
 
 #ifdef HAS_SHADOWS
-uniform lowp sampler2DArray u_shadow_maps;
+layout(set = 1, binding = 0) uniform lowp sampler2DArray u_shadow_maps;
 #endif
 
 struct Radiance

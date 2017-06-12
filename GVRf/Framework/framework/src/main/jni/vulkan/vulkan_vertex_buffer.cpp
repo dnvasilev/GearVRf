@@ -11,10 +11,7 @@
 namespace gvr {
     VulkanVertexBuffer::VulkanVertexBuffer(const char* layout_desc, int vertexCount)
     : VertexBuffer(layout_desc, vertexCount)
-      //vkVertices_(new GVR_VK_Vertices())
     {
-        m_vertices.vi_bindings = NULL;
-        m_vertices.vi_attrs = NULL;
     }
 
     VulkanVertexBuffer::~VulkanVertexBuffer()
@@ -24,12 +21,6 @@ namespace gvr {
 
     void VulkanVertexBuffer::freeGPUResources()
     {
-        if (m_vertices.vi_bindings) {
-            delete m_vertices.vi_bindings;
-        }
-        if (m_vertices.vi_attrs) {
-            delete m_vertices.vi_attrs;
-        }
     }
 
     bool VulkanVertexBuffer::updateGPU(Renderer* renderer, IndexBuffer* ibuf, Shader* shader)
@@ -46,8 +37,7 @@ namespace gvr {
     {
         if (!isDirty())
             return;
-        m_vertices.vi_bindings = new VkVertexInputBindingDescription[1];
-        m_vertices.vi_attrs = new VkVertexInputAttributeDescription[mLayout.size() -1];
+
         VkResult   err;
         bool   pass;
 
@@ -58,7 +48,7 @@ namespace gvr {
         VkDevice& device = vulkanCore->getDevice();
         VkBufferCreateInfo bufferCreateInfo = {};
         int bufferByteSize = getVertexCount() * mTotalSize;
-      //  bufferByteSize = 20 * sizeof(float);
+
         VkCommandBuffer trnCmdBuf;
         vulkanCore->createTransientCmdBuffer(trnCmdBuf);
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -136,20 +126,15 @@ namespace gvr {
         vkQueueWaitIdle(vulkanCore->getVkQueue());
         vkFreeCommandBuffers(device, vulkanCore->getTransientCmdPool(), 1, &trnCmdBuf);
 
-
-        // The vertices need to be defined so that the pipeline understands how the
-        // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
-        // structure with the correct information.
-        m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+      /*  m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         m_vertices.vi.pNext = nullptr;
         // check this
         m_vertices.vi.vertexBindingDescriptionCount = 1;
-        m_vertices.vi.pVertexBindingDescriptions = m_vertices.vi_bindings;
-        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size() - 1;
-        m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs;
-        m_vertices.vi_bindings[0].binding = 0;
+        m_vertices.vi.pVertexBindingDescriptions = &m_vertices.vi_bindings;
 
-        m_vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        m_vertices.vi_bindings.binding = 0;
+
+        m_vertices.vi_bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         LOGE("attrMapping.size() %d, total_size= %d", mLayout.size(), bufferByteSize);
         int i = 0;
         int stride = 0;
@@ -159,21 +144,49 @@ namespace gvr {
             }
         });
 
-        m_vertices.vi_bindings[0].stride = 32;
+        m_vertices.vi_bindings.stride = 32;
 
-   /*     shader->getVertexDescriptor().forEachEntry([this, &i](const DataDescriptor::DataEntry &e)
+
+        forEachEntry([this, i](const DataEntry& e) mutable
+                     {
+                         if (e.IsSet && std::strstr(e.Name, "normal") == NULL)
+                         {
+                             VkVertexInputAttributeDescription binding;
+                             binding.binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+                             binding.location = e.Index;
+                             LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
+                             binding.format = getDataType(e.Type); //float3
+                             binding.offset = e.Offset;
+                             m_vertices.vi_attrs.push_back(binding);
+                             i++;
+                         }
+                     });
+        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size() - 1;
+        m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs.data();
+*/
+        // The vertices need to be defined so that the pipeline understands how the
+        // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
+        // structure with the correct information.
+        m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        m_vertices.vi.pNext = nullptr;
+        int i = 0;
+
+        shader->getVertexDescriptor().forEachEntry([this, &i](const DataDescriptor::DataEntry &e)
         {
             LOGV("VertexBuffer::bindToShader find %s", e.Name);
             const DataDescriptor::DataEntry* entry = find(e.Name);
+
             if (!e.NotUsed)                             // shader uses this vertex attribute?
             {
                 if ((entry != nullptr) && entry->IsSet) // mesh uses this vertex attribute?
                 {
-                    m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-                    m_vertices.vi_attrs[i].location = e.Index;
+                    VkVertexInputAttributeDescription binding;
+                    binding.binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
+                    binding.location = e.Index;
                     LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
-                    m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
-                    m_vertices.vi_attrs[i].offset = e.Offset;
+                    binding.format = getDataType(e.Type); //float3
+                    binding.offset = e.Offset;
+                    m_vertices.vi_attrs.push_back(binding);
                     i++;
                 }
                 else                                // mesh uses attribute but shader does not
@@ -184,19 +197,14 @@ namespace gvr {
 
             }
         });
-*/
-        forEachEntry([this, i](const DataEntry& e) mutable
-        {
-            if (e.IsSet && std::strstr(e.Name, "normal") == NULL)
-            {
-                m_vertices.vi_attrs[i].binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-                m_vertices.vi_attrs[i].location = e.Index;
-                LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
-                m_vertices.vi_attrs[i].format = getDataType(e.Type); //float3
-                m_vertices.vi_attrs[i].offset = e.Offset;
-                i++;
-            }
-        });
+        m_vertices.vi_bindings.stride = mTotalSize;
+        m_vertices.vi.vertexAttributeDescriptionCount = i;
+        m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs.data();
+        m_vertices.vi.vertexBindingDescriptionCount = 1;
+        m_vertices.vi.pVertexBindingDescriptions = &m_vertices.vi_bindings;
+        m_vertices.vi_bindings.binding = 0;
+        m_vertices.vi_bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
 
         mIsDirty = false;
     }

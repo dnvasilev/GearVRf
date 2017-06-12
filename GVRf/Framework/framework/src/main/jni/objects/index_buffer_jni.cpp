@@ -139,7 +139,7 @@ Java_org_gearvrf_NativeIndexBuffer_setShortVec(JNIEnv * env, jobject obj, jlong 
     if (bufptr)
     {
         jlong capacity = env->GetDirectBufferCapacity(jshortbuf);
-        rc = ibuf->setShortVec((unsigned short*) bufptr, capacity / sizeof(short));
+        rc = ibuf->setShortVec((unsigned short*) bufptr, capacity);
     }
     return rc;
 }
@@ -153,7 +153,7 @@ Java_org_gearvrf_NativeIndexBuffer_setIntVec(JNIEnv* env, jobject obj, jlong jib
     if (bufptr)
     {
         jlong capacity = env->GetDirectBufferCapacity(jintbuf);
-        rc = ibuf->setIntVec((unsigned int*) bufptr, capacity / sizeof(int));
+        rc = ibuf->setIntVec((unsigned int*) bufptr, capacity);
     }
     return rc;
 }

@@ -26,12 +26,15 @@ namespace gvr {
 
     void VulkanIndexBuffer::generateVKBuffers(VulkanCore* vulkanCore)
     {
+
+        if (!isDirty())
+            return;
         m_indices.count = static_cast<uint32_t>(getIndexCount());
         VkMemoryRequirements mem_reqs;
         VkMemoryAllocateInfo memoryAllocateInfo = {};
         bool        pass;
         void*       data;
-        uint32_t    indexBufferSize = m_indices.count *  sizeof(unsigned short);//sizeof(uint32_t);//*
+        uint32_t    indexBufferSize = getDataSize();//sizeof(uint32_t);//*
         VkDevice&   device = vulkanCore->getDevice();
         VkBufferCreateInfo indexbufferInfo = {};
         VkCommandBuffer trnCmdBuf;

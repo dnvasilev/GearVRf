@@ -1177,5 +1177,5 @@ public abstract class GVRContext implements IEventReceiver {
         }
         return null;
     }
-    public native boolean isVulkanInstance();
+
 }

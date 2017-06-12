@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -17,8 +16,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static java.lang.Math.PI;
 import static java.lang.Math.max;
 
 import org.gearvrf.animation.GVRAnimation;
@@ -87,45 +84,57 @@ class GVRJassimpAdapter {
 
     public GVRMesh createMesh(GVRContext ctx, AiMesh aiMesh) {
         String vertexDescriptor = "float3 a_position";
-        List<GVRBone> bones = null;
-        FloatBuffer verticesBuffer = aiMesh.getPositionBuffer();
-        FloatBuffer normalsBuffer = aiMesh.getNormalBuffer();
-        FloatBuffer tangentsBuffer = aiMesh.getTangentBuffer();
-        FloatBuffer bitangentsBuffer = aiMesh.getBitangentBuffer();
-        FloatBuffer texcoordBuffer = aiMesh.getTexCoordBuffer(0);
+        float[] verticesArray = null;
+        float[] tangentsArray = null;
+        float[] bitangentsArray = null;
+        float[] normalsArray = null;
 
-        if (texcoordBuffer != null)
-        {
-            vertexDescriptor += " float2 a_texcoord";
+        List<GVRBone> bones = null;
+
+        // Vertices
+        FloatBuffer verticesBuffer = aiMesh.getPositionBuffer();
+        if (verticesBuffer != null) {
+            verticesArray = new float[verticesBuffer.capacity()];
+            verticesBuffer.get(verticesArray, 0, verticesBuffer.capacity());
         }
-        if (normalsBuffer != null)
-        {
-            vertexDescriptor += " float3 a_normal";
-        }
-        for(int texIndex = 1; texIndex< MAX_TEX_COORDS; texIndex++)
-        {
+        // TexCoords
+        for(int texIndex=0; texIndex< MAX_TEX_COORDS; texIndex++) {
             FloatBuffer fbuf = aiMesh.getTexCoordBuffer(texIndex);
             if (fbuf != null)
             {
-                vertexDescriptor += " float2 a_texcoord" + texIndex;
+                vertexDescriptor += " float2 a_texcoord";
+                if (texIndex > 0)
+                {
+                    vertexDescriptor += texIndex;
+                }
             }
         }
-        if (tangentsBuffer != null)
-        {
-            vertexDescriptor += " float3 a_tangent";
-        }
-        if (bitangentsBuffer != null)
-        {
-            vertexDescriptor += " float3 a_bitangent";
+        // Normals
+        FloatBuffer normalsBuffer = aiMesh.getNormalBuffer();
+        if (normalsBuffer != null) {
+            vertexDescriptor += " float3 a_normal";
+            normalsArray = new float[normalsBuffer.capacity()];
+            normalsBuffer.get(normalsArray, 0, normalsBuffer.capacity());
         }
 
-        if (aiMesh.hasBones())
-        {
-            bones = new ArrayList<GVRBone>();
-            vertexDescriptor += " float4 a_bone_weights int4 a_bone_indices";
+        // Tangents
+        FloatBuffer tangetsBuffer = aiMesh.getTangentBuffer();
+        if(tangetsBuffer != null) {
+            vertexDescriptor += " float3 a_tangent";
+            tangentsArray = new float[tangetsBuffer.capacity()];
+            tangetsBuffer.get(tangentsArray, 0, tangetsBuffer.capacity());
         }
-        for(int c = 0; c < MAX_VERTEX_COLORS; c++)
-        {
+
+        // Bitangents
+        FloatBuffer bitangentsBuffer = aiMesh.getBitangentBuffer();
+        if(bitangentsBuffer != null) {
+            vertexDescriptor += " float3 a_bitangent";
+            bitangentsArray = new float[bitangentsBuffer.capacity()];
+            bitangentsBuffer.get(bitangentsArray, 0, bitangentsBuffer.capacity());
+        }
+        
+
+        for(int c = 0; c < MAX_VERTEX_COLORS; c++) {
             FloatBuffer fbuf = aiMesh.getColorBuffer(c);
             if (fbuf != null)
             {
@@ -136,80 +145,81 @@ class GVRJassimpAdapter {
                 }
             }
         }
+        if (aiMesh.hasBones()) {
+            bones = new ArrayList<GVRBone>();
+            vertexDescriptor += " float4 a_bone_weights int4 a_bone_indices";
+        }
         GVRMesh mesh = new GVRMesh(ctx, vertexDescriptor);
+
+        // Vertex Colors
+        for(int c = 0; c < MAX_VERTEX_COLORS; c++) {
+            FloatBuffer fbuf = aiMesh.getColorBuffer(c);
+            if (fbuf != null) {
+                FloatBuffer coords = FloatBuffer.allocate(aiMesh.getNumVertices() * 4);
+                FloatBuffer source = aiMesh.getColorBuffer(c);
+                String name = "a_color";
+
+                if (c > 0) {
+                    name += c;
+                }
+                coords.put(source);
+                mesh.setFloatVec(name, coords);
+            }
+        }
+
         IntBuffer indices = aiMesh.getIndexBuffer();
-        GVRIndexBuffer indexBuffer = new GVRIndexBuffer(ctx, 4, indices.capacity() / 4);
-        GVRVertexBuffer vertexBuffer = mesh.getVertexBuffer();
+        int len = indices.capacity();
+        GVRIndexBuffer indexBuffer = new GVRIndexBuffer(ctx, 4, len);
+
         indexBuffer.setIntVec(indices);
         mesh.setIndexBuffer(indexBuffer);
-
+        /*
+        // Triangles
+        IntBuffer indexBuffer = aiMesh.getIndexBuffer();
+        if (indexBuffer != null) {
+            CharBuffer triangles = CharBuffer.allocate(indexBuffer.capacity());
+            for (int i = 0; i < indexBuffer.capacity(); ++i) {
+                triangles.put((char)indexBuffer.get());
+            }
+            mesh.setIndices(triangles.array());
+        }
+*/
         // Bones
-        if (aiMesh.hasBones())
-        {
+        if (aiMesh.hasBones()) {
             bones = new ArrayList<GVRBone>();
              for (AiBone bone : aiMesh.getBones()) {
                 bones.add(createBone(ctx, bone));
             }
         }
-        if (verticesBuffer != null)
-        {
-            vertexBuffer.setFloatVec("a_position", verticesBuffer);
+        if (verticesArray != null) {
+            mesh.setVertices(verticesArray);
         }
-        if (normalsBuffer != null)
-        {
-            vertexBuffer.setFloatVec("a_normal", normalsBuffer);
+        if (normalsArray != null) {
+            mesh.setNormals(normalsArray);
         }
-        if (tangentsBuffer != null)
-        {
-            vertexBuffer.setFloatVec("a_tangent", tangentsBuffer);
+        if (tangentsArray != null) {
+            mesh.setFloatArray("a_tangent", tangentsArray);
         }
-        if (bitangentsBuffer != null)
-        {
-            vertexBuffer.setFloatVec("a_bitangent", bitangentsBuffer);
+        if (bitangentsArray != null) {
+            mesh.setFloatArray("a_bitangent", bitangentsArray);
         }
         // TexCords
-        for(int texIndex = 0; texIndex < MAX_TEX_COORDS; texIndex++)
-        {
+        for(int texIndex=0; texIndex< MAX_TEX_COORDS; texIndex++) {
             FloatBuffer fbuf = aiMesh.getTexCoordBuffer(texIndex);
-            if (fbuf != null)
-            {
-                if (aiMesh.getNumUVComponents(texIndex) == 2)
-                {
+            if (fbuf != null) {
+                FloatBuffer coords = FloatBuffer.allocate(aiMesh.getNumVertices() * 2);
+                if (aiMesh.getNumUVComponents(texIndex) == 2) {
                     FloatBuffer coordsSource = aiMesh.getTexCoordBuffer(texIndex);
-                    String name = "a_texcoord";
-                    if (texIndex > 0)
-                    {
-                        name += texIndex;
-                    }
-                    vertexBuffer.setFloatVec(name, coordsSource);
-                }
-                else
-                {
-                    float[] coords = new float[aiMesh.getNumVertices() * 2];
-                    for (int i = 0; i < aiMesh.getNumVertices(); ++i)
-                    {
+                    coords.put(coordsSource);
+                } else {
+                    for (int i = 0; i < aiMesh.getNumVertices(); ++i) {
                         float u = aiMesh.getTexCoordU(i, texIndex);
                         float v = aiMesh.getTexCoordV(i, texIndex);
-                        coords[i * 2] = u;
-                        coords[i * 2 + 1] = v;
+                        coords.put(u);
+                        coords.put(v);
                     }
-                    mesh.setTexCoords(coords, texIndex);
                 }
-            }
-        }
-        // Vertex Colors
-        for (int c = 0; c < MAX_VERTEX_COLORS; c++)
-        {
-            FloatBuffer fbuf = aiMesh.getColorBuffer(c);
-            if (fbuf != null)
-            {
-                String name = "a_color";
-
-                if (c > 0)
-                {
-                    name += c;
-                }
-                vertexBuffer.setFloatVec(name, fbuf);
+                mesh.setTexCoords(coords.array(), texIndex);
             }
         }
         if (bones != null)

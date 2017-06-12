@@ -4,6 +4,7 @@
 #define FRAMEWORK_VULKANINFOWRAPPER_H
 
 #include <vulkan/vulkan.h>
+#include <vector>
 
 namespace gvr {
 struct GVR_VK_SwapchainBuffer
@@ -30,8 +31,8 @@ struct GVR_VK_Vertices {
    //    VkVertexInputBindingDescription      vi_bindings[6];
    //     VkVertexInputAttributeDescription    vi_attrs[6];
 
-    VkVertexInputBindingDescription*      vi_bindings;
-    VkVertexInputAttributeDescription*    vi_attrs;
+    VkVertexInputBindingDescription      vi_bindings;
+    std::vector<VkVertexInputAttributeDescription>    vi_attrs;
 };
 
 struct GVR_Uniform {

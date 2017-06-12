@@ -111,8 +111,6 @@ public:
 
     void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader);
 
-    VkShaderModule CreateShaderModuleAscii(const uint32_t *code, uint32_t size);
-
 
     bool GetMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask,
                                      uint32_t *typeIndex);
@@ -153,8 +151,6 @@ private:
     }
 
     bool CreateInstance();
-    VkShaderModule CreateShaderModule(std::vector <uint32_t> code, uint32_t size);
-    //   void CreateShaderModule(VkShaderModule& module, std::vector <uint32_t> code, uint32_t size);
     bool GetPhysicalDevices();
 
 
@@ -170,13 +166,7 @@ private:
 
     void InitTransientCmdPool();
 
-    void InitRenderPass();
-
-    void InitFrameBuffers();
-
     void InitSync();
-
-    void InitUniformBuffers();
 
     void createPipelineCache();
     void InitTexture();
@@ -187,7 +177,8 @@ private:
     std::vector <uint32_t> CompileShader(const std::string &shaderName,
                                          ShaderType shaderTypeID,
                                          const std::string &shaderContents);
-    void InitShaders(VkPipelineShaderStageCreateInfo shaderStages[], std::string& vertexShader, std::string& fragmentShader);
+    void InitShaders(VkPipelineShaderStageCreateInfo shaderStages[],
+                     std::vector<uint32_t>& result_vert, std::vector<uint32_t>& result_frag);
     void CreateSampler(TextureObject * &textureObject);
 
 
@@ -216,14 +207,9 @@ private:
     VkCommandPool m_commandPoolTrans;
 
     int imageIndex = 0;
-    uint8_t *finaloutput;
-    GVR_Uniform m_modelViewMatrixUniform;
-
 
     VkPipelineCache m_pipelineCache;
 
-    //uint m_threadCount;
-    //ThreadPool m_threadPool;
     TextureObject * textureObject;
 
     VKFramebuffer* mFramebuffer[SWAP_CHAIN_COUNT];

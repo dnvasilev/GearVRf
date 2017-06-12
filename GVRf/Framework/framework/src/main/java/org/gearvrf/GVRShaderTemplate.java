@@ -112,6 +112,7 @@ public class GVRShaderTemplate extends GVRShader
     public GVRShaderTemplate(String uniformDescriptor, String textureDescriptor, String vertexDescriptor)
     {
         super(uniformDescriptor, textureDescriptor, vertexDescriptor);
+        mHasVariants = true;
     }
 
     /**
@@ -129,6 +130,7 @@ public class GVRShaderTemplate extends GVRShader
     public GVRShaderTemplate(String uniformDescriptor, String textureDescriptor, String vertexDescriptor, int glslVersion)
     {
        super(uniformDescriptor, textureDescriptor, vertexDescriptor, glslVersion);
+        mHasVariants = true;
     }
 
     /**
@@ -337,7 +339,7 @@ public class GVRShaderTemplate extends GVRShader
 
         if (mGLSLVersion > 100)
         {
-            shaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+            shaderSource.append("#version " + mGLSLVersion.toString() + "\n");
         }
         if (definedNames.containsKey("LIGHTSOURCES") &&
             definedNames.get("LIGHTSOURCES") == 0)

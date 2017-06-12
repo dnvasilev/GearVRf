@@ -59,8 +59,29 @@ namespace gvr {
 
     std::string VulkanUniformBlock::makeShaderLayout()
     {
-        std::string layout("layout (std140) ");
-        return layout + UniformBlock::makeShaderLayout();
+        std::ostringstream stream;
+        if (mUseBuffer)
+        {
+            stream << "layout (std140, set = 0, binding = " << getBindingPoint() <<" ) uniform " << getBlockName() << " {" << std::endl;
+            DataDescriptor::forEachEntry([&stream](const DataEntry& entry) mutable
+                                         {
+                                             if(entry.IsSet)
+                                                 stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+                                         });
+        }
+        else
+        {
+            stream << "layout (std140, push_constant) uniform PushConstants {" << std::endl;
+            DataDescriptor::forEachEntry([&stream, this](const DataEntry& entry) mutable
+                                         {
+                                             if (entry.IsSet)
+                                             {
+                                                 stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+                                             }
+                                         });
+        }
+        stream << "};" << std::endl;
+        return stream.str();
     }
 
     void VulkanUniformBlock::updateBuffer(VulkanCore* vk)

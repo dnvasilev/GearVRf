@@ -52,6 +52,7 @@ diffuse.xyz *= diffuse.w;
 #endif
 
 #ifdef HAS_lightMapTexture
+
 	vec2 lmap_coord = (lightmap_coord * u_lightMap_scale) + u_lightMap_offset;
 	diffuse *= texture(lightMapTexture, vec2(lmap_coord.x, 1 - lmap_coord.y);
 	return Surface(viewspaceNormal, ambient, vec4(0.0, 0.0, 0.0, 0.0), specular, diffuse);

@@ -131,7 +131,7 @@ VulkanShader::~VulkanShader() { }
 
         if (module.GetCompilationStatus() != shaderc_compilation_status_success)
         {
-            LOGI("Vulkan shader unable to compile : %s", module.GetErrorMessage().c_str());
+            LOGE("Vulkan shader unable to compile : %s", module.GetErrorMessage().c_str());
         }
 
         std::vector<uint32_t> result(module.cbegin(), module.cend());
@@ -141,17 +141,19 @@ VulkanShader::~VulkanShader() { }
     std::string VulkanShader::makeLayout(const DataDescriptor& desc, const char* blockName, bool useGPUBuffer)
     {
         std::ostringstream stream;
+        int bindingIndex = strcasestr(blockName,"material") ? 1 : 0;
         if (useGPUBuffer)
         {
-            stream << "layout (binding = 1) uniform " << blockName << " {" << std::endl;
+            stream << "layout (std140, set = 0, binding = " << bindingIndex <<" ) uniform " << blockName << " {" << std::endl;
         }
         else
         {
-            stream << "layout (std340, push_constant) uniform PushConstants {" << std::endl;
+            stream << "layout (std140, push_constant) uniform PushConstants {" << std::endl;
         }
         desc.forEachEntry([&stream](const DataDescriptor::DataEntry& entry) mutable
         {
-            stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
+            if(entry.IsSet)
+                stream << "   " << entry.Type << " " << entry.Name << ";" << std::endl;
         });
         stream << "};" << std::endl;
         return stream.str();

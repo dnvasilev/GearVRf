@@ -84,6 +84,34 @@ public class GVRShader
             + "     float u_right;\n"
             + "};\n";
 
+    protected static String sTransformVkUBOCode = "layout (std140, set = 0, binding = 0) uniform Transform_ubo {\n "
+            + "     mat4 u_view;\n"
+            + "     mat4 u_mvp;\n"
+            + "     mat4 u_mv;\n"
+            + "     mat4 u_mv_it;\n"
+            + "     mat4 u_model;\n"
+            + "     mat4 u_view_i;\n"
+            + "     float u_right;\n"
+            + "};\n";
+
+    protected static String sTransformVkUniformCode = "layout(std140, push_constant) uniform Transform_ubo { \n"
+            + " #ifdef HAS_MULTIVIEW\n"
+            + "     mat4 u_view_[2];\n"
+            + "     mat4 u_mvp_[2];\n"
+            + "     mat4 u_mv_[2];\n"
+            + "     mat4 u_mv_it_[2];\n"
+            + " #else\n"
+            + "     mat4 u_view;\n"
+            + "     mat4 u_mvp;\n"
+            + "     mat4 u_mv;\n"
+            + "     mat4 u_mv_it;\n"
+            + " #endif\n"
+            + "     mat4 u_model;\n"
+            + "     mat4 u_view_i;\n"
+            + "     float u_right;\n"
+            + "};\n";
+
+
     protected static String sTransformUniformCode = "// Transform_ubo implemented as uniforms\n"
             + " #ifdef HAS_MULTIVIEW\n"
             + "    uniform mat4 u_view_[2];\n"
@@ -251,8 +279,8 @@ public class GVRShader
         StringBuilder fragmentShaderSource = new StringBuilder();
         if (mGLSLVersion > 100)
         {
-            vertexShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
-            fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " es\n");
+            vertexShaderSource.append("#version " + mGLSLVersion.toString() + "\n");
+            fragmentShaderSource.append("#version " + mGLSLVersion.toString() + " \n");
         }
         String vshader = replaceTransforms(getSegment("VertexTemplate"));
         String fshader = replaceTransforms(getSegment("FragmentTemplate"));
@@ -359,6 +387,9 @@ public class GVRShader
      */
     protected String replaceTransforms(String code)
     {
+        if(isVulkanInstance())
+            return code.replace("@MATRIX_UNIFORMS", sTransformVkUBOCode);
+
         return code.replace("@MATRIX_UNIFORMS", sTransformUniformCode);
         //return code.replace("@MATRIX_UNIFORMS", sTransformUBOCode);
     }
@@ -424,4 +455,5 @@ public class GVRShader
             NativeShaderManager.bindCalcMatrix(shaderManager.getNative(), nativeShader, getClass());
         }
     }
+    public native boolean isVulkanInstance();
 }
