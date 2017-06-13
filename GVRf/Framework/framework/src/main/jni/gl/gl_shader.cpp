@@ -80,7 +80,7 @@ void modifyShader(std::string& shader)
     mod_shader += "#version 300 es \n";
 
     std::unordered_map<std::string, int>::iterator it;
-
+    std::unordered_map<std::string, int>::iterator it1;
     while (std::getline(shaderStream, line))
     {
         if (line.find("GL_ARB_separate_shader_objects") != std::string::npos ||
@@ -95,7 +95,16 @@ void modifyShader(std::string& shader)
             mod_shader += ((layout_pos > 0) ? line.substr((0, layout_pos)) : "") + line.substr(it->second) + "\n";
 
         }
-        else  {
+        else if ((it = tokens.find("layout")) != tokens.end() && tokens.find("uniform")==tokens.end()) {
+            it1 = tokens.find("in");
+            if (it1 == tokens.end())
+                it1 = tokens.find("out");
+            int pos = it->second;
+
+            mod_shader += ((pos > 0) ? line.substr(0, pos) : "") + line.substr(it1->second) + "\n";
+        }
+        else
+            {
             mod_shader += line + "\n";
         }
     }
