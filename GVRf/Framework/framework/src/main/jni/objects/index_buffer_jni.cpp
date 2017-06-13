@@ -30,7 +30,7 @@ namespace gvr {
     Java_org_gearvrf_NativeIndexBuffer_ctor(JNIEnv* env, jobject obj,
                                             int bytesPerIndex, int vertexCount);
     JNIEXPORT bool JNICALL
-    Java_org_gearvrf_NativeIndexBuffer_getIntVec(JNIEnv* env, jobject obj, jlong jibuf, jintArray data);
+    Java_org_gearvrf_NativeIndexBuffer_getIntVec(JNIEnv* env, jobject obj, jlong jibuf, jobject data);
 
     JNIEXPORT jintArray JNICALL
     Java_org_gearvrf_NativeIndexBuffer_getIntArray(JNIEnv* env, jobject obj, jlong jibuf);
@@ -77,7 +77,7 @@ Java_org_gearvrf_NativeIndexBuffer_getShortVec(JNIEnv * env, jobject obj, jlong 
     if (bufptr)
     {
         int capacity = env->GetDirectBufferCapacity(jshortbuf);
-        rc = ibuf->getShortVec((unsigned short*) bufptr, capacity / sizeof(short));
+        rc = ibuf->getShortVec((unsigned short*) bufptr, capacity);
     }
     return rc;
 }
@@ -92,7 +92,7 @@ Java_org_gearvrf_NativeIndexBuffer_getIntVec(JNIEnv * env, jobject obj, jlong ji
     if (bufptr)
     {
         int capacity = env->GetDirectBufferCapacity(jdata);
-        rc = ibuf->setShortVec((unsigned short*) bufptr, capacity / sizeof(int));
+        rc = ibuf->getIntVec((unsigned int*) bufptr, capacity);
     }
     return rc;
 }
