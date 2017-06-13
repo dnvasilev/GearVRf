@@ -1,12 +1,13 @@
-
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 precision highp float;
-in vec3 a_position;
-in vec3 a_normal;
+layout(location = 0) in vec3 a_position;
+layout(location = 5) in vec3 a_normal;
 
 @MATRIX_UNIFORMS
 
-out vec3 v_viewspace_position;
-out vec3 v_viewspace_normal;
+layout(location = 1) out vec3 viewspace_position;
+layout(location = 2) out vec3 viewspace_normal;
 void main()
 {
   vec4 v_viewspace_position_vec4 = u_mv * vec4(a_position,1.0);

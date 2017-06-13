@@ -63,6 +63,14 @@ void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line)
         }
     }
 }
+bool checkSamplers(std::unordered_map<std::string, int>& tokens){
+    std::string samplers [] = { "sampler2D", "sampler2dArray", "samplerCube"};
+    for(auto i: samplers)
+        if(tokens.find(i)!= tokens.end())
+            return true;
+
+    return false;
+}
 void modifyShader(std::string& shader)
 {
     std::istringstream shaderStream(shader);
@@ -82,7 +90,7 @@ void modifyShader(std::string& shader)
         std::unordered_map<std::string, int> tokens;
         getTokens(tokens, line);
 
-        if ((it = tokens.find("uniform")) != tokens.end() && (tokens.find("sampler2D") != tokens.end() || (tokens.find("sampler2DArray") != tokens.end()))){
+        if ((it = tokens.find("uniform")) != tokens.end() && checkSamplers(tokens)){
             int layout_pos = tokens["layout"];
             mod_shader += ((layout_pos > 0) ? line.substr((0, layout_pos)) : "") + line.substr(it->second) + "\n";
 

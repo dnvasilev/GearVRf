@@ -90,20 +90,20 @@ namespace gvr {
         return new VulkanIndexBuffer(bytesPerIndex, icount);
     }
 
-    void VulkanRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* rdata, ShaderData* shaderData)
+    bool VulkanRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* rdata, ShaderData* shaderData)
     {
         Transform* const t = rdata->owner_object()->transform();
 
         if (shader == nullptr)
         {
             LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
-            return;
+            return false;
         }
         int status = shaderData->updateGPU(this);
         if (status < 0)
         {
             LOGE("SHADER: textures not ready %s", rdata->owner_object()->name().c_str());
-            return;
+            return false;
         }
 
         VulkanRenderData* vkRdata = static_cast<VulkanRenderData*>(rdata);
@@ -128,6 +128,7 @@ namespace gvr {
         }
         vkRdata->createPipeline(shader,this);
         shader->useShader();
+        return true;
     }
 
     void VulkanRenderer::renderCamera(Scene *scene, Camera *camera,
@@ -169,7 +170,8 @@ namespace gvr {
             {
                 curr_material = rstate.material_override;
             }
-            renderWithShader(rstate, shader, rdata, curr_material);
+            if(!renderWithShader(rstate, shader, rdata, curr_material))
+                continue;
             allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }
         vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, render_data_vector,camera, shader_manager);

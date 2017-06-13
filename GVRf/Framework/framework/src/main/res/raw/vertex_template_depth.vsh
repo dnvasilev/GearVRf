@@ -1,4 +1,6 @@
 
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 
 uniform mat4 shadow_matrix;
 
@@ -14,8 +16,8 @@ layout (std140) uniform Bones_ubo
     mat4 u_bone_matrix[60];
 };
 
-in vec3 a_position;
-out vec4 proj_position;
+layout(location = 0) in vec3 a_position;
+layout(location = 0) out vec4 proj_position;
 struct Vertex
 {
 	vec4 local_position;

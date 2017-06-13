@@ -1,15 +1,15 @@
-
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 precision highp float;
-uniform samplerCube u_texture;
+layout(set = 0, binding = 2) uniform samplerCube u_texture;
 
-uniform vec3 u_color;
-uniform float u_opacity;
+@MATERIAL_UNIFORMS
 
 @MATRIX_UNIFORMS
 
-in vec3 v_viewspace_position;
-in vec3 v_viewspace_normal;
-out vec4 outColor;
+layout(location = 1) in vec3 viewspace_position;
+layout(location = 2) in vec3 viewspace_normal;
+layout(location = 0) out vec4 outColor;
 
 void main()
 {
