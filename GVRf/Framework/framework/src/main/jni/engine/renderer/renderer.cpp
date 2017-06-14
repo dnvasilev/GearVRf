@@ -478,7 +478,7 @@ void Renderer::renderPostEffectData(RenderState& rstate, Texture* render_texture
         post_effect_data->setTexture("u_texture", render_texture);
         rdata->set_shader(0, post_effect_data->getNativeShader());
     }
-    renderWithShader(rstate, shader, post_effect_render_data(), post_effect_data);
+    renderWithShader(rstate, shader, post_effect_render_data(), post_effect_data, 0);
 }
 
 }

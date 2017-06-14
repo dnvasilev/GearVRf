@@ -714,7 +714,7 @@ namespace gvr
         checkGLError("renderMesh::renderMaterialShader");
     }
 
-    bool GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData ,int renderPass)
+    bool GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData, int renderPass)
     {
         if (shader == NULL)
         {
