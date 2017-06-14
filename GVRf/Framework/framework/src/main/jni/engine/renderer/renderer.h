@@ -122,6 +122,7 @@ public:
      virtual RenderData* createRenderData() = 0;
      virtual UniformBlock* createUniformBlock(const char* desc, int, const char* name) = 0;
      virtual Image* createImage(int type, int format) = 0;
+        virtual RenderPass* createRenderPass() = 0;
      virtual Texture* createTexture(int target = GL_TEXTURE_2D) = 0;
      virtual RenderTexture* createRenderTexture(int width, int height, int sample_count,
                                                 int jcolor_format, int jdepth_format, bool resolve_depth,
@@ -172,7 +173,7 @@ public:
     virtual void restoreRenderStates(RenderData* render_data) = 0;
     virtual void setRenderStates(RenderData* render_data, RenderState& rstate) = 0;
     virtual Texture* createSharedTexture(int id) = 0;
-    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData) = 0;
+    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData, int) = 0;
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
                         RenderTexture* post_effect_render_texture_a,

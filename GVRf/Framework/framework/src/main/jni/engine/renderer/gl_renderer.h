@@ -106,7 +106,7 @@ public:
             RenderTexture* post_effect_render_texture_b);
 
      void set_face_culling(int cull_face);
-
+    virtual RenderPass* createRenderPass();
     virtual ShaderData* createMaterial(const char* uniform_desc, const char* texture_desc);
     virtual RenderData* createRenderData();
     virtual UniformBlock* createUniformBlock(const char* desc, int binding, const char* name);
@@ -125,7 +125,7 @@ public:
 private:
     void updateLights(RenderState &rstate, Shader* shader, int texIndex);
     virtual void renderMesh(RenderState& rstate, RenderData* render_data);
-    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
+    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData,  int);
     virtual void renderMaterialShader(RenderState& rstate, RenderData* render_data, ShaderData *material, Shader* shader);
     void occlusion_cull(RenderState& rstate,
                     std::vector<SceneObject*>& scene_objects);

@@ -44,7 +44,7 @@ void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
   */
 }
 
-    void VulkanRenderData::createPipeline(Shader* shader, VulkanRenderer* renderer){
+    void VulkanRenderData::createPipeline(Shader* shader, VulkanRenderer* renderer, int pass){
         if(shader == NULL)
             return;
 
@@ -56,7 +56,7 @@ void VulkanRenderData::bindToShader(Shader* shader, Renderer* renderer)
 
         // TODO: if viewport, vertices, shader, draw_mode, blending or depth state changes, we need to re-create the pipeline
         if(isHashCodeDirty() || isDirty(0xFFFF)){
-            renderer->getCore()->InitPipelineForRenderData(vertices,this, reinterpret_cast<VulkanShader*>(shader));
+            renderer->getCore()->InitPipelineForRenderData(vertices,this, reinterpret_cast<VulkanShader*>(shader), pass);
             getHashCode();
             setDirty(false);
         }

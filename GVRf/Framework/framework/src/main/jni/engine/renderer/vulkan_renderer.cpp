@@ -43,6 +43,9 @@ namespace gvr {
         return new VulkanRenderData();
     }
 
+    RenderPass* VulkanRenderer::createRenderPass(){
+        return new VulkanRenderPass();
+    }
     UniformBlock* VulkanRenderer::createUniformBlock(const char* desc, int binding, const char* name)
     {
         return new VulkanUniformBlock(desc, binding, name);
@@ -90,15 +93,10 @@ namespace gvr {
         return new VulkanIndexBuffer(bytesPerIndex, icount);
     }
 
-    bool VulkanRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* rdata, ShaderData* shaderData)
+    bool VulkanRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* rdata, ShaderData* shaderData,  int pass)
     {
         Transform* const t = rdata->owner_object()->transform();
 
-        if (shader == nullptr)
-        {
-            LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
-            return false;
-        }
         int status = shaderData->updateGPU(this);
         if (status < 0)
         {
@@ -109,24 +107,19 @@ namespace gvr {
         VulkanRenderData* vkRdata = static_cast<VulkanRenderData*>(rdata);
         UniformBlock& transformUBO = vkRdata->getTransformUbo();
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
-
-       // vkRdata->generateVbos(shader->signature(),this);
         if (shader->usesMatrixUniforms())
         {
             updateTransforms(rstate, &transformUBO, t);
         }
-       // if (status != -1)
-        {
-            VulkanData& vkdata = vkRdata->getVkData();
 
             // only need to call when binding is changed
-            vulkanCore_->InitLayoutRenderData(*vkmtl, vkdata, shader);
+            vulkanCore_->InitLayoutRenderData(*vkmtl, vkRdata, shader);
 
             // if texture or binding, material is changed, call this
             if(vkRdata->isDirty(0xFFFF))
-                vulkanCore_->InitDescriptorSetForRenderData(this, vkdata, *vkmtl, &transformUBO, shader);
-        }
-        vkRdata->createPipeline(shader,this);
+                vulkanCore_->InitDescriptorSetForRenderData(this, pass, shader, vkRdata);
+
+        vkRdata->createPipeline(shader,this, pass);
         shader->useShader();
         return true;
     }
@@ -141,9 +134,8 @@ namespace gvr {
         if(!vulkanCore_->swapChainCreated())
             vulkanCore_->initVulkanCore();
 
-        std::vector<VkDescriptorSet> allDescriptors;
+        std::vector<RenderData*> render_data_list;
 
-        int swapChainIndex = vulkanCore_->AcquireNextImage();
         RenderState rstate;
         rstate.shadow_map = false;
         rstate.material_override = NULL;
@@ -153,28 +145,29 @@ namespace gvr {
         rstate.uniforms.u_right = rstate.render_mask & RenderData::RenderMaskBit::Right;
         rstate.uniforms.u_view = camera->getViewMatrix();
         rstate.uniforms.u_proj = camera->getProjectionMatrix();
-/*
-        rstate.viewportX = viewportX;
-        rstate.viewportY = viewportY;
-        rstate.viewportWidth = viewportWidth;
-        rstate.viewportHeight = viewportHeight;
- */
+
 
         for (auto &rdata : render_data_vector)
         {
 
-            ShaderData* curr_material = rdata->material(0);
-            Shader *shader = shader_manager->getShader(rdata->get_shader());
+            for(int curr_pass =0; curr_pass< rdata->pass_count(); curr_pass++) {
 
-            if (rstate.material_override != nullptr)
-            {
-                curr_material = rstate.material_override;
+                ShaderData *curr_material = rdata->material(curr_pass);
+                Shader *shader = rstate.shader_manager->getShader(rdata->get_shader(curr_pass));
+                if (shader == NULL)
+                {
+                    LOGE("SHADER: shader not found");
+                    continue;
+                }
+                if (rstate.material_override != nullptr) {
+                    curr_material = rstate.material_override;
+                }
+                if (!renderWithShader(rstate, shader, rdata, curr_material, curr_pass))
+                    continue;
+                render_data_list.push_back(rdata);
             }
-            if(!renderWithShader(rstate, shader, rdata, curr_material))
-                continue;
-            allDescriptors.push_back(static_cast<VulkanRenderData*>(rdata)->getVkData().m_descriptorSet);
         }
-        vulkanCore_->BuildCmdBufferForRenderData(allDescriptors, render_data_vector,camera, shader_manager);
+        vulkanCore_->BuildCmdBufferForRenderData(render_data_list,camera, shader_manager);
         vulkanCore_->DrawFrameForRenderData();
     }
 

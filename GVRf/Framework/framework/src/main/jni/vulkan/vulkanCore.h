@@ -87,15 +87,14 @@ public:
             return theInstance;
         return NULL;
     }
-    void InitLayoutRenderData(VulkanMaterial& vkMtl, VulkanData& vkdata, Shader*);
+    void InitLayoutRenderData(VulkanMaterial& vkMtl, VulkanRenderData* vkdata, Shader*);
 
     void initCmdBuffer(VkCommandBufferLevel level,VkCommandBuffer& cmdBuffer);
 
-    bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, VulkanData& vkdata, VulkanMaterial& vkmtl, UniformBlock* transformUBO, Shader* shader);
+    bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader*, VulkanRenderData* vkData);
 
 
-    void BuildCmdBufferForRenderData(std::vector <VkDescriptorSet> &allDescriptors,
-                                     std::vector<RenderData *> &render_data_vector, Camera*, ShaderManager*);
+    void BuildCmdBufferForRenderData(std::vector<RenderData *> &render_data_vector, Camera*, ShaderManager*);
 
     void DrawFrameForRenderData();
     int getCurrentSwapChainIndx(){
@@ -109,7 +108,7 @@ public:
     }
     int AcquireNextImage();
 
-    void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader);
+    void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int);
 
 
     bool GetMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask,

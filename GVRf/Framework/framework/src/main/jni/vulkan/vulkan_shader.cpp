@@ -39,10 +39,10 @@ void VulkanShader::initialize()
 {
 }
 
-int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index, VulkanData &vkdata)
+int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index, VulkanRenderData* vkdata)
 {
     if (usesMatrixUniforms()) {
-        VkDescriptorSetLayoutBinding &transform_uniformBinding = vkdata.getTransformUbo().getVulkanDescriptor()->getLayoutBinding();
+        VkDescriptorSetLayoutBinding &transform_uniformBinding = vkdata->getTransformUbo().getVulkanDescriptor()->getLayoutBinding();
         samplerBinding.push_back(transform_uniformBinding);
         index++;
     }
@@ -73,11 +73,11 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
     return index;
 }
 
-int VulkanShader::bindTextures(VulkanMaterial& material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet, int index)
+int VulkanShader::bindTextures(VulkanMaterial* material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet, int index)
 {
     int texIndex = 0;
     bool fail = false;
-    material.forEachTexture([this, index, &writes, descriptorSet](const char* texname, Texture* t) mutable
+    material->forEachTexture([this, index, &writes, descriptorSet](const char* texname, Texture* t) mutable
     {
         VkTexture *tex = static_cast<VkTexture *>(t);
         const DataDescriptor::DataEntry* e = mTextureDesc.find(texname);

@@ -39,7 +39,9 @@ namespace gvr
     {
         return new GLRenderData();
     }
-
+    RenderPass* GLRenderer::createRenderPass(){
+        return new RenderPass();
+    }
     void GLRenderer::clearBuffers(const Camera &camera) const
     {
         GLbitfield mask = GL_DEPTH_BUFFER_BIT;
@@ -557,7 +559,7 @@ namespace gvr
                 RenderData *bounding_box_render_data(createRenderData());
                 Mesh *bounding_box_mesh = render_data->mesh()->createBoundingBox();
                 ShaderData *bbox_material = new GLMaterial("", "");
-                RenderPass *pass = new RenderPass();
+                RenderPass *pass = Renderer::getInstance()->createRenderPass();
                 GLShader *bboxShader = reinterpret_cast<GLShader *>(rstate.shader_manager
                         ->findShader("GVRBoundingBoxShader"));
                 pass->set_shader(bboxShader->getProgramId());
@@ -578,7 +580,7 @@ namespace gvr
 
                 //Issue the query only with a bounding box
                 glBeginQuery(GL_ANY_SAMPLES_PASSED, query[0]);
-                renderWithShader(rstate, bboxShader, bounding_box_render_data, bounding_box_render_data->material(0));
+                renderWithShader(rstate, bboxShader, bounding_box_render_data, bounding_box_render_data->material(0), 0);
                 glEndQuery(GL_ANY_SAMPLES_PASSED);
                 scene_object->set_query_issued(true);
 
@@ -654,7 +656,7 @@ namespace gvr
             set_face_culling(render_data->pass(curr_pass)->cull_face());
             curr_material = render_data->pass(curr_pass)->material();
             shader = rstate.shader_manager->getShader(render_data->get_shader(curr_pass));
-            renderWithShader(rstate, shader, render_data, curr_material);
+            renderWithShader(rstate, shader, render_data, curr_material, curr_pass);
         }
     }
 
@@ -665,6 +667,10 @@ namespace gvr
         GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
         int drawMode = render_data->draw_mode();
         Transform* model = render_data->owner_object() ? render_data->owner_object()->transform() : nullptr;
+        const char* ext =(const char *) glGetString(GL_EXTENSIONS);
+        if(strstr(ext,"GL_ANDROID_extension_pack_es31a")!=NULL){
+     //       LOGE("it is present");
+        }
         try
         {
             shader->useShader();
@@ -712,7 +718,7 @@ namespace gvr
         checkGLError("renderMesh::renderMaterialShader");
     }
 
-    bool GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData)
+    bool GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData ,int renderPass)
     {
         if (shader == NULL)
         {

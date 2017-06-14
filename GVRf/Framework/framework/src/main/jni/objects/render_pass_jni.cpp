@@ -17,6 +17,7 @@
  * JNI
  ***************************************************************************/
 
+#include <engine/renderer/renderer.h>
 #include "util/gvr_jni.h"
 #include "util/gvr_log.h"
 #include "render_pass.h"
@@ -49,7 +50,7 @@ extern "C" {
 JNIEXPORT jlong JNICALL
 Java_org_gearvrf_NativeRenderPass_ctor(JNIEnv * env, jobject obj)
 {
-    return reinterpret_cast<jlong>(new RenderPass());
+    return reinterpret_cast<jlong>(Renderer::getInstance()->createRenderPass());
 }
 
 JNIEXPORT void JNICALL

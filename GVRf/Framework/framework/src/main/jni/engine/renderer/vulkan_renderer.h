@@ -118,6 +118,7 @@ public:
     void set_face_culling(int cull_face){}
     virtual ShaderData* createMaterial(const char* uniform_desc, const char* texture_desc);
     virtual RenderData* createRenderData();
+    virtual RenderPass* createRenderPass();
     virtual UniformBlock* createUniformBlock(const char* desc, int binding, const char* name);
     Image* createImage(int type, int format);
     virtual Texture* createTexture(int target = GL_TEXTURE_2D);
@@ -131,7 +132,7 @@ public:
                                  const char* uniformDescriptor, const char* textureDescriptor,
                                  const char* vertexDescriptor, const char* vertexShader,
                                  const char* fragmentShader);
-    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData);
+    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData, int);
 private:
     VulkanCore* vulkanCore_;
     void renderMesh(RenderState& rstate, RenderData* render_data){}

@@ -30,59 +30,49 @@
 typedef unsigned long Long;
 namespace gvr
 {
-    class VulkanData
+class VulkanRenderPass : public RenderPass
+{
+public:
+    VkPipeline getVKPipeline() const
     {
+        return m_pipeline;
+    }
 
-    public:
-        VulkanData() : ubo(
-        "mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; float u_right;", TRANSFORM_UBO_INDEX, "Transform_ubo")
-        {
-        }
+    VkDescriptorPool getDescriptorPool() const
+    {
+        return m_descriptorPool;
+    }
 
-        VkPipeline &getVKPipeline()
-        {
-            return m_pipeline;
-        }
+    VkDescriptorSet getDescriptorSet() const
+    {
+        return m_descriptorSet;
+    }
 
-        VulkanDescriptor &getDescriptor()
-        {
-            return vk_descriptor;
-        }
+    bool isDescriptorSetNull() const{
+        return descriptorSetNull;
+    }
+    void setDescriptorSetNull(bool flag){
+        descriptorSetNull = flag;
+    }
+    void setPipeline(VkPipeline pipeline){
+        m_pipeline = pipeline;
+    }
+    void setDescriptorPool(VkDescriptorPool descriptorPool){
+        m_descriptorPool = descriptorPool;
+    }
+    void setDescriptorSet(VkDescriptorSet descriptorSet){
+        m_descriptorSet = descriptorSet;
+    }
 
-        VkDescriptorSetLayout &getDescriptorLayout()
-        {
-            return m_descriptorLayout;
-        }
 
-        VkDescriptorPool &getDescriptorPool()
-        {
-            return m_descriptorPool;
-        }
+private:
 
-        VkDescriptorSet &getDescriptorSet()
-        {
-            return m_descriptorSet;
-        }
-        VulkanUniformBlock& getTransformUbo(){
-            return ubo;
-        }
-        bool isDescriptorSetNull(){
-            return descriptorSetNull;
-        }
-        void setDescriptorSetNull(bool flag){
-            descriptorSetNull = flag;
-        }
+    bool descriptorSetNull = false;
+    VkDescriptorPool m_descriptorPool;
+    VkPipeline m_pipeline;
+    VkDescriptorSet m_descriptorSet;
+};
 
-        VkPipeline m_pipeline;
-        VkDescriptorSet m_descriptorSet;
-
-    private:
-        bool descriptorSetNull = false;
-        VulkanUniformBlock ubo;
-        VkDescriptorPool m_descriptorPool;
-        VkDescriptorSetLayout m_descriptorLayout;
-        VulkanDescriptor vk_descriptor;
-    };
 
     /**
      * Vulkan implementation of RenderData.
@@ -91,27 +81,40 @@ namespace gvr
     class VulkanRenderData : public RenderData
     {
     public:
-        VulkanRenderData() : RenderData(), uniform_dirty(true)
+        VulkanRenderData() : RenderData(), ubo(
+        "mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; float u_right;", TRANSFORM_UBO_INDEX, "Transform_ubo")
         {
         }
 
-        VulkanRenderData(const RenderData &rdata) : RenderData(rdata)
+        VulkanRenderData(const RenderData &rdata) : RenderData(rdata), ubo(
+        "mat4 u_view; mat4 u_mvp; mat4 u_mv; mat4 u_mv_it; mat4 u_model; mat4 u_view_i; float u_right;", TRANSFORM_UBO_INDEX, "Transform_ubo")
         {
         }
-        void createPipeline(Shader* shader, VulkanRenderer* renderer);
+        void createPipeline(Shader* shader, VulkanRenderer* renderer, int pass);
 
-        UniformBlock& getTransformUbo(){
-            return vkData.getTransformUbo();
+        VulkanUniformBlock& getTransformUbo(){
+            return ubo;
         }
-        VulkanData &getVkData()
-        {
-            return vkData;
+
+        void setPipeline(VkPipeline pipeline, int pass){
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            renderPass->setPipeline(pipeline);
+
         }
-        bool isDescriptorSetNull(){
-            vkData.isDescriptorSetNull();
+        void setDescriptorPool(VkDescriptorPool descriptorPool, int pass){
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            renderPass->setDescriptorPool(descriptorPool);
+
         }
-        void setDescriptorSetNull(bool flag){
-            vkData.setDescriptorSetNull(flag);
+        void setDescriptorSet(VkDescriptorSet descriptorSet, int pass){
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            renderPass->setDescriptorSet(descriptorSet);
+
+        }
+        void setDescriptorSetNull(bool flag, int pass){
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            renderPass->setDescriptorSetNull(flag);
+
         }
         void generateVbos(const std::string& descriptor, VulkanRenderer* renderer, Shader* shader){
             VulkanVertexBuffer* vbuf = static_cast<VulkanVertexBuffer*>(mesh_->getVertexBuffer());
@@ -119,8 +122,6 @@ namespace gvr
              VulkanIndexBuffer* ibuf = reinterpret_cast< VulkanIndexBuffer*>(mesh_->getIndexBuffer());
             ibuf->generateVKBuffers(renderer->getCore());
         }
-
-        bool       uniform_dirty;
 
         void bindToShader(Shader* shader, Renderer* renderer);
 
@@ -133,8 +134,9 @@ namespace gvr
         VulkanRenderData &operator=(VulkanRenderData&&);
 
     private:
+        VulkanUniformBlock ubo;
         bool m_pipelineInit = false;
-         VulkanData vkData;
+
     };
 
 }

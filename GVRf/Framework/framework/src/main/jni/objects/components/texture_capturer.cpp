@@ -160,7 +160,7 @@ void TextureCapturer::render(RenderState* rstate, RenderData* render_data) {
         Shader* shader = mShaderManager->getShader(id);
         if (shader != NULL)
         {
-            Renderer::getInstance()->renderWithShader(*rstate, shader, render_data, mMaterial);
+            Renderer::getInstance()->renderWithShader(*rstate, shader, render_data, mMaterial,0);
         }
     }
 }

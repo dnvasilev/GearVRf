@@ -518,7 +518,7 @@ namespace gvr {
         GVR_VK_CHECK(!ret);
     }
 
-    void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanData &vkdata, Shader *shader) {
+    void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanRenderData* vkdata, Shader *shader) {
 
         const DataDescriptor& textureDescriptor = shader->getTextureDescriptor();
         DataDescriptor &uniformDescriptor = shader->getUniformDescriptor();
@@ -749,7 +749,7 @@ namespace gvr {
 
     }
 
-    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader) {
+    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int pass) {
         VkResult err;
 
 
@@ -827,11 +827,12 @@ namespace gvr {
         pipelineCreateInfo.renderPass = *(mRenderTexture[0]->getRenderPass());
         pipelineCreateInfo.pDynamicState = nullptr;
         pipelineCreateInfo.stageCount = 2; //vertex and fragment
-
+        VkPipeline pipeline;
         LOGI("Vulkan graphics call before");
         err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
-                                        &(rdata->getVkData().m_pipeline));
+                                        &pipeline);
         GVR_VK_CHECK(!err);
+        rdata->setPipeline(pipeline,pass);
         LOGI("Vulkan graphics call after");
 
     }
@@ -935,8 +936,7 @@ namespace gvr {
         LOGI("Vulkan initsync end");
     }
 
-    void VulkanCore::BuildCmdBufferForRenderData(std::vector<VkDescriptorSet> &allDescriptors,
-                                                 std::vector<RenderData *> &render_data_vector,
+    void VulkanCore::BuildCmdBufferForRenderData(std::vector<RenderData *> &render_data_vector,
                                                  Camera *camera, ShaderManager* shader_manager) {
         // For the triangle sample, we pre-record our command buffer, as it is static.
         // We have a buffer per swap chain image, so loop over the creation process.
@@ -972,35 +972,46 @@ namespace gvr {
         mRenderTexture[imageIndex]->bind();
         mRenderTexture[imageIndex]->beginRendering(Renderer::getInstance());
 
-        for (int j = 0; j < allDescriptors.size(); j++) {
+        for (int j = 0; j < render_data_vector.size(); j++) {
+
             VulkanRenderData *rdata = reinterpret_cast<VulkanRenderData *>(render_data_vector[j]);
-            // Set our pipeline. This holds all major state
-            // the pipeline defines, for example, that the vertex buffer is a triangle list.
-            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              rdata->getVkData().m_pipeline);
 
-            VulkanShader *shader = reinterpret_cast<VulkanShader*>(shader_manager->getShader(rdata->get_shader()));
+            for(int curr_pass =0 ;curr_pass < rdata->pass_count(); curr_pass++) {
 
-            //bind out descriptor set, which handles our uniforms and samplers
-            if (!rdata->isDescriptorSetNull())
-                vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        shader->getPipelineLayout(), 0, 1,
-                                        &allDescriptors[j], 0, NULL);
+               const VulkanRenderPass* renderPass = static_cast<const VulkanRenderPass*>(rdata->pass(curr_pass));
+               vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                renderPass->getVKPipeline() );
 
-            // Bind our vertex buffer, with a 0 offset.
-            VkDeviceSize offsets[1] = {0};
-            const Mesh* mesh = rdata->mesh();
-            const VulkanVertexBuffer* vbuf = reinterpret_cast<const VulkanVertexBuffer*>(mesh->getVertexBuffer());
-            const VulkanIndexBuffer* ibuf = reinterpret_cast<const VulkanIndexBuffer*>(mesh->getIndexBuffer());
-            const GVR_VK_Vertices& vert = (vbuf->getVKVertices());
-            const GVR_VK_Indices& ind = ibuf->getVKIndices();
+               VulkanShader *shader = reinterpret_cast<VulkanShader *>(shader_manager->getShader(
+                       rdata->get_shader()));
 
-            vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
+                VkDescriptorSet descriptorSet = renderPass->getDescriptorSet();
+               //bind out descriptor set, which handles our uniforms and samplers
+               if (!renderPass->isDescriptorSetNull())
+                   vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                           shader->getPipelineLayout(), 0, 1,
+                                           &descriptorSet, 0, NULL);
 
-            // Bind triangle index buffer
-            VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-            vkCmdBindIndexBuffer(cmdBuffer, ind.buffer, 0, indexType);
-            vkCmdDrawIndexed(cmdBuffer, ind.count, 1, 0, 0, 1);
+               // Bind our vertex buffer, with a 0 offset.
+               VkDeviceSize offsets[1] = {0};
+               const Mesh *mesh = rdata->mesh();
+               const VulkanVertexBuffer *vbuf = reinterpret_cast<const VulkanVertexBuffer *>(mesh->getVertexBuffer());
+               const VulkanIndexBuffer *ibuf = reinterpret_cast<const VulkanIndexBuffer *>(mesh->getIndexBuffer());
+               const GVR_VK_Vertices &vert = (vbuf->getVKVertices());
+               const GVR_VK_Indices &ind = ibuf->getVKIndices();
+
+               vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
+
+               // Bind triangle index buffer
+               VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16
+                                                                   : VK_INDEX_TYPE_UINT32;
+                if(ind.count) {
+                    vkCmdBindIndexBuffer(cmdBuffer, ind.buffer, 0, indexType);
+                    vkCmdDrawIndexed(cmdBuffer, ind.count, 1, 0, 0, 1);
+                }
+                else
+                    vkCmdDraw(cmdBuffer, mesh->getVertexCount(), 1, 0, 1);
+           }
         }
 
         mRenderTexture[imageIndex]->endRendering(Renderer::getInstance());
@@ -1065,16 +1076,15 @@ namespace gvr {
     }
 
 
-    bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer *renderer, VulkanData &vkdata,
-                                                    VulkanMaterial &vkmtl, UniformBlock *transformUBO,
-                                                    Shader *shader) {
+    bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader* shader, VulkanRenderData* vkData) {
 
         const DataDescriptor& textureDescriptor = shader->getTextureDescriptor();
         DataDescriptor &uniformDescriptor = shader->getUniformDescriptor();
         bool transformUboPresent = shader->usesMatrixUniforms();
+        VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(vkData->material(pass));
 
         if ((textureDescriptor.getNumEntries() == 0) && uniformDescriptor.getNumEntries() == 0 && !transformUboPresent) {
-            vkdata.setDescriptorSetNull(true);
+            vkData->setDescriptorSetNull(true,pass);
             return true;
         }
         VulkanShader* vkShader = reinterpret_cast<VulkanShader*>(shader);
@@ -1091,7 +1101,7 @@ namespace gvr {
 
         pool = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
 
-        vkmtl.forEachTexture([this, &poolSize, &pool](const char* texname, Texture* t) mutable{
+        vkmtl->forEachTexture([this, &poolSize, &pool](const char* texname, Texture* t) mutable{
             poolSize.push_back(pool);
         });
 
@@ -1104,10 +1114,10 @@ namespace gvr {
         descriptorPoolCreateInfo.pPoolSizes = poolSize.data();
 
         VkResult err;
-        VkDescriptorPool &descriptorPool = vkdata.getDescriptorPool();
+        VkDescriptorPool descriptorPool;
         err = vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, NULL, &descriptorPool);
         GVR_VK_CHECK(!err);
-
+        vkData->setDescriptorPool(descriptorPool,pass);
 
         VkDescriptorSetLayout &descriptorLayout = reinterpret_cast<VulkanShader *>(shader)->getDescriptorLayout();
         VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
@@ -1117,14 +1127,15 @@ namespace gvr {
         descriptorSetAllocateInfo.descriptorSetCount = 1;
         descriptorSetAllocateInfo.pSetLayouts = &descriptorLayout;
 
-        VkDescriptorSet &descriptorSet = vkdata.getDescriptorSet();
+        VkDescriptorSet descriptorSet;
         err = vkAllocateDescriptorSets(m_device, &descriptorSetAllocateInfo, &descriptorSet);
         GVR_VK_CHECK(!err);
+        vkData->setDescriptorSet(descriptorSet,pass);
 
-        VkWriteDescriptorSet &transform_desc = static_cast<VulkanUniformBlock *>(transformUBO)->getDescriptorSet();
+        VkWriteDescriptorSet &transform_desc = vkData->getTransformUbo().getDescriptorSet();
         transform_desc.dstSet = descriptorSet;
 
-        VkWriteDescriptorSet &mat_desc = static_cast<VulkanUniformBlock&>(vkmtl.uniforms()).getDescriptorSet();
+        VkWriteDescriptorSet &mat_desc = static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).getDescriptorSet();
         mat_desc.dstSet = descriptorSet;
 
         if (transformUboPresent)
