@@ -207,7 +207,6 @@ namespace gvr
         {
             GLRenderTexture *texture_render_texture =
                     static_cast<GLRenderTexture *>(post_effect_render_texture_a);
-            RenderTexture *target_render_texture;
 
             GL(glBindFramebuffer(GL_FRAMEBUFFER, texture_render_texture->getFrameBufferId()));
             GL(glViewport(0, 0, texture_render_texture->width(), texture_render_texture->height()));
@@ -227,17 +226,14 @@ namespace gvr
                 {
                     texture_render_texture =
                             static_cast<GLRenderTexture *>(post_effect_render_texture_a);
-                    target_render_texture =
-                            static_cast<GLRenderTexture *>(post_effect_render_texture_b);
+                    GL(glBindFramebuffer(GL_FRAMEBUFFER, post_effect_render_texture_b->getFrameBufferId()));
                 }
                 else
                 {
                     texture_render_texture =
                             static_cast<GLRenderTexture *>(post_effect_render_texture_b);
-                    target_render_texture =
-                            static_cast<GLRenderTexture *>(post_effect_render_texture_a);
+                    GL(glBindFramebuffer(GL_FRAMEBUFFER, post_effect_render_texture_a->getFrameBufferId()));
                 }
-                GL(glBindFramebuffer(GL_FRAMEBUFFER, framebufferId));
                 GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
 
                 GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
