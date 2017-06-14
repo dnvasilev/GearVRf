@@ -3,9 +3,9 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 precision highp float;
-layout(set = 0, binding = 2) uniform samplerCube u_texture;
-layout(location = 0) in vec3 diffuse_coord;
-layout(location = 0) out vec4 fragColor;
+layout ( set = 0, binding = 2 ) uniform samplerCube u_texture;
+layout ( location = 0 ) in vec3 diffuse_coord;
+layout ( location = 0 ) out vec4 fragColor;
 
 @MATERIAL_UNIFORMS
 

@@ -30,11 +30,11 @@ import org.gearvrf.utility.TextFile;
  *    u_texture     texture
  * </code>
  */
-public class GVRUnlitHorizontalStereoShader extends GVRShader
+public class GVRUnlitHorizontalStereoShader extends GVRShaderTemplate
 {
     public GVRUnlitHorizontalStereoShader(GVRContext gvrContext)
     {
-        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
+        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 400);
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context,R.raw.unlit_horizontal_frag));
         setSegment("VertexTemplate",TextFile.readTextFile(context,R.raw.pos_tex_ubo));
