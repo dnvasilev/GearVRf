@@ -665,7 +665,6 @@ namespace gvr
         GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
         int drawMode = render_data->draw_mode();
         Transform* model = render_data->owner_object() ? render_data->owner_object()->transform() : nullptr;
-
         try
         {
             shader->useShader();
@@ -713,18 +712,19 @@ namespace gvr
         checkGLError("renderMesh::renderMaterialShader");
     }
 
-    void GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData)
+    bool GLRenderer::renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData)
     {
         if (shader == NULL)
         {
             LOGE("SHADER: shader %d not found", shaderData->getNativeShader());
-            return;
+            return false;
         }
         if (shaderData->updateGPU(this) >= 0)
         {
             renderData->updateGPU(this,shader);
             renderMaterialShader(rstate, renderData, shaderData, shader);
         }
+        return true;
     }
 
     void GLRenderer::updateLights(RenderState& rstate, Shader* shader, int texIndex)

@@ -414,7 +414,7 @@ public class GVRCubeSceneObject extends GVRSceneObject {
     private void createSimpleCube(GVRContext gvrContext, boolean facingOut,
             GVRMaterial material, Vector3f dimensions) {
 
-        GVRMesh mesh = createCube(gvrContext, "float3 a_position, float3 a_normal, float2 a_texcoord", facingOut, dimensions);
+        GVRMesh mesh = createCube(gvrContext, "float3 a_position, float2 a_texcoord, float3 a_normal", facingOut, dimensions);
         GVRRenderData renderData = new GVRRenderData(gvrContext, material);
         attachComponent(renderData);
         renderData.setMesh(mesh);

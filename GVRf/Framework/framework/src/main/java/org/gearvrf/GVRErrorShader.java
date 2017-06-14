@@ -22,14 +22,17 @@ import org.gearvrf.utility.TextFile;
  * and does not rely on any uniform data. The mesh
  * will be rendered in SOLID RED.
  */
-public class GVRErrorShader extends GVRShader
+public class GVRErrorShader extends GVRShaderTemplate
 {
     private String fragmentShader =
-            "void main() { gl_FragColor = vec4(1, 0, 0, 1); }\n";
+            "#extension GL_ARB_separate_shader_objects : enable\n" +
+                    "#extension GL_ARB_shading_language_420pack : enable\n"+
+                    "layout(location = 0) out vec4 outColor; "+
+    "void main() { outColor = vec4(1, 0, 0, 1); }\n";
 
     public GVRErrorShader(GVRContext ctx)
     {
-        super("", "", "float3 a_position");
+        super("", "", "float3 a_position",400);
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", TextFile.readTextFile(ctx.getContext(), R.raw.pos_ubo));
     }

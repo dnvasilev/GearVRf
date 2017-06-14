@@ -172,7 +172,7 @@ public:
     virtual void restoreRenderStates(RenderData* render_data) = 0;
     virtual void setRenderStates(RenderData* render_data, RenderState& rstate) = 0;
     virtual Texture* createSharedTexture(int id) = 0;
-    virtual void renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData) = 0;
+    virtual bool renderWithShader(RenderState& rstate, Shader* shader, RenderData* renderData, ShaderData* shaderData) = 0;
     virtual void cullAndRender(RenderTarget* renderTarget, Scene* scene,
                         ShaderManager* shader_manager, PostEffectShaderManager* post_effect_shader_manager,
                         RenderTexture* post_effect_render_texture_a,

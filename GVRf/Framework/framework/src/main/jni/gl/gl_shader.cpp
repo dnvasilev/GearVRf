@@ -63,6 +63,14 @@ void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line)
         }
     }
 }
+bool checkSamplers(std::unordered_map<std::string, int>& tokens){
+    std::string samplers [] = { "sampler2D", "sampler2dArray", "samplerCube"};
+    for(auto i: samplers)
+        if(tokens.find(i)!= tokens.end())
+            return true;
+
+    return false;
+}
 void modifyShader(std::string& shader)
 {
     std::istringstream shaderStream(shader);
@@ -72,7 +80,7 @@ void modifyShader(std::string& shader)
     mod_shader += "#version 300 es \n";
 
     std::unordered_map<std::string, int>::iterator it;
-
+    std::unordered_map<std::string, int>::iterator it1;
     while (std::getline(shaderStream, line))
     {
         if (line.find("GL_ARB_separate_shader_objects") != std::string::npos ||
@@ -82,12 +90,21 @@ void modifyShader(std::string& shader)
         std::unordered_map<std::string, int> tokens;
         getTokens(tokens, line);
 
-        if ((it = tokens.find("uniform")) != tokens.end() && (tokens.find("sampler2D") != tokens.end() || (tokens.find("sampler2DArray") != tokens.end()))){
+        if ((it = tokens.find("uniform")) != tokens.end() && checkSamplers(tokens)){
             int layout_pos = tokens["layout"];
             mod_shader += ((layout_pos > 0) ? line.substr((0, layout_pos)) : "") + line.substr(it->second) + "\n";
 
         }
-        else  {
+        else if ((it = tokens.find("layout")) != tokens.end() && tokens.find("uniform")==tokens.end()) {
+            it1 = tokens.find("in");
+            if (it1 == tokens.end())
+                it1 = tokens.find("out");
+            int pos = it->second;
+
+            mod_shader += ((pos > 0) ? line.substr(0, pos) : "") + line.substr(it1->second) + "\n";
+        }
+        else
+            {
             mod_shader += line + "\n";
         }
     }
