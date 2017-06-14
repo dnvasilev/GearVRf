@@ -64,7 +64,7 @@ void getTokens(std::unordered_map<std::string, int>& tokens, std::string& line)
     }
 }
 bool checkSamplers(std::unordered_map<std::string, int>& tokens){
-    std::string samplers [] = { "sampler2D", "sampler2dArray", "samplerCube"};
+    std::string samplers [] = { "sampler2D", "sampler2DArray", "samplerCube"};
     for(auto i: samplers)
         if(tokens.find(i)!= tokens.end())
             return true;
