@@ -18,6 +18,7 @@ package org.gearvrf;
 import org.gearvrf.utility.Log;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.IllegalBlockingModeException;
@@ -55,7 +56,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
             return null;
         }
         size *= 4 * getVertexCount();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         FloatBuffer data = buffer.asFloatBuffer();
         if (!NativeVertexBuffer.getFloatVec(getNative(), attributeName, data, 0))
         {
@@ -82,7 +83,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
             return null;
         }
         size *= 4 * getVertexCount();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         IntBuffer data = buffer.asIntBuffer();
         if (!NativeVertexBuffer.getIntVec(getNative(), attributeName, data, 0))
         {

@@ -16,10 +16,9 @@
 package org.gearvrf;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.channels.IllegalBlockingModeException;
 
 /**
  * Describes an interleaved vertex buffer containing vertex data for a mesh.
@@ -35,9 +34,9 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
     private static final String TAG = GVRIndexBuffer.class.getSimpleName();
     private String mDescriptor;
 
-    public GVRIndexBuffer(GVRContext gvrContext, int bytesPerIndex, int vertexCount)
+    public GVRIndexBuffer(GVRContext gvrContext, int bytesPerIndex, int indexCount)
     {
-        super(gvrContext, NativeIndexBuffer.ctor(bytesPerIndex, vertexCount));
+        super(gvrContext, NativeIndexBuffer.ctor(bytesPerIndex, indexCount));
     }
 
     public CharBuffer asCharBuffer()
@@ -51,7 +50,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         {
             return null;
         }
-        CharBuffer data = ByteBuffer.allocateDirect(2 * n).asCharBuffer();
+        CharBuffer data = ByteBuffer.allocateDirect(2 * n).order(ByteOrder.nativeOrder()).asCharBuffer();
         if (!NativeIndexBuffer.getShortVec(getNative(), data))
         {
             throw new IllegalArgumentException("Cannot convert integer indices to char buffer of size " + n);
@@ -70,7 +69,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         {
             return null;
         }
-        IntBuffer data = ByteBuffer.allocateDirect(4 * n).asIntBuffer();
+        IntBuffer data = ByteBuffer.allocateDirect(4 * n).order(ByteOrder.nativeOrder()).asIntBuffer();
         if (!NativeIndexBuffer.getIntVec(getNative(), data))
         {
             throw new IllegalArgumentException("Cannot convert short indices to int buffer of size " + n);
@@ -162,7 +161,11 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
                 throw new UnsupportedOperationException("Input buffer is wrong size");
             }
         }
-        throw new UnsupportedOperationException("CharBuffer type not supported");
+        else
+        {
+            throw new UnsupportedOperationException(
+                    "CharBuffer type not supported. Must be direct or have backing array");
+        }
     }
 
     /**
@@ -207,9 +210,23 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
         {
             throw new UnsupportedOperationException("Cannot update integer indices with short array");
         }
-        if (!NativeIndexBuffer.setIntVec(getNative(), data))
+        if (data.isDirect())
         {
-            throw new UnsupportedOperationException("Input array is wrong size");
+            if (!NativeIndexBuffer.setIntVec(getNative(), data))
+            {
+                throw new UnsupportedOperationException("Input array is wrong size");
+            }
+        }
+        else if (data.hasArray())
+        {
+            if (!NativeIndexBuffer.setIntArray(getNative(), data.array()))
+            {
+                throw new IllegalArgumentException("Data array incompatible with index buffer");
+            }
+        }
+        else
+        {
+            throw new UnsupportedOperationException("IntBuffer type not supported. Must be direct or have backing array");
         }
     }
 
@@ -233,7 +250,7 @@ public class GVRIndexBuffer extends GVRHybridObject implements PrettyPrint
 }
 
 class NativeIndexBuffer {
-    static native long ctor(int bytesPerIndex, int vertexCount);
+    static native long ctor(int bytesPerIndex, int indexCount);
 
     static native int getIndexCount(long ibuf);
 
