@@ -31,11 +31,11 @@ import org.gearvrf.utility.TextFile;
  *    u_texture     texture
  * </code>
  */
-public class GVRUnlitVerticalStereoShader extends GVRShader
+public class GVRUnlitVerticalStereoShader extends GVRShaderTemplate
 {
     public GVRUnlitVerticalStereoShader(GVRContext gvrContext)
     {
-        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
+        super("float3 u_color float u_opacity ", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 400);
         Context context = gvrContext.getContext();
         setSegment("FragmentTemplate", TextFile.readTextFile(context,R.raw.unlit_vertical_frag));
         setSegment("VertexTemplate",TextFile.readTextFile(context,R.raw.pos_tex_ubo));

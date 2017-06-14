@@ -29,13 +29,15 @@ package org.gearvrf;
  *     u_lightmap_texture   texture with lighting
  * </code>
  */
-public class GVRLightmapShader extends GVRShader
+public class GVRLightmapShader extends GVRShaderTemplate
 {
     private String vertexShader =
-        "attribute vec3 a_position;\n" +
-        "attribute vec2 a_texcoord;\n" +
-        "uniform mat4 u_mvp;\n" +
-        "varying vec2 diffuse_coord;\n" +
+        "#extension GL_ARB_separate_shader_objects : enable\n" +
+        "#extension GL_ARB_shading_language_420pack : enable\n" +
+        "layout ( location = 0 ) in vec3 a_position;\n" +
+        "layout ( location = 1 ) in vec2 a_texcoord;\n" +
+        "@MATRIX_UNIFORMS\n" +
+        "layout ( location = 0 ) out vec2 diffuse_coord;\n" +
         "void main() {\n" +
         " vec4 pos = u_mvp * vec4(a_position, 1.0);\n" +
         " diffuse_coord = a_texcoord;\n" +
@@ -43,26 +45,29 @@ public class GVRLightmapShader extends GVRShader
         "}";
 
     private String fragmentShader =
-        "varying vec2 coord;\n" +
-        "uniform sampler2D u_main_texture;\n" +
-        "uniform sampler2D u_lightmap_texture;\n" +
-        "uniform vec2  u_lightmap_offset;\n" +
-        "uniform vec2  u_lightmap_scale;\n" +
+        "#extension GL_ARB_separate_shader_objects : enable\n" +
+        "#extension GL_ARB_shading_language_420pack : enable\n" +
+        "layout ( location = 0 ) in vec2 diffuse_coord;\n" +
+        "layout ( set = 0, binding = 2 ) uniform sampler2D u_main_texture;\n" +
+        "layout ( set = 0, binding = 3 ) uniform sampler2D u_lightmap_texture;\n" +
+        "layout ( set = 0, binding = 0 ) uniform vec2  u_lightmap_offset;\n" +
+        "layout ( set = 0, binding = 1 ) uniform vec2  u_lightmap_scale;\n" +
+        "layout ( location = 0 ) out vec4 outColor;\n" +
         "void main() {\n" +
         " vec4 color;\n" +
         " vec4 lightmap_color;\n" +
         " vec2 lightmap_coord = (diffuse_coord * u_lightmap_scale) + u_lightmap_offset;\n" +
         // Beast exports the texture with vertical flip
-        " lightmap_color = texture2D(u_lightmap_texture, vec2(lightmap_coord.x, 1.0 - lightmap_coord.y));\n" +
-        " color = texture2D(u_main_texture, diffuse_coord);\n" +
-        " gl_FragColor = color * lightmap_color;\n" +
+        " lightmap_color = texture(u_lightmap_texture, vec2(lightmap_coord.x, 1.0 - lightmap_coord.y));\n" +
+        " color = texture(u_main_texture, diffuse_coord);\n" +
+        " outColor = color * lightmap_color;\n" +
         "}";
 
     public GVRLightmapShader()
     {
         super("float2 u_lightmap_offset float2 u_lightmap_scale",
               "sampler2D u_main_texture, sampler2D u_lightmap_texture",
-              "float3 a_position float2 a_texcoord");
+              "float3 a_position float2 a_texcoord", 400);
         setSegment("FragmentTemplate", fragmentShader);
         setSegment("VertexTemplate", vertexShader);
     }
