@@ -29,29 +29,28 @@ namespace gvr {
     JNIEXPORT jlong JNICALL
     Java_org_gearvrf_NativeVertexBuffer_ctor(JNIEnv* env, jobject obj,
                                              jstring descriptor, int vertexCount);
-    JNIEXPORT bool JNICALL
+    JNIEXPORT jintArray JNICALL
     Java_org_gearvrf_NativeVertexBuffer_getIntArray(JNIEnv* env, jobject obj,
-                                                    jlong jvbuf, jstring attribName,
-                                                    jintArray data, jint stride);
+                                                    jlong jvbuf, jstring attribName);
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_setIntArray(JNIEnv* env, jobject obj,
                                                     jlong jvbuf, jstring attribName,
-                                                    jintArray data, jint stride);
+                                                    jintArray data, jint stride, jint ofs);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_setIntVec(JNIEnv* env, jobject obj,
                                                   jlong jvbuf, jstring attribName,
-                                                  jintArray data, jint stride);
+                                                  jintArray data, jint stride, jint ofs);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv* env, jobject obj,
                                                   jlong jvbuf, jstring attribName,
-                                                  jobject jintbuf, jint stride);
+                                                  jobject jintbuf, jint stride, jint ofs);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_getFloatVec(JNIEnv* env, jobject obj,
                                                     jlong jvbuf, jstring attribName,
-                                                    jobject jfloatbuf, jint stride);
+                                                    jobject jfloatbuf, jint stride, jint ofs);
 
     JNIEXPORT jfloatArray JNICALL
     Java_org_gearvrf_NativeVertexBuffer_getFloatArray(JNIEnv * env, jobject obj,
@@ -60,11 +59,11 @@ namespace gvr {
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_setFloatArray(JNIEnv* env, jobject obj,
                                                     jlong jvbuf, jstring attribName,
-                                                    jfloatArray data, jint stride);
+                                                    jfloatArray data, jint stride, jint ofs);
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_setFloatVec(JNIEnv* env, jobject obj,
                                                     jlong jvbuf, jstring attribName,
-                                                    jobject jfloatbuf, jint stride);
+                                                    jobject jfloatbuf, jint stride, jint ofs);
 
     JNIEXPORT bool JNICALL
     Java_org_gearvrf_NativeVertexBuffer_isSet(JNIEnv* env, jobject obj,
@@ -92,17 +91,18 @@ Java_org_gearvrf_NativeVertexBuffer_ctor(JNIEnv* env, jobject obj, jstring descr
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_getFloatVec(JNIEnv * env, jobject obj,
-                                                jlong jvbuf, jstring attribName, jobject jfloatbuf, jint stride)
+Java_org_gearvrf_NativeVertexBuffer_getFloatVec(JNIEnv* env, jobject obj,
+                                                jlong jvbuf, jstring attribName,
+                                                jobject jfloatbuf, jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    void* bufptr = env->GetDirectBufferAddress(jfloatbuf);
+    float* bufptr = (float*) env->GetDirectBufferAddress(jfloatbuf);
     bool rc = false;
     if (bufptr)
     {
-        int capacity = env->GetDirectBufferCapacity(jfloatbuf);
-        rc = vbuf->getFloatVec(char_key, (float *) bufptr, capacity, stride);
+        int capacity = env->GetDirectBufferCapacity(jfloatbuf) - ofs;
+        rc = vbuf->getFloatVec(char_key, bufptr + ofs, capacity, stride);
     }
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
@@ -129,44 +129,55 @@ Java_org_gearvrf_NativeVertexBuffer_getFloatArray(JNIEnv * env, jobject obj,
     return jdata;
 }
 
-JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_getIntArray(JNIEnv * env, jobject obj,
-                                                jlong jvbuf, jstring attribName, jintArray jdata, jint stride)
+JNIEXPORT jintArray JNICALL
+Java_org_gearvrf_NativeVertexBuffer_getIntArray(JNIEnv* env, jobject obj,
+                                                jlong jvbuf, jstring attribName)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
+    VertexBuffer::DataEntry* entry = vbuf->find(char_key);
+    jintArray jdata = NULL;
 
-    jint* attribData = env->GetIntArrayElements(jdata, 0);
-    bool rc = vbuf->getIntVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    if (entry != NULL)
+    {
+        int n = (vbuf->getVertexCount() * entry->Size) / sizeof(float);
+        jdata = env->NewIntArray(n);
+        int* data = env->GetIntArrayElements(jdata, 0);
+        vbuf->getIntVec(char_key, data, n, 0);
+        env->ReleaseIntArrayElements(jdata, data, 0);
+    }
     env->ReleaseStringUTFChars(attribName, char_key);
-    return rc;
+    return jdata;
 }
 
 JNIEXPORT bool JNICALL
 Java_org_gearvrf_NativeVertexBuffer_setIntArray(JNIEnv * env, jobject obj,
-                                                jlong jvbuf, jstring attribName, jintArray jdata, jint stride)
+                                                jlong jvbuf, jstring attribName,
+                                                jintArray jdata, jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
 
-    jint* attribData = env->GetIntArrayElements(jdata, 0);
-    bool rc = vbuf->setIntVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    jint* attribData = env->GetIntArrayElements(jdata, 0) + ofs;
+    int n = static_cast<int>(env->GetArrayLength(jdata));
+    bool rc = vbuf->setIntVec(char_key, attribData, n - ofs, stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv * env, jobject obj,
-                                              jlong jvbuf, jstring attribName, jobject jintbuf, jint stride)
+Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv* env, jobject obj,
+                                              jlong jvbuf, jstring attribName, jobject jintbuf,
+                                              jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    void* bufptr = env->GetDirectBufferAddress(jintbuf);
+    int* bufptr = (int*) env->GetDirectBufferAddress(jintbuf);
     bool rc = false;
     if (bufptr)
     {
-        int capacity = env->GetDirectBufferCapacity(jintbuf);
-        rc = vbuf->getIntVec(char_key, (int*) bufptr, capacity, stride);
+        int capacity = env->GetDirectBufferCapacity(jintbuf) - ofs;
+        rc = vbuf->getIntVec(char_key, bufptr + ofs, capacity, stride);
     }
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
@@ -174,43 +185,47 @@ Java_org_gearvrf_NativeVertexBuffer_getIntVec(JNIEnv * env, jobject obj,
 
 JNIEXPORT bool JNICALL
 Java_org_gearvrf_NativeVertexBuffer_setFloatArray(JNIEnv * env, jobject obj,
-                                                jlong jvbuf, jstring attribName, jfloatArray jdata, jint stride)
+                                                jlong jvbuf, jstring attribName,
+                                                jfloatArray jdata, jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
 
-    jfloat* attribData = env->GetFloatArrayElements(jdata, 0);
+    jfloat* attribData = env->GetFloatArrayElements(jdata, 0) + ofs;
     bool rc = vbuf->setFloatVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_setFloatVec(JNIEnv * env, jobject obj,
-                                                jlong jvbuf, jstring attribName, jobject jfloatbuf, jint stride)
+Java_org_gearvrf_NativeVertexBuffer_setFloatVec(JNIEnv* env, jobject obj,
+                                                jlong jvbuf, jstring attribName,
+                                                jobject jfloatbuf, jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
-    void* bufptr = env->GetDirectBufferAddress(jfloatbuf);
+    float* bufptr = (float*) env->GetDirectBufferAddress(jfloatbuf) + ofs;
     bool rc = false;
     if (bufptr)
     {
-        int capacity = env->GetDirectBufferCapacity(jfloatbuf);
-        rc = vbuf->setFloatVec(char_key, (float *) bufptr, capacity, stride);
+        int capacity = env->GetDirectBufferCapacity(jfloatbuf) - ofs;
+        rc = vbuf->setFloatVec(char_key, bufptr + ofs, capacity, stride);
     }
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }
 
 JNIEXPORT bool JNICALL
-Java_org_gearvrf_NativeVertexBuffer_setIntVec(JNIEnv * env, jobject obj,
-                                              jlong jvbuf, jstring attribName, jintArray jdata, jint stride)
+Java_org_gearvrf_NativeVertexBuffer_setIntVec(JNIEnv* env, jobject obj,
+                                              jlong jvbuf, jstring attribName,
+                                              jintArray jdata, jint stride, jint ofs)
 {
     VertexBuffer* vbuf = reinterpret_cast<VertexBuffer*>(jvbuf);
     const char* char_key = env->GetStringUTFChars(attribName, 0);
 
-    jint* attribData = env->GetIntArrayElements(jdata, 0);
-    bool rc = vbuf->setIntVec(char_key, attribData, static_cast<int>(env->GetArrayLength(jdata)), stride);
+    jint* attribData = env->GetIntArrayElements(jdata, 0) + ofs;
+    int n = static_cast<int>(env->GetArrayLength(jdata));
+    bool rc = vbuf->setIntVec(char_key, attribData, n - ofs, stride);
     env->ReleaseStringUTFChars(attribName, char_key);
     return rc;
 }

@@ -58,7 +58,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
         size *= 4 * getVertexCount();
         ByteBuffer buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         FloatBuffer data = buffer.asFloatBuffer();
-        if (!NativeVertexBuffer.getFloatVec(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.getFloatVec(getNative(), attributeName, data, 0, 0))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
         }
@@ -85,7 +85,7 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
         size *= 4 * getVertexCount();
         ByteBuffer buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         IntBuffer data = buffer.asIntBuffer();
-        if (!NativeVertexBuffer.getIntVec(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.getIntVec(getNative(), attributeName, data, 0, 0))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be accessed");
         }
@@ -125,7 +125,38 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
      */
     public void setIntArray(String attributeName, int[] data)
     {
-        if (!NativeVertexBuffer.setIntArray(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.setIntArray(getNative(), attributeName, data, 0, 0))
+        {
+            throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
+        }
+    }
+
+    /**
+     * Updates a vertex attribute from an integer array.
+     * All of the entries of the input integer array are copied into
+     * the storage for the named vertex attribute. Other vertex
+     * attributes are not affected.
+     * The attribute name must be one of the attributes named
+     * in the descriptor passed to the constructor.
+     * <p>
+     * All vertex attributes have the same number of entries.
+     * If this is the first attribute added to the vertex buffer,
+     * the size of the input data array will determine the number of vertices.
+     * Updating subsequent attributes will fail if the data array
+     * size is not consistent. For example, if you create a vertex
+     * buffer with descriptor "float3 a_position float2 a_texcoord"
+     * and provide an array of 12 floats for "a_position" this will result in
+     * a vertex count of 4. The corresponding data array for the
+     * "a_texcoord" attribute should contain 8 floats.
+     * @param attributeName name of the attribute to update
+     * @param data integer array containing the new values
+     * @param stride number of ints in the attribute
+     * @param offset offset from start of array of where to start copying source data
+     * @throws IllegalArgumentException if attribute name not in descriptor or int array is wrong size
+     */
+    public void setIntArray(String attributeName, int[] data, int stride, int offset)
+    {
+        if (!NativeVertexBuffer.setIntArray(getNative(), attributeName, data, stride, offset))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
         }
@@ -154,7 +185,38 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
      */
     public void setFloatArray(String attributeName, float[] data)
     {
-        if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data, 0, 0))
+        {
+            throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
+        }
+    }
+
+    /**
+     * Updates a vertex attribute from a float array.
+     * All of the entries of the input float array are copied into
+     * the storage for the named vertex attribute. Other vertex
+     * attributes are not affected.
+     * The attribute name must be one of the attributes named
+     * in the descriptor passed to the constructor.
+     * <p>
+     * All vertex attributes have the same number of entries.
+     * If this is the first attribute added to the vertex buffer,
+     * the size of the input data array will determine the number of vertices.
+     * Updating subsequent attributes will fail if the data array
+     * size is not consistent. For example, if you create a vertex
+     * buffer with descriptor "float3 a_position float2 a_texcoord"
+     * and provide an array of 12 floats for "a_position" this will result in
+     * a vertex count of 4. The corresponding data array for the
+     * "a_texcoord" attribute should contain 8 floats.
+     * @param attributeName name of the attribute to update
+     * @param data float array containing the new values
+     * @param stride number of floats in the attribute
+     * @param offset offset from start of array of where to start copying source data
+     * @throws IllegalArgumentException if attribute name not in descriptor or float array is wrong size
+     */
+    public void setFloatArray(String attributeName, float[] data, int stride, int offset)
+    {
+        if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data, stride, offset))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
         }
@@ -185,14 +247,59 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
     {
         if (data.isDirect())
         {
-            if (!NativeVertexBuffer.setFloatVec(getNative(), attributeName, data, 0))
+            if (!NativeVertexBuffer.setFloatVec(getNative(), attributeName, data, 0, 0))
             {
                 throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
             }
         }
         else if (data.hasArray())
         {
-            if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data.array(), 0))
+            if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data.array(), 0, 0))
+            {
+                throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
+            }
+        }
+        else
+        {
+            throw new UnsupportedOperationException("FloatBuffer type not supported. must be direct or have backing array");
+        }
+    }
+
+    /**
+     * Updates a vertex attribute from a float buffer.
+     * All of the entries of the input float buffer are copied into
+     * the storage for the named vertex attribute. Other vertex
+     * attributes are not affected.
+     * The attribute name must be one of the attributes named
+     * in the descriptor passed to the constructor.
+     * <p>
+     * All vertex attributes have the same number of entries.
+     * If this is the first attribute added to the vertex buffer,
+     * the size of the input data buffer will determine the number of vertices.
+     * Updating subsequent attributes will fail if the data buffer
+     * size is not consistent. For example, if you create a vertex
+     * buffer with descriptor "float3 a_position float2 a_texcoord"
+     * and provide an data buffer of 12 floats for "a_position" this will result in
+     * a vertex count of 4. The corresponding data buffer for the
+     * "a_texcoord" attribute should contain 8 floats.
+     * @param attributeName name of the attribute to update
+     * @param data float buffer containing the new values
+     * @param stride number of floats in the attribute
+     * @param offset offset from start of array of where to start copying source data
+     * @throws IllegalArgumentException if attribute name not in descriptor or float buffer is wrong size
+     */
+    public void setFloatVec(String attributeName, FloatBuffer data, int stride, int offset)
+    {
+        if (data.isDirect())
+        {
+            if (!NativeVertexBuffer.setFloatVec(getNative(), attributeName, data, stride, offset))
+            {
+                throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
+            }
+        }
+        else if (data.hasArray())
+        {
+            if (!NativeVertexBuffer.setFloatArray(getNative(), attributeName, data.array(), stride, offset))
             {
                 throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
             }
@@ -226,7 +333,38 @@ public class GVRVertexBuffer extends GVRHybridObject implements PrettyPrint
      */
     public void setIntVec(String attributeName, IntBuffer data)
     {
-        if (!NativeVertexBuffer.setIntVec(getNative(), attributeName, data, 0))
+        if (!NativeVertexBuffer.setIntVec(getNative(), attributeName, data, 0, 0))
+        {
+            throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
+        }
+    }
+
+    /**
+     * Updates a vertex attribute from an integer  buffer.
+     * All of the entries of the input buffer are copied into
+     * the storage for the named vertex attribute. Other vertex
+     * attributes are not affected.
+     * The attribute name must be one of the attributes named
+     * in the descriptor passed to the constructor.
+     * <p>
+     * All vertex attributes have the same number of entries.
+     * If this is the first attribute added to the vertex buffer,
+     * the size of the input data array will determine the number of vertices.
+     * Updating subsequent attributes will fail if the data array
+     * size is not consistent. For example, if you create a vertex
+     * buffer with descriptor "... float4 a_bone_weights int4 a_bone_indices"
+     * and provide an array of 16 ints this will result in
+     * a vertex count of 4. The corresponding data array for the
+     * "a_bone_indices" attribute should also contain 16 floats.
+     * @param attributeName name of the attribute to update
+     * @param data IntBuffer containing the new values
+     * @param stride number of ints in the attribute
+     * @param offset offset from start of array of where to start copying source data
+     * @throws IllegalArgumentException if attribute name not in descriptor or buffer is wrong size
+     */
+    public void setIntVec(String attributeName, IntBuffer data, int stride, int offset)
+    {
+        if (!NativeVertexBuffer.setIntVec(getNative(), attributeName, data, stride, offset))
         {
             throw new IllegalArgumentException("Attribute name " + attributeName + " cannot be updated");
         }
@@ -306,21 +444,21 @@ class NativeVertexBuffer {
 
     static native boolean isSet(long vbuf, String name);
 
-    static native boolean getIntVec(long vbuf, String name, IntBuffer data, int stride);
+    static native boolean getIntVec(long vbuf, String name, IntBuffer data, int stride, int offset);
 
-    static native boolean setIntVec(long vbuf, String name, IntBuffer data, int stride);
+    static native boolean setIntVec(long vbuf, String name, IntBuffer data, int stride, int offset);
 
-    static native boolean getFloatVec(long vbuf, String name, FloatBuffer data, int stride);
+    static native boolean getFloatVec(long vbuf, String name, FloatBuffer data, int stride, int offset);
 
     static native float[] getFloatArray(long vbuf, String name);
 
     static native int[] getIntArray(long vbuf, String name);
 
-    static native boolean setIntArray(long vbuf, String name, int[] data, int stride);
+    static native boolean setIntArray(long vbuf, String name, int[] data, int stride, int offset);
 
-    static native boolean setFloatVec(long vbuf, String name, FloatBuffer data, int stride);
+    static native boolean setFloatVec(long vbuf, String name, FloatBuffer data, int stride, int offset);
 
-    static native boolean setFloatArray(long vbuf, String name, float[] data, int stride);
+    static native boolean setFloatArray(long vbuf, String name, float[] data, int stride, int offset);
 
     static native int  getAttributeSize(long vbuf, String name);
 

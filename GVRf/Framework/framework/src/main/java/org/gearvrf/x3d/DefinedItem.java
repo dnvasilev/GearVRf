@@ -17,6 +17,7 @@ package org.gearvrf.x3d;
 
 import java.util.concurrent.Future;
 
+import org.gearvrf.GVRIndexBuffer;
 import org.gearvrf.GVRMaterial;
 
 /*
@@ -29,6 +30,7 @@ import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRRenderData;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.GVRTexture;
+import org.gearvrf.GVRVertexBuffer;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 
@@ -51,6 +53,8 @@ public class DefinedItem {
 
     private String name = "";
     private GVRMesh gvrMesh = null;
+    private GVRIndexBuffer gvrIndexBuffer = null;
+    private GVRVertexBuffer gvrVertexBuffer = null;
     private GVRSceneObject gvrSceneObject = null;
     private GVRTexture gvrTexture = null;
     private GVRRenderData gvrRenderData = null;
@@ -153,6 +157,14 @@ public class DefinedItem {
     public GVRMesh getGVRMesh() {
         return this.gvrMesh;
     }
+
+    public void setVertexBuffer(GVRVertexBuffer vbuf) { gvrVertexBuffer = vbuf; }
+
+    public GVRVertexBuffer getVertexBuffer() { return gvrVertexBuffer; }
+
+    public void setIndexBuffer(GVRIndexBuffer ibuf) { gvrIndexBuffer = ibuf; }
+
+    public GVRIndexBuffer getIndexBuffer() { return gvrIndexBuffer; }
 
     public void setGVRMaterial(GVRMaterial gvrMaterial) {
         this.gvrMaterial = gvrMaterial;
