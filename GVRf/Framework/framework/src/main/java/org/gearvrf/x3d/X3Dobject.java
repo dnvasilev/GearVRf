@@ -362,6 +362,7 @@ public class X3Dobject {
                     int v2Index = faces[f + 1] * 3;
                     int v3Index = faces[f + 2] * 3;
 
+                    mInputNormals.get(f * 3, normal);
                     normals[v1Index] += normal.x;
                     normals[v1Index + 1] += normal.y;
                     normals[v1Index + 2] += normal.z;
@@ -676,9 +677,9 @@ public class X3Dobject {
 
     private Vector<TimeSensor> timeSensors = new Vector<TimeSensor>();
     private Vector<Interpolator> interpolators = new Vector<Interpolator>();
-    private MeshCreator meshCreator = null;
-    private Vector<InlineObject> inlineObjects = new Vector<InlineObject>();
 
+    private Vector<InlineObject> inlineObjects = new Vector<InlineObject>();
+    private MeshCreator meshCreator = null;
 
     /**
      * public list of <Viewpoints> since camera position can be
