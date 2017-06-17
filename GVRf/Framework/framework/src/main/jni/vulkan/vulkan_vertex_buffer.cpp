@@ -12,6 +12,7 @@ namespace gvr {
     VulkanVertexBuffer::VulkanVertexBuffer(const char* layout_desc, int vertexCount)
     : VertexBuffer(layout_desc, vertexCount)
     {
+        mVerticesMap.clear();
     }
 
     VulkanVertexBuffer::~VulkanVertexBuffer()
@@ -32,15 +33,22 @@ namespace gvr {
             ibuf->updateGPU(renderer);
         }
     }
+    const GVR_VK_Vertices* VulkanVertexBuffer::getVKVertices(Shader* shader)  {
+        std::unordered_map<Shader*,std::shared_ptr<GVR_VK_Vertices>>::iterator it;
+        if((it = mVerticesMap.find(shader)) == mVerticesMap.end())
+            LOGE("vertex buffer not created");
 
+        return (it->second).get();
+    }
     void VulkanVertexBuffer::generateVKBuffers(VulkanCore* vulkanCore, Shader* shader)
     {
-        if (!isDirty())
+
+        if(mVerticesMap.find(shader) != mVerticesMap.end() && !isDirty())
             return;
 
         VkResult   err;
         bool   pass;
-
+        std::shared_ptr<GVR_VK_Vertices> vertices(new GVR_VK_Vertices);
         // Our m_vertices member contains the types required for storing
         // and defining our vertex buffer within the graphics pipeline
 
@@ -57,12 +65,12 @@ namespace gvr {
         bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferCreateInfo.flags = 0;
         //err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &m_vertices.buf);
-        err = vkCreateBuffer(device, gvr::BufferCreateInfo(bufferByteSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), nullptr, &m_vertices.buf);
+        err = vkCreateBuffer(device, gvr::BufferCreateInfo(bufferByteSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), nullptr, &(vertices->buf));
         GVR_VK_CHECK(!err);
 
         // Obtain the memory requirements for this buffer.
         VkMemoryRequirements mem_reqs;
-        vkGetBufferMemoryRequirements(device, m_vertices.buf, &mem_reqs);
+        vkGetBufferMemoryRequirements(device, vertices->buf, &mem_reqs);
         GVR_VK_CHECK(!err);
 
         // And allocate memory according to those requirements.
@@ -100,10 +108,10 @@ namespace gvr {
         // Create Device memory optimal
         pass = vulkanCore->GetMemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryAllocateInfo.memoryTypeIndex);
         GVR_VK_CHECK(pass);
-        err = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &m_vertices.mem);
+        err = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &vertices->mem);
         GVR_VK_CHECK(!err);
         // Bind our buffer to the memory.
-        err = vkBindBufferMemory(device, m_vertices.buf, m_vertices.mem, 0);
+        err = vkBindBufferMemory(device, vertices->buf, vertices->mem, 0);
         GVR_VK_CHECK(!err);
 
         VkCommandBufferBeginInfo beginInfo = {};
@@ -114,7 +122,7 @@ namespace gvr {
         copyRegion.srcOffset = 0; // Optional
         copyRegion.dstOffset = 0; // Optional
         copyRegion.size = bufferCreateInfo.size;
-        vkCmdCopyBuffer(trnCmdBuf, buf_staging_vert, m_vertices.buf, 1, &copyRegion);
+        vkCmdCopyBuffer(trnCmdBuf, buf_staging_vert, vertices->buf, 1, &copyRegion);
         vkEndCommandBuffer(trnCmdBuf);
 
         VkSubmitInfo submitInfo = {};
@@ -126,52 +134,14 @@ namespace gvr {
         vkQueueWaitIdle(vulkanCore->getVkQueue());
         vkFreeCommandBuffers(device, vulkanCore->getTransientCmdPool(), 1, &trnCmdBuf);
 
-      /*  m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        m_vertices.vi.pNext = nullptr;
-        // check this
-        m_vertices.vi.vertexBindingDescriptionCount = 1;
-        m_vertices.vi.pVertexBindingDescriptions = &m_vertices.vi_bindings;
-
-        m_vertices.vi_bindings.binding = 0;
-
-        m_vertices.vi_bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        LOGE("attrMapping.size() %d, total_size= %d", mLayout.size(), bufferByteSize);
-        int i = 0;
-        int stride = 0;
-        forEachEntry([this, i, &stride](const DataEntry& e) mutable {
-            if (e.IsSet){
-                stride += e.Size;
-            }
-        });
-
-        m_vertices.vi_bindings.stride = 32;
-
-
-        forEachEntry([this, i](const DataEntry& e) mutable
-                     {
-                         if (e.IsSet && std::strstr(e.Name, "normal") == NULL)
-                         {
-                             VkVertexInputAttributeDescription binding;
-                             binding.binding = GVR_VK_VERTEX_BUFFER_BIND_ID;
-                             binding.location = e.Index;
-                             LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
-                             binding.format = getDataType(e.Type); //float3
-                             binding.offset = e.Offset;
-                             m_vertices.vi_attrs.push_back(binding);
-                             i++;
-                         }
-                     });
-        m_vertices.vi.vertexAttributeDescriptionCount = mLayout.size() - 1;
-        m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs.data();
-*/
         // The vertices need to be defined so that the pipeline understands how the
         // data is laid out. This is done by providing a VkPipelineVertexInputStateCreateInfo
         // structure with the correct information.
-        m_vertices.vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        m_vertices.vi.pNext = nullptr;
+        vertices->vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertices->vi.pNext = nullptr;
         int i = 0;
 
-        shader->getVertexDescriptor().forEachEntry([this, &i](const DataDescriptor::DataEntry &e)
+        shader->getVertexDescriptor().forEachEntry([this, &i, &vertices](const DataDescriptor::DataEntry &e)
         {
             LOGV("VertexBuffer::bindToShader find %s", e.Name);
             const DataDescriptor::DataEntry* entry = find(e.Name);
@@ -186,7 +156,7 @@ namespace gvr {
                     LOGE("location %d attrMapping[i].offset %d , name %s", e.Index, e.Offset, e.Name);
                     binding.format = getDataType(e.Type); //float3
                     binding.offset = e.Offset;
-                    m_vertices.vi_attrs.push_back(binding);
+                    vertices->vi_attrs.push_back(binding);
                     i++;
                 }
                 else                                // mesh uses attribute but shader does not
@@ -197,15 +167,15 @@ namespace gvr {
 
             }
         });
-        m_vertices.vi_bindings.stride = mTotalSize;
-        m_vertices.vi.vertexAttributeDescriptionCount = i;
-        m_vertices.vi.pVertexAttributeDescriptions = m_vertices.vi_attrs.data();
-        m_vertices.vi.vertexBindingDescriptionCount = 1;
-        m_vertices.vi.pVertexBindingDescriptions = &m_vertices.vi_bindings;
-        m_vertices.vi_bindings.binding = 0;
-        m_vertices.vi_bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        vertices->vi_bindings.stride = mTotalSize;
+        vertices->vi.vertexAttributeDescriptionCount = i;
+        vertices->vi.pVertexAttributeDescriptions = vertices->vi_attrs.data();
+        vertices->vi.vertexBindingDescriptionCount = 1;
+        vertices->vi.pVertexBindingDescriptions = &vertices->vi_bindings;
+        vertices->vi_bindings.binding = 0;
+        vertices->vi_bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-
+        mVerticesMap[shader] = vertices;
         mIsDirty = false;
     }
 

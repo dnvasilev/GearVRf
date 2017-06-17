@@ -663,10 +663,6 @@ namespace gvr
         GLRenderData* rdata = static_cast<GLRenderData*>(render_data);
         int drawMode = render_data->draw_mode();
         Transform* model = render_data->owner_object() ? render_data->owner_object()->transform() : nullptr;
-        const char* ext =(const char *) glGetString(GL_EXTENSIONS);
-        if(strstr(ext,"GL_ANDROID_extension_pack_es31a")!=NULL){
-     //       LOGE("it is present");
-        }
         try
         {
             shader->useShader();

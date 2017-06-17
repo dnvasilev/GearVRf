@@ -108,7 +108,7 @@ public:
     }
     int AcquireNextImage();
 
-    void InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int);
+    void InitPipelineForRenderData(const GVR_VK_Vertices *m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int);
 
 
     bool GetMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask,

@@ -77,6 +77,9 @@ namespace gvr {
         std::lock_guard<std::mutex> lock(mLock);
         for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
         {
+            if(*it == NULL)
+                continue;
+
             const std::string& name = mTextureNames[it - mTextures.begin()];
             func(name.c_str(), *it);
         }

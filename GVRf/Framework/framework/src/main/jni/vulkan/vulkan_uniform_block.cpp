@@ -36,7 +36,7 @@ namespace gvr {
         writeDescriptorSet = *writeInfo;
 
     }
-    VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
+    const VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
           return writeDescriptorSet;
     }
 

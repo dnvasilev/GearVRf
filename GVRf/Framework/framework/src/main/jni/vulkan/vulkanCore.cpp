@@ -23,6 +23,7 @@
 #include "vulkan/vk_framebuffer.h"
 #include "vulkan/vk_render_to_texture.h"
 #define CUSTOM_TEXTURE
+#define TEXTURE_BIND_START 4
 #define QUEUE_INDEX_MAX 99999
 #define VERTEX_BUFFER_BIND_ID 0
 std::string data_frag = std::string("") +
@@ -749,7 +750,7 @@ namespace gvr {
 
     }
 
-    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices &m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int pass) {
+    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int pass) {
         VkResult err;
 
 
@@ -758,7 +759,7 @@ namespace gvr {
         // Our vertex input is a single vertex buffer, and its layout is defined
         // in our m_vertices object already. Use this when creating the pipeline.
         VkPipelineVertexInputStateCreateInfo vi = {};
-        vi = m_vertices.vi;
+        vi = m_vertices->vi;
 
         // For this example we do not do blending, so it is disabled.
         VkPipelineColorBlendAttachmentState att_state[1] = {};
@@ -800,10 +801,12 @@ namespace gvr {
         pipelineCreateInfo.pVertexInputState = &vi;
         pipelineCreateInfo.pInputAssemblyState = gvr::PipelineInputAssemblyStateCreateInfo(
                 getTopology(rdata->draw_mode()));
+
+        VkCullModeFlagBits cull_face = (rdata->cull_face(pass) ==  RenderData::CullBack) ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
         pipelineCreateInfo.pRasterizationState = gvr::PipelineRasterizationStateCreateInfo(VK_FALSE,
                                                                                            VK_FALSE,
                                                                                            VK_POLYGON_MODE_FILL,
-                                                                                           VK_CULL_MODE_BACK_BIT,
+                                                                                           cull_face,
                                                                                            VK_FRONT_FACE_CLOCKWISE,
                                                                                            VK_FALSE,
                                                                                            0, 0, 0,
@@ -978,16 +981,15 @@ namespace gvr {
 
             for(int curr_pass =0 ;curr_pass < rdata->pass_count(); curr_pass++) {
 
-               const VulkanRenderPass* renderPass = static_cast<const VulkanRenderPass*>(rdata->pass(curr_pass));
                vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                renderPass->getVKPipeline() );
+                                rdata->getVKPipeline(curr_pass) );
 
-               VulkanShader *shader = reinterpret_cast<VulkanShader *>(shader_manager->getShader(
-                       rdata->get_shader()));
+                VulkanShader *shader = reinterpret_cast<VulkanShader *>(shader_manager->getShader(
+                       rdata->get_shader(curr_pass)));
 
-                VkDescriptorSet descriptorSet = renderPass->getDescriptorSet();
+                VkDescriptorSet descriptorSet = rdata->getDescriptorSet(curr_pass);
                //bind out descriptor set, which handles our uniforms and samplers
-               if (!renderPass->isDescriptorSetNull())
+               if (!rdata->isDescriptorSetNull(curr_pass))
                    vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                            shader->getPipelineLayout(), 0, 1,
                                            &descriptorSet, 0, NULL);
@@ -995,12 +997,12 @@ namespace gvr {
                // Bind our vertex buffer, with a 0 offset.
                VkDeviceSize offsets[1] = {0};
                const Mesh *mesh = rdata->mesh();
-               const VulkanVertexBuffer *vbuf = reinterpret_cast<const VulkanVertexBuffer *>(mesh->getVertexBuffer());
+                VulkanVertexBuffer *vbuf = reinterpret_cast< VulkanVertexBuffer *>(mesh->getVertexBuffer());
                const VulkanIndexBuffer *ibuf = reinterpret_cast<const VulkanIndexBuffer *>(mesh->getIndexBuffer());
-               const GVR_VK_Vertices &vert = (vbuf->getVKVertices());
+               const GVR_VK_Vertices *vert = (vbuf->getVKVertices(shader));
                const GVR_VK_Indices &ind = ibuf->getVKIndices();
 
-               vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert.buf), offsets);
+               vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert->buf), offsets);
 
                // Bind triangle index buffer
                VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16
@@ -1084,7 +1086,7 @@ namespace gvr {
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(vkData->material(pass));
 
         if ((textureDescriptor.getNumEntries() == 0) && uniformDescriptor.getNumEntries() == 0 && !transformUboPresent) {
-            vkData->setDescriptorSetNull(true,pass);
+        //    vkData->setDescriptorSetNull(true,pass);
             return true;
         }
         VulkanShader* vkShader = reinterpret_cast<VulkanShader*>(shader);
@@ -1098,6 +1100,14 @@ namespace gvr {
 
         if (uniformDescriptor.getNumEntries())
             poolSize.push_back(pool);
+
+        bool bones_present = shader->getVertexDescriptor().isSet("a_bone_weights");
+        if(vkData->mesh()->hasBones() && bones_present)
+            poolSize.push_back(pool);
+
+        /*
+         * TODO: if has shadow-map add pool for that
+         */
 
         pool = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
 
@@ -1132,20 +1142,26 @@ namespace gvr {
         GVR_VK_CHECK(!err);
         vkData->setDescriptorSet(descriptorSet,pass);
 
-        VkWriteDescriptorSet &transform_desc = vkData->getTransformUbo().getDescriptorSet();
-        transform_desc.dstSet = descriptorSet;
+        if (transformUboPresent) {
+            vkData->getTransformUbo().setDescriptorSet(descriptorSet);
+            writes.push_back(vkData->getTransformUbo().getDescriptorSet());
+        }
 
-        VkWriteDescriptorSet &mat_desc = static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).getDescriptorSet();
-        mat_desc.dstSet = descriptorSet;
+        if (uniformDescriptor.getNumEntries()) {
+            static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).setDescriptorSet(descriptorSet);
+            writes.push_back(static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).getDescriptorSet());
+        }
 
-        if (transformUboPresent)
-            writes.push_back(transform_desc);
+        if(vkData->mesh()->hasBones() && bones_present){
+            static_cast<VulkanUniformBlock*>(vkData->getBonesUbo())->setDescriptorSet(descriptorSet);
+            writes.push_back(static_cast<VulkanUniformBlock*>(vkData->getBonesUbo())->getDescriptorSet());
+        }
 
-        if (uniformDescriptor.getNumEntries())
-            writes.push_back(mat_desc);
+        // TODO: add shadowmap descriptor
 
-        vkShader->bindTextures(vkmtl, writes,  descriptorSet, writes.size());
+        vkShader->bindTextures(vkmtl, writes,  descriptorSet, TEXTURE_BIND_START);
         vkUpdateDescriptorSets(m_device, writes.size(), writes.data(), 0, nullptr);
+        vkData->setDescriptorSetNull(false,pass);
         LOGI("Vulkan after update descriptor");
         return true;
     }
