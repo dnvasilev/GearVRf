@@ -158,16 +158,21 @@ namespace gvr {
         if (srcStride == 0)
         {
             srcStride = attrStride;
+            nverts = srcSize / srcStride;           // # of vertices in input array
+            if (!setVertexCount(nverts))
+            {
+                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+                return false;
+            }
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
-        nverts = srcSize / srcStride;               // # of vertices in input array
-        if (!setVertexCount(nverts))
+        else if (mVertexCount > srcSize / srcStride)
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+            LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
             return false;
         }
         dest = reinterpret_cast<float*>(mVertexData) + attr->Offset / sizeof(float);
@@ -269,24 +274,30 @@ namespace gvr {
             LOGE("VertexBuffer: cannot set attribute %s, source array not found", attributeName);
             return false;
         }
+        attrStride = attr->Size / sizeof(int);
         if (srcStride == 0)
         {
-            srcStride = attrStride;         // # of ints in vertex attribute
+            srcStride = attrStride;
+            nverts = srcSize / srcStride;           // # of vertices in input array
+            if (!setVertexCount(nverts))
+            {
+                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+                return false;
+            }
         }
-        else if (attrStride > srcStride)    // stride too small for this attribute?
+        else if (attrStride > srcStride)            // stride too small for this attribute?
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
-        nverts = srcSize / srcStride;       // # of vertices in input array
-        if  (!setVertexCount(nverts))
+        else if (mVertexCount > srcSize / srcStride)
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+            LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
             return false;
         }
+
         dest = reinterpret_cast<int*>(mVertexData) + attr->Offset / sizeof(int);
         dstStride = getTotalSize() / sizeof(int);
-        attrStride = attr->Size / sizeof(int);
         srcend = src + srcSize;
 
         for (int i = 0; i < mVertexCount; ++i)
