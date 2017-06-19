@@ -103,9 +103,6 @@ void modifyShader(std::string& shader)
 
             mod_shader += ((pos > 0) ? line.substr(0, pos) : "") + line.substr(it1->second) + "\n";
         }
-            else if((it = tokens.find("uniform"))!=tokens.end() && tokens.find("Bones_ubo")!=tokens.end()){
-            mod_shader+= "layout (std140) " + line.substr(it->second) + "\n";
-        }
         else
             {
             mod_shader += line + "\n";

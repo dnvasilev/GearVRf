@@ -763,8 +763,9 @@ namespace gvr {
 
         // For this example we do not do blending, so it is disabled.
         VkPipelineColorBlendAttachmentState att_state[1] = {};
-        att_state[0].colorWriteMask = 0xf;
-        att_state[0].blendEnable = VK_FALSE;
+        bool disable_color_depth_write = rdata->stencil_test() && (RenderData::Queue::Stencil == rdata->rendering_order());
+        att_state[0].colorWriteMask = disable_color_depth_write ? 0x0 : 0xf;
+        att_state[0].blendEnable =  VK_FALSE;
 
 
         VkViewport viewport = {};
@@ -818,8 +819,8 @@ namespace gvr {
                 VK_NULL_HANDLE, VK_NULL_HANDLE);
         pipelineCreateInfo.pViewportState = gvr::PipelineViewportStateCreateInfo(1, &viewport, 1,
                                                                                  &scissor);
-        pipelineCreateInfo.pDepthStencilState = gvr::PipelineDepthStencilStateCreateInfo(VK_TRUE,
-                                                                                         VK_TRUE,
+        pipelineCreateInfo.pDepthStencilState = gvr::PipelineDepthStencilStateCreateInfo(rdata->depth_test() ? VK_TRUE : VK_FALSE,
+                                                                                         disable_color_depth_write ? VK_FALSE: VK_TRUE,
                                                                                          VK_COMPARE_OP_LESS_OR_EQUAL,
                                                                                          VK_FALSE,
                                                                                          VK_STENCIL_OP_KEEP,

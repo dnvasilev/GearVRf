@@ -20,11 +20,7 @@ layout(location = 2) in vec3 a_normal;
 
 
 #ifdef HAS_VertexSkinShader
-
-layout (std140, set = 0, binding = 2) uniform Bones_ubo
-{
-    mat4 u_bone_matrix[60];
-};
+@BONES_UNIFORMS
 
 layout(location = 6) in vec4 a_bone_weights;
 layout(location = 7) in ivec4 a_bone_indices;
