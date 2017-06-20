@@ -129,7 +129,13 @@ public class GVRMaterial extends  GVRShaderData
 
         public abstract static class PhongLayered {
             public static final GVRShaderId ID = new GVRShaderId(GVRPhongLayeredShader.class);
-        }    };
+        }
+
+        public abstract static class VerticalFlip {
+            public static final GVRShaderId ID = new GVRShaderId(GVRVerticalFlipShader.class);
+        }
+
+    };
 
     /**
      * A new holder for a shader's uniforms.

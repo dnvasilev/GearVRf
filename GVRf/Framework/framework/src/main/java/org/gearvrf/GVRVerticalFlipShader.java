@@ -32,9 +32,9 @@ import org.gearvrf.utility.TextFile;
  *     u_texture    texture to blend
  * </code>
  */
-public class GVRHorizontalFlipShader extends GVRShaderTemplate
+public class GVRVerticalFlipShader extends GVRShaderTemplate
 {
-    public GVRHorizontalFlipShader(GVRContext ctx)
+    public GVRVerticalFlipShader(GVRContext ctx)
     {
         super("float3 u_color float u_factor", "sampler2D u_texture", "float3 a_position float2 a_texcoord", 300);
         Context context = ctx.getContext();
@@ -45,6 +45,6 @@ public class GVRHorizontalFlipShader extends GVRShaderTemplate
     protected void setMaterialDefaults(GVRShaderData material)
     {
         material.setVec3("u_color", 1, 1, 1);
-        material.setFloat("u_factor", 1);
+        material.setFloat("u_factor", 0);
     }
 }
