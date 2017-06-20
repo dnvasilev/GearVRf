@@ -20,10 +20,12 @@ layout(location = 2) in vec3 a_normal;
 
 
 #ifdef HAS_VertexSkinShader
+#ifdef HAS_a_bone_weights
 @BONES_UNIFORMS
 
 layout(location = 6) in vec4 a_bone_weights;
 layout(location = 7) in ivec4 a_bone_indices;
+#endif
 #endif
 
 #ifdef HAS_VertexNormalShader

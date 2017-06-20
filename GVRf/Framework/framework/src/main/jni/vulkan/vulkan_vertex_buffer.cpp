@@ -161,7 +161,7 @@ namespace gvr {
                 }
                 else                                // mesh uses attribute but shader does not
                 {
-                    LOGE("entry is not present");
+                    LOGE("entry is not present %s", e.Name);
 
                 }
 

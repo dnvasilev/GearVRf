@@ -556,9 +556,9 @@ namespace gvr {
         shader->setShaderDirty(false);
     }
 
-    VkRenderPass* getShadowRenderPass(VkDevice device){
+    VkRenderPass getShadowRenderPass(VkDevice device){
 
-        VkRenderPass* renderPass = new VkRenderPass();
+        VkRenderPass renderPass;
         VkAttachmentDescription attachmentDescription{};
         attachmentDescription.format = VK_FORMAT_D32_SFLOAT;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -599,21 +599,21 @@ namespace gvr {
 
         vkCreateRenderPass(device, gvr::RenderPassCreateInfo(0, (uint32_t) 1, &attachmentDescription,
                                                              1, &subpass, (uint32_t) dependencies.size(),
-                                                             dependencies.data()), nullptr, renderPass);
+                                                             dependencies.data()), nullptr, &renderPass);
         return renderPass;
     }
 
-    VkRenderPass* VulkanCore::createVkRenderPass(RenderPassType render_pass_type, int sample_count){
+    VkRenderPass VulkanCore::createVkRenderPass(RenderPassType render_pass_type, int sample_count){
 
         if(mRenderPassMap[SHADOW_RENDERPASS])
             return mRenderPassMap[SHADOW_RENDERPASS];
 
         if(render_pass_type == SHADOW_RENDERPASS){
-            VkRenderPass* render_pass = getShadowRenderPass(m_device);
+            VkRenderPass render_pass = getShadowRenderPass(m_device);
             mRenderPassMap[SHADOW_RENDERPASS] = render_pass;
             return render_pass;
         }
-        VkRenderPass* renderPass = new VkRenderPass();
+        VkRenderPass renderPass;
         VkAttachmentDescription attachmentDescriptions[2] = {};
         attachmentDescriptions[0].flags = 0;
         attachmentDescriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;//.format;
@@ -662,7 +662,7 @@ namespace gvr {
         vkCreateRenderPass(m_device,
                            gvr::RenderPassCreateInfo(0, (uint32_t) 2, attachmentDescriptions,
                                                      1, &subpassDescription, (uint32_t) 0,
-                                                     nullptr), nullptr, renderPass);
+                                                     nullptr), nullptr, &renderPass);
         mRenderPassMap[NORMAL_RENDERPASS] = renderPass;
         return renderPass;
     }
@@ -742,104 +742,118 @@ namespace gvr {
                 return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
             case GL_TRIANGLE_STRIP:
                 return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
+            case GL_LINES:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case GL_LINE_STRIP:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             default:
                 LOGE("incorrect Draw Type");
                 return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         }
 
     }
-
-    void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int pass) {
-        VkResult err;
-
-
-        // The pipeline contains all major state for rendering.
-
-        // Our vertex input is a single vertex buffer, and its layout is defined
-        // in our m_vertices object already. Use this when creating the pipeline.
-        VkPipelineVertexInputStateCreateInfo vi = {};
-        vi = m_vertices->vi;
-
-        // For this example we do not do blending, so it is disabled.
-        VkPipelineColorBlendAttachmentState att_state[1] = {};
-        bool disable_color_depth_write = rdata->stencil_test() && (RenderData::Queue::Stencil == rdata->rendering_order());
-        att_state[0].colorWriteMask = disable_color_depth_write ? 0x0 : 0xf;
-        att_state[0].blendEnable =  VK_FALSE;
+void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, VulkanRenderData *rdata, VulkanShader* shader, int pass) {
+    VkResult err;
 
 
-        VkViewport viewport = {};
-        viewport.height = (float) m_height;
-        viewport.width = (float) m_width;
-        viewport.minDepth = (float) 0.0f;
-        viewport.maxDepth = (float) 1.0f;
+    // The pipeline contains all major state for rendering.
 
-        VkRect2D scissor = {};
-        scissor.extent.width = m_width;
-        scissor.extent.height = m_height;
-        scissor.offset.x = 0;
-        scissor.offset.y = 0;
+    // Our vertex input is a single vertex buffer, and its layout is defined
+    // in our m_vertices object already. Use this when creating the pipeline.
+    VkPipelineVertexInputStateCreateInfo vi = {};
+    vi = m_vertices->vi;
+
+    // For this example we do not do blending, so it is disabled.
+    VkPipelineColorBlendAttachmentState att_state[1] = {};
+    bool disable_color_depth_write = rdata->stencil_test() && (RenderData::Queue::Stencil == rdata->rendering_order());
+    att_state[0].colorWriteMask = disable_color_depth_write ? 0x0 : (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
+    att_state[0].blendEnable = VK_FALSE;
+
+    if(rdata->alpha_blend()) {
+        att_state[0].blendEnable = VK_TRUE;
+        att_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        att_state[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        att_state[0].colorBlendOp = VK_BLEND_OP_ADD;
+        att_state[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        att_state[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        att_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
+    }
+
+    VkViewport viewport = {};
+    viewport.height = (float) m_height;
+    viewport.width = (float) m_width;
+    viewport.minDepth = (float) 0.0f;
+    viewport.maxDepth = (float) 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.extent.width = m_width;
+    scissor.extent.height = m_height;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
 
 #if  0
-        std::vector<uint32_t> result_vert = CompileShader("VulkanVS", VERTEX_SHADER,
+    std::vector<uint32_t> result_vert = CompileShader("VulkanVS", VERTEX_SHADER,
                                                           vertexShaderData);//vs;//
         std::vector<uint32_t> result_frag = CompileShader("VulkanFS", FRAGMENT_SHADER,
                                                           data_frag);//fs;//
 #else
-        std::vector<uint32_t> result_vert = shader->getVkVertexShader();
-        std::vector<uint32_t> result_frag = shader->getVkFragmentShader();
+    std::vector<uint32_t> result_vert = shader->getVkVertexShader();
+    std::vector<uint32_t> result_frag = shader->getVkFragmentShader();
 #endif
-        // We define two shader stages: our vertex and fragment shader.
-        // they are embedded as SPIR-V into a header file for ease of deployment.
-        VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-        InitShaders(shaderStages,result_vert,result_frag);
-        // Out graphics pipeline records all state information, including our renderpass
-        // and pipeline layout. We do not have any dynamic state in this example.
-        VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
-        pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    // We define two shader stages: our vertex and fragment shader.
+    // they are embedded as SPIR-V into a header file for ease of deployment.
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+    InitShaders(shaderStages,result_vert,result_frag);
+    // Out graphics pipeline records all state information, including our renderpass
+    // and pipeline layout. We do not have any dynamic state in this example.
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
-        pipelineCreateInfo.layout = shader->getPipelineLayout();
-        pipelineCreateInfo.pVertexInputState = &vi;
-        pipelineCreateInfo.pInputAssemblyState = gvr::PipelineInputAssemblyStateCreateInfo(
-                getTopology(rdata->draw_mode()));
+    pipelineCreateInfo.layout = shader->getPipelineLayout();
+    pipelineCreateInfo.pVertexInputState = &vi;
+    pipelineCreateInfo.pInputAssemblyState = gvr::PipelineInputAssemblyStateCreateInfo(
+            getTopology(rdata->draw_mode()));
+    VkCullModeFlagBits cull_face = (rdata->cull_face(pass) ==  RenderData::CullBack) ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
+    ShaderData *curr_material = rdata->material(pass);
+    float line_width;
+    curr_material->getFloat("line_width", line_width);
+    pipelineCreateInfo.pRasterizationState = gvr::PipelineRasterizationStateCreateInfo(VK_FALSE,
+                                                                                       VK_FALSE,
+                                                                                       VK_POLYGON_MODE_FILL,
+                                                                                       cull_face,
+                                                                                       VK_FRONT_FACE_CLOCKWISE,
+                                                                                       VK_FALSE,
+                                                                                       0, 0, 0,
+                                                                                       line_width);
+    pipelineCreateInfo.pColorBlendState = gvr::PipelineColorBlendStateCreateInfo(1,
+                                                                                 &att_state[0]);
+    pipelineCreateInfo.pMultisampleState = gvr::PipelineMultisampleStateCreateInfo(
+            VK_SAMPLE_COUNT_1_BIT, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
+            VK_NULL_HANDLE, VK_NULL_HANDLE);
+    pipelineCreateInfo.pViewportState = gvr::PipelineViewportStateCreateInfo(1, &viewport, 1,
+                                                                             &scissor);
+    pipelineCreateInfo.pDepthStencilState = gvr::PipelineDepthStencilStateCreateInfo(rdata->depth_test() ? VK_TRUE : VK_FALSE,
+                                                                                     disable_color_depth_write ? VK_FALSE: VK_TRUE,
+                                                                                     VK_COMPARE_OP_LESS_OR_EQUAL,
+                                                                                     VK_FALSE,
+                                                                                     VK_STENCIL_OP_KEEP,
+                                                                                     VK_STENCIL_OP_KEEP,
+                                                                                     VK_COMPARE_OP_ALWAYS,
+                                                                                     VK_FALSE);
+    pipelineCreateInfo.pStages = &shaderStages[0];
+    pipelineCreateInfo.renderPass =(mRenderTexture[0]->getRenderPass());
+    pipelineCreateInfo.pDynamicState = nullptr;
+    pipelineCreateInfo.stageCount = 2; //vertex and fragment
+    VkPipeline pipeline = 0;
+    LOGI("Vulkan graphics call before");
+    err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
+                                    &pipeline);
+    GVR_VK_CHECK(!err);
+    rdata->setPipeline(pipeline,pass);
+    LOGI("Vulkan graphics call after");
 
-        VkCullModeFlagBits cull_face = (rdata->cull_face(pass) ==  RenderData::CullBack) ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
-        pipelineCreateInfo.pRasterizationState = gvr::PipelineRasterizationStateCreateInfo(VK_FALSE,
-                                                                                           VK_FALSE,
-                                                                                           VK_POLYGON_MODE_FILL,
-                                                                                           cull_face,
-                                                                                           VK_FRONT_FACE_CLOCKWISE,
-                                                                                           VK_FALSE,
-                                                                                           0, 0, 0,
-                                                                                           0);
-        pipelineCreateInfo.pColorBlendState = gvr::PipelineColorBlendStateCreateInfo(1,
-                                                                                     &att_state[0]);
-        pipelineCreateInfo.pMultisampleState = gvr::PipelineMultisampleStateCreateInfo(
-                VK_SAMPLE_COUNT_1_BIT, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
-                VK_NULL_HANDLE, VK_NULL_HANDLE);
-        pipelineCreateInfo.pViewportState = gvr::PipelineViewportStateCreateInfo(1, &viewport, 1,
-                                                                                 &scissor);
-        pipelineCreateInfo.pDepthStencilState = gvr::PipelineDepthStencilStateCreateInfo(rdata->depth_test() ? VK_TRUE : VK_FALSE,
-                                                                                         disable_color_depth_write ? VK_FALSE: VK_TRUE,
-                                                                                         VK_COMPARE_OP_LESS_OR_EQUAL,
-                                                                                         VK_FALSE,
-                                                                                         VK_STENCIL_OP_KEEP,
-                                                                                         VK_STENCIL_OP_KEEP,
-                                                                                         VK_COMPARE_OP_ALWAYS,
-                                                                                         VK_FALSE);
-        pipelineCreateInfo.pStages = &shaderStages[0];
-        pipelineCreateInfo.renderPass = *(mRenderTexture[0]->getRenderPass());
-        pipelineCreateInfo.pDynamicState = nullptr;
-        pipelineCreateInfo.stageCount = 2; //vertex and fragment
-        VkPipeline pipeline;
-        LOGI("Vulkan graphics call before");
-        err = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
-                                        &pipeline);
-        GVR_VK_CHECK(!err);
-        rdata->setPipeline(pipeline,pass);
-        LOGI("Vulkan graphics call after");
+}
 
-    }
     void VKFramebuffer::createFramebuffer(VkDevice& device){
 
         std::vector<VkImageView> attachments;
@@ -852,12 +866,12 @@ namespace gvr {
         if(mAttachments[DEPTH_IMAGE]!= nullptr){
             attachments.push_back(mAttachments[DEPTH_IMAGE]->getVkImageView());
         }
-        if(mRenderpass == NULL ){
+        if(mRenderpass == 0 ){
             LOGE("renderpass  is not initialized");
         }
 
         ret = vkCreateFramebuffer(device,
-                                  gvr::FramebufferCreateInfo(0, *mRenderpass, attachments.size(),
+                                  gvr::FramebufferCreateInfo(0, mRenderpass, attachments.size(),
                                                              attachments.data(), mWidth, mHeight,
                                                              uint32_t(1)), nullptr,
                                   &mFramebuffer);
@@ -895,12 +909,12 @@ namespace gvr {
             attachments.push_back(depthImage->getVkImageView());
         }
 
-        if(mRenderpass == NULL ){
+        if(mRenderpass == 0 ){
             LOGE("renderpass  is not initialized");
         }
 
         ret = vkCreateFramebuffer(device,
-                                  gvr::FramebufferCreateInfo(0, *mRenderpass, attachments.size(),
+                                  gvr::FramebufferCreateInfo(0, mRenderpass, attachments.size(),
                                                              attachments.data(), mWidth, mHeight,
                                                              uint32_t(1)), nullptr,
                                   &mFramebuffer);
@@ -1001,14 +1015,13 @@ namespace gvr {
                 VulkanVertexBuffer *vbuf = reinterpret_cast< VulkanVertexBuffer *>(mesh->getVertexBuffer());
                const VulkanIndexBuffer *ibuf = reinterpret_cast<const VulkanIndexBuffer *>(mesh->getIndexBuffer());
                const GVR_VK_Vertices *vert = (vbuf->getVKVertices(shader));
-               const GVR_VK_Indices &ind = ibuf->getVKIndices();
 
                vkCmdBindVertexBuffers(cmdBuffer, VERTEX_BUFFER_BIND_ID, 1, &(vert->buf), offsets);
 
-               // Bind triangle index buffer
-               VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16
-                                                                   : VK_INDEX_TYPE_UINT32;
-                if(ind.count) {
+                if(ibuf && ibuf->getIndexCount()) {
+                    const GVR_VK_Indices &ind = ibuf->getVKIndices();
+                    VkIndexType indexType = (ibuf->getIndexSize() == 2) ? VK_INDEX_TYPE_UINT16
+                                                                        : VK_INDEX_TYPE_UINT32;
                     vkCmdBindIndexBuffer(cmdBuffer, ind.buffer, 0, indexType);
                     vkCmdDrawIndexed(cmdBuffer, ind.count, 1, 0, 0, 1);
                 }

@@ -136,7 +136,7 @@ public:
     bool swapChainCreated(){
         return swap_chain_init_;
     }
-    VkRenderPass* createVkRenderPass(RenderPassType render_pass_type, int sample_count = 1);
+    VkRenderPass createVkRenderPass(RenderPassType render_pass_type, int sample_count = 1);
 private:
     std::vector <VkFence> waitFences;
     std::vector <VkFence> waitSCBFences;
@@ -211,9 +211,8 @@ private:
 
     TextureObject * textureObject;
 
-    VKFramebuffer* mFramebuffer[SWAP_CHAIN_COUNT];
     VkRenderTexture* mRenderTexture[SWAP_CHAIN_COUNT];
-    VkRenderPass* mRenderPassMap[2];
+    VkRenderPass mRenderPassMap[2];
 };
 }
 #endif //FRAMEWORK_VULKANCORE_H

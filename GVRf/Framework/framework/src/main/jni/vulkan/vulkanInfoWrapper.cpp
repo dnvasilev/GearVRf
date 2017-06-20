@@ -46,6 +46,7 @@ namespace gvr {
         mInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         mInfo.attachmentCount = attachmentCount;
         mInfo.pAttachments = pAttachments;
+    //    mInfo.logicOpEnable = VK_TRUE;
     }
 
     PipelineViewportStateCreateInfo::PipelineViewportStateCreateInfo(uint32_t viewportCount, const VkViewport* pViewports, uint32_t scissorCount, const VkRect2D* pScissors):mInfo()
@@ -247,7 +248,7 @@ FenceCreateInfo::FenceCreateInfo(VkFenceCreateFlags aFlags)
     mInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 }
 
-    FramebufferCreateInfo::FramebufferCreateInfo(VkFramebufferCreateFlags flags, VkRenderPass &renderPass, uint32_t attachmentCount,
+    FramebufferCreateInfo::FramebufferCreateInfo(VkFramebufferCreateFlags flags, VkRenderPass renderPass, uint32_t attachmentCount,
                                                  const VkImageView* pAttachments, uint32_t width, uint32_t height, uint32_t layers) : mInfo()
     {
         mInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

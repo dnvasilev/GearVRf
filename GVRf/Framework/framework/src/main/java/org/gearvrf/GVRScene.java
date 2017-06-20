@@ -418,7 +418,8 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
         public boolean visit(GVRComponent obj)
         {
             GVRRenderData rdata = (GVRRenderData) obj;
-            rdata.bindShader(mScene);
+            if (rdata.getMesh() != null)
+                rdata.bindShader(mScene);
             return true;
         }
     };

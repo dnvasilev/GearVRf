@@ -150,6 +150,9 @@ namespace gvr {
 
         for (auto &rdata : render_data_vector)
         {
+            if (!(rstate.render_mask & rdata->render_mask()))
+                continue;
+
             for(int curr_pass =0; curr_pass< rdata->pass_count(); curr_pass++) {
 
                 ShaderData *curr_material = rdata->material(curr_pass);
