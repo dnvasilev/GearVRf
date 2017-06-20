@@ -234,7 +234,7 @@ void GLShader::findUniforms(const DataDescriptor& desc, int bindingPoint)
         }
         else
         {
-            LOGE("SHADER: uniform %s has no location in shader %d", entry.Name, getProgramId());
+            LOGV("SHADER: uniform %s has no location in shader %d", entry.Name, getProgramId());
         }
     });
     checkGLError("GLShader::findUniforms");
@@ -272,7 +272,7 @@ void GLShader::findTextures()
         }
         else
         {
-            LOGE("SHADER: texture %s has no location in shader %d", entry.Name, getProgramId());
+            LOGV("SHADER: texture %s has no location in shader %d", entry.Name, getProgramId());
         }
     });
     checkGLError("GLShader::findTextures");

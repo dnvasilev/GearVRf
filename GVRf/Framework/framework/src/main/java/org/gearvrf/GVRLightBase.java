@@ -137,7 +137,12 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
             throw new UnsupportedOperationException("This light cannot cast shadows");
         }
     }
-    
+
+    public void setShadowRange(float near, float far)
+    {
+        throw new UnsupportedOperationException("This light cannot cast shadows");
+    }
+
     /**
      * Determines if this light is currently casting shadows.
      * @return true if shadow casting enabled, else false
@@ -176,25 +181,10 @@ public class GVRLightBase extends GVRJavaComponent implements GVRDrawFrameListen
 
     /**
      * Gets the shadow material used in constructing shadow maps.
-     *
-     * The shadow material has several public attributes which affect the shadow
-     * map construction:
-     * <ul>
-     * <li>shadow_near   near plane of the shadow map camera (default 0.1)</li>
-     * <li>shadow_far    far plane of the shadow map camera (default 50)</li>
-     * </ul>
+     * <p>
      * The shadow map is constructed using a depth map rendered
      * from the viewpoint of the light. This global material
-     * contains the shadow map properties. Modifying the near and far
-     * planes change how much of the scene is visible from the light.
-     * The shadow map will be more detailed if this range is small.
-     * It may be blocky if the range is too large.
-     *
-     * Note that shadow_near and shadow_far will be deprecated in the next release.
-     * The proper way to change the near and far planes of the shadow map
-     * camera is to call {@link GVRShadowMap#getCamera } and then call
-     * {@link GVRPerspectiveCamera#setNearClippingDistance(float)} and
-     * {@link GVRPerspectiveCamera#setFarClippingDistance(float)}}.
+     * does not currently contain any settable properties.
      * @return shadow map material
      */
     public static GVRMaterial getShadowMaterial(GVRContext ctx)

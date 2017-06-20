@@ -78,7 +78,7 @@ namespace gvr {
                     }
                     else                                // mesh uses attribute but shader does not
                     {
-                        LOGE("SHADER: vertex attribute %s has no location in shader", e.Name);
+                        LOGV("SHADER: vertex attribute %s has no location in shader", e.Name);
                     }
                 }
                 else if (loc >= 0)                      // shader uses attribute but mesh does not

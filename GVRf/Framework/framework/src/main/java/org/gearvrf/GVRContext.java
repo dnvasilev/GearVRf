@@ -548,28 +548,10 @@ public abstract class GVRContext implements IEventReceiver {
      * @param height
      *            the quad's height
      * @return A 2D, rectangular mesh with four vertices and two triangles
+     * @deprecated use GVRMesh.createQuad instead
      */
-    @SuppressWarnings("deprecation")
     public GVRMesh createQuad(float width, float height) {
-        GVRMesh mesh = new GVRMesh(this, "float3 a_position float2 a_texcoord float3 a_normal ");
-
-        float[] vertices = { width * -0.5f, height * 0.5f, 0.0f, width * -0.5f,
-                height * -0.5f, 0.0f, width * 0.5f, height * 0.5f, 0.0f,
-                width * 0.5f, height * -0.5f, 0.0f };
-        mesh.setVertices(vertices);
-
-        final float[] normals = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
-        mesh.setNormals(normals);
-
-        final float[] texCoords = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-                1.0f };
-        mesh.setTexCoords(texCoords);
-
-        char[] triangles = { 0, 1, 2, 1, 3, 2 };
-        mesh.setTriangles(triangles);
-
-        return mesh;
+        return GVRMesh.createQuad(this, "float3 a_position float2 a_texcoord float3 a_normal", width, height);
     }
 
     /**

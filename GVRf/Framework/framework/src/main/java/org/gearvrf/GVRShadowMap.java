@@ -53,7 +53,7 @@ public class GVRShadowMap extends GVRRenderTarget
     }
 
     /**
-     * Constructs a shadow map using the given material.
+     * Constructs a shadow map using the given camera.
      *
      * @param ctx GVRContext to associate the shadow map with.
      * @param camera GVRCamera used to cast shadow
@@ -86,12 +86,11 @@ public class GVRShadowMap extends GVRRenderTarget
      * @return Orthographic camera to use for shadow casting
      * @see GVRDirectLight
      */
-    static GVRCamera makeOrthoShadowCamera(GVRPerspectiveCamera centerCam)
+    static GVROrthogonalCamera makeOrthoShadowCamera(GVRPerspectiveCamera centerCam)
     {
         GVROrthogonalCamera shadowCam = new GVROrthogonalCamera(centerCam.getGVRContext());
-        GVRMaterial shadowMtl = getShadowMaterial(centerCam.getGVRContext());
-        float near = shadowMtl.hasUniform("shadow_near") ? shadowMtl.getFloat("shadow_near") : centerCam.getNearClippingDistance();
-        float far = shadowMtl.hasUniform("shadow_far") ? shadowMtl.getFloat("shadow_far") : centerCam.getFarClippingDistance();
+        float near = centerCam.getNearClippingDistance();
+        float far = centerCam.getFarClippingDistance();
         float fovy = (float) Math.toRadians(centerCam.getFovY());
         float h = (float) (Math.atan(fovy / 2.0f) * far) / 2.0f;
 
@@ -113,12 +112,11 @@ public class GVRShadowMap extends GVRRenderTarget
      * @return Perspective camera to use for shadow casting
      * @see GVRSpotLight
      */
-    static GVRCamera makePerspShadowCamera(GVRPerspectiveCamera centerCam, float coneAngle)
+    static GVRPerspectiveCamera makePerspShadowCamera(GVRPerspectiveCamera centerCam, float coneAngle)
     {
         GVRPerspectiveCamera camera = new GVRPerspectiveCamera(centerCam.getGVRContext());
-        GVRMaterial shadowMtl = GVRLightBase.getShadowMaterial(centerCam.getGVRContext());
-        float near = shadowMtl.hasUniform("shadow_near") ? shadowMtl.getFloat("shadow_near") : centerCam.getNearClippingDistance();
-        float far = shadowMtl.hasUniform("shadow_far") ? shadowMtl.getFloat("shadow_far") : centerCam.getFarClippingDistance();
+        float near = centerCam.getNearClippingDistance();
+        float far = centerCam.getFarClippingDistance();
 
         camera.setNearClippingDistance(near);
         camera.setFarClippingDistance(far);

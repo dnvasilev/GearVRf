@@ -435,6 +435,58 @@ public class GVRMesh extends GVRHybridObject implements PrettyPrint {
     }
 
     /**
+     * Sets the contents of this mesh to be a quad consisting of two triangles,
+     * with the specified width and height. If the mesh descriptor allows for
+     * normals and/or texture coordinates, they are added.
+     *
+     * @param width
+     *            the quad's width
+     * @param height
+     *            the quad's height
+     */
+    public void createQuad(float width, float height)
+    {
+        String vertexDescriptor = getVertexBuffer().getDescriptor();
+        float[] vertices = { width * -0.5f, height * 0.5f, 0.0f, width * -0.5f,
+                height * -0.5f, 0.0f, width * 0.5f, height * 0.5f, 0.0f,
+                width * 0.5f, height * -0.5f, 0.0f };
+        setVertices(vertices);
+
+        if (vertexDescriptor.contains("normal"))
+        {
+            final float[] normals = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+            setNormals(normals);
+        }
+
+        if (vertexDescriptor.contains("texcoord"))
+        {
+            final float[] texCoords = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+            setTexCoords(texCoords);
+        }
+
+        char[] triangles = { 0, 1, 2, 1, 3, 2 };
+        setTriangles(triangles);
+    }
+
+    /**
+     * Creates a mesh whose vertices describe a quad consisting of two triangles,
+     * with the specified width and height. If the vertex descriptor allows for
+     * normals and/or texture coordinates, they are added.
+     *
+     * @param ctx         GVRContext to use for creating mesh.
+     * @param vertexDesc  String describing vertex format of {@link GVRVertexBuffer}
+     * @param width       the quad's width
+     * @param height      the quad's height
+     * @return A 2D, rectangular mesh with four vertices and two triangles
+     */
+    public static GVRMesh createQuad(GVRContext ctx, String vertexDesc, float width, float height)
+    {
+        GVRMesh mesh = new GVRMesh(ctx, vertexDesc);
+        mesh.createQuad(width, height);
+        return mesh;
+    }
+
+    /**
      * Returns the bones of this mesh.
      *
      * @return a list of bones

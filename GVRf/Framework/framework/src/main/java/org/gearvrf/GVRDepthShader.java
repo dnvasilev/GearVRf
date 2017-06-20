@@ -30,7 +30,7 @@ public class GVRDepthShader extends GVRShaderTemplate
 
     public GVRDepthShader(GVRContext gvrcontext)
     {
-        super("float shadow_near float shadow_far", "", "float3 a_position float3 a_normal float4 a_bone_weights int4 a_bone_indices", 400);
+        super("", "", "float3 a_position float3 a_normal float4 a_bone_weights int4 a_bone_indices", 400);
         if (fragTemplate == null)
         {
             Context context = gvrcontext.getContext();
