@@ -393,34 +393,15 @@ RenderData* Renderer::post_effect_render_data()
     {
         return post_effect_render_data_;
     }
-    std::vector<glm::vec3> quad_vertices;
-    std::vector<glm::vec2> quad_uvs;
-    std::vector<unsigned short> quad_triangles;
-
-    quad_vertices.push_back(glm::vec3(-1.0f, -1.0f, 0.0f));
-    quad_vertices.push_back(glm::vec3(-1.0f, 1.0f, 0.0f));
-    quad_vertices.push_back(glm::vec3(1.0f, -1.0f, 0.0f));
-    quad_vertices.push_back(glm::vec3(1.0f, 1.0f, 0.0f));
-
-    quad_uvs.push_back(glm::vec2(0.0f, 0.0f));
-    quad_uvs.push_back(glm::vec2(0.0f, 1.0f));
-    quad_uvs.push_back(glm::vec2(1.0f, 0.0f));
-    quad_uvs.push_back(glm::vec2(1.0f, 1.0f));
-
-    quad_triangles.push_back(0);
-    quad_triangles.push_back(1);
-    quad_triangles.push_back(2);
-
-    quad_triangles.push_back(1);
-    quad_triangles.push_back(3);
-    quad_triangles.push_back(2);
+    float positions[12] = { -1.0f, -1.0f, 0.0f, -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f };
+    float uvs[8] = { 0.0f, 0.0, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
+    unsigned short faces[6] = { 0, 1, 2, 1, 3, 2 };
     Mesh* mesh = new Mesh("float3 a_position float2 a_texcoord");
-    mesh->setVertices(glm::value_ptr(quad_vertices[0]), quad_vertices.size());
-    mesh->setFloatVec("a_texcoord", glm::value_ptr(quad_uvs[0]), quad_uvs.size());
-    mesh->setTriangles(quad_triangles.data(), quad_triangles.size());
-
     RenderPass* pass = new RenderPass();
 
+    mesh->setVertices(positions, 12);
+    mesh->setFloatVec("a_texcoord", uvs, 8);
+    mesh->setTriangles(faces, 6);
     post_effect_render_data_ = createRenderData();
     post_effect_render_data_->set_mesh(mesh);
     post_effect_render_data_->add_pass(pass);

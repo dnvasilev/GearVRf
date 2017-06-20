@@ -18,6 +18,7 @@ namespace gvr {
     {
         mVertexData = NULL;
         mBoneFlags == 0;
+        parseDescriptor();
         setVertexCount(vertexCount);
     }
 
@@ -140,7 +141,7 @@ namespace gvr {
         const float*    srcend;
         float*          dest;
         int             dstStride;
-        int             nverts;
+        int             nverts = mVertexCount;
         int             attrStride;
 
         LOGD("VertexBuffer::setFloatVec %s %d", attributeName, srcSize);
@@ -158,21 +159,21 @@ namespace gvr {
         if (srcStride == 0)
         {
             srcStride = attrStride;
-            nverts = srcSize / srcStride;           // # of vertices in input array
-            if (!setVertexCount(nverts))
-            {
-                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
-                return false;
-            }
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
-        else if (mVertexCount > srcSize / srcStride)
+        nverts = srcSize / srcStride;           // # of vertices in input array
+        if (mVertexCount > nverts)
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
+            return false;
+        }
+        if (!setVertexCount(nverts))
+        {
+            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
             return false;
         }
         dest = reinterpret_cast<float*>(mVertexData) + attr->Offset / sizeof(float);
@@ -260,7 +261,7 @@ namespace gvr {
         const int*      srcend;
         int*            dest;
         int             dstStride;
-        int             nverts;
+        int             nverts = mVertexCount;
         int             attrStride;
 
         LOGD("VertexBuffer::setIntVec %s %d", attributeName, srcSize);
@@ -278,24 +279,23 @@ namespace gvr {
         if (srcStride == 0)
         {
             srcStride = attrStride;
-            nverts = srcSize / srcStride;           // # of vertices in input array
-            if (!setVertexCount(nverts))
-            {
-                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
-                return false;
-            }
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, stride is %d should be >= %d", attributeName, srcStride, attrStride);
             return false;
         }
-        else if (mVertexCount > srcSize / srcStride)
+        nverts = srcSize / srcStride;           // # of vertices in input array
+        if (mVertexCount > nverts)
         {
             LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
             return false;
         }
-
+        if (!setVertexCount(nverts))
+        {
+            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+            return false;
+        }
         dest = reinterpret_cast<int*>(mVertexData) + attr->Offset / sizeof(int);
         dstStride = getTotalSize() / sizeof(int);
         srcend = src + srcSize;
