@@ -54,8 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 /**
- * {@link GVRAssetLoader} provides methods for importing 3D models and making them
- * available through instances of {@link GVRAssimpImporter}.
+ * {@link GVRAssetLoader} provides methods for importing 3D models and textures.
  * <p>
  * Supports importing models from an application's resources (both
  * {@code assets} and {@code res/raw}), from directories on the device's SD

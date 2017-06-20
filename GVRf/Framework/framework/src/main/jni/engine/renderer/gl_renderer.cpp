@@ -39,9 +39,12 @@ namespace gvr
     {
         return new GLRenderData();
     }
-    RenderPass* GLRenderer::createRenderPass(){
+
+    RenderPass* GLRenderer::createRenderPass()
+    {
         return new RenderPass();
     }
+
     void GLRenderer::clearBuffers(const Camera &camera) const
     {
         GLbitfield mask = GL_DEPTH_BUFFER_BIT;
@@ -200,50 +203,44 @@ namespace gvr
             glBindFramebuffer(GL_FRAMEBUFFER, framebufferId);
             glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
 
-            clearBuffers(*camera);
+            GL(clearBuffers(*camera));
             renderRenderDataVector(rstate);
         }
         else
         {
-            GLRenderTexture *texture_render_texture =
-                    static_cast<GLRenderTexture *>(post_effect_render_texture_a);
+            GLRenderTexture* target_texture = static_cast<GLRenderTexture*>(post_effect_render_texture_a);
+            Texture* input_texture = target_texture;
 
-            GL(glBindFramebuffer(GL_FRAMEBUFFER, texture_render_texture->getFrameBufferId()));
-            GL(glViewport(0, 0, texture_render_texture->width(), texture_render_texture->height()));
-            clearBuffers(*camera);
-            GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+            GL(glBindFramebuffer(GL_FRAMEBUFFER, target_texture->getFrameBufferId()));
+            GL(glViewport(0, 0, target_texture->width(), target_texture->height()));
+            GL(clearBuffers(*camera));
             for (auto it = render_data_vector.begin(); it != render_data_vector.end(); ++it)
             {
-                GL(renderRenderData(rstate, *it));
+                renderRenderData(rstate, *it);
             }
 
             GL(glDisable(GL_DEPTH_TEST));
             GL(glDisable(GL_CULL_FACE));
-            rstate.shader_manager = shader_manager;
             for (int i = 0; i < post_effects.size() - 1; ++i)
             {
+                input_texture = target_texture;
                 if (i % 2 == 0)
                 {
-                    texture_render_texture =
-                            static_cast<GLRenderTexture *>(post_effect_render_texture_a);
-                    GL(glBindFramebuffer(GL_FRAMEBUFFER, post_effect_render_texture_b->getFrameBufferId()));
+                    target_texture = static_cast<GLRenderTexture*>(post_effect_render_texture_b);
                 }
                 else
                 {
-                    texture_render_texture =
-                            static_cast<GLRenderTexture *>(post_effect_render_texture_b);
-                    GL(glBindFramebuffer(GL_FRAMEBUFFER, post_effect_render_texture_a->getFrameBufferId()));
+                    target_texture = static_cast<GLRenderTexture*>(post_effect_render_texture_a);
                 }
+                GL(glBindFramebuffer(GL_FRAMEBUFFER, target_texture->getFrameBufferId()));
                 GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
-
                 GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-                GL(renderPostEffectData(rstate, texture_render_texture, post_effects[i]));
+                GL(renderPostEffectData(rstate, input_texture, post_effects[i]));
             }
-
             GL(glBindFramebuffer(GL_FRAMEBUFFER, framebufferId));
             GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
             GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-            renderPostEffectData(rstate, texture_render_texture, post_effects.back());
+            renderPostEffectData(rstate, input_texture, post_effects.back());
         }
         GL(glDisable(GL_DEPTH_TEST));
         GL(glDisable(GL_CULL_FACE));

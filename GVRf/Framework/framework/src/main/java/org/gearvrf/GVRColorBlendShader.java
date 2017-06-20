@@ -42,6 +42,6 @@ public class GVRColorBlendShader extends GVRShaderTemplate
     protected void setMaterialDefaults(GVRShaderData material)
     {
         material.setVec3("u_color", 1, 1, 1);
-        material.setFloat("u_factor", 1);
+        material.setFloat("u_factor", 0);
     }
 }

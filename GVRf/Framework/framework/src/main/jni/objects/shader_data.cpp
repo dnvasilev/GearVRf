@@ -58,7 +58,8 @@ namespace gvr {
         std::lock_guard<std::mutex> lock(mLock);
         for (auto it = mTextureNames.begin(); it < mTextureNames.end(); ++it)
         {
-            if (*it == key)
+            const std::string& temp = *it;
+            if (temp.compare(key) == 0)
             {
                 int i = it - mTextureNames.begin();
                 Texture* oldtex = mTextures[i];

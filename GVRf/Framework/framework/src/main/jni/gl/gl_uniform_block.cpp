@@ -70,7 +70,7 @@ namespace gvr {
                 int loc = glshader->getUniformLoc(e.Index, getBindingPoint());
                 if (loc < 0)
                 {
-                    LOGE("UniformBlock: %s not used by shader", e.Name);
+                    LOGV("UniformBlock: %s not used by shader", e.Name);
                     return;
                 }
                 int elemsize = e.Size / e.Count;

@@ -273,7 +273,7 @@ public class GVRShader
      */
     protected void setMaterialDefaults(GVRShaderData material) { }
 
-    private int addShader(GVRShaderManager shaderManager, String signature)
+    private int addShader(GVRShaderManager shaderManager, String signature, GVRShaderData material)
     {
         StringBuilder vertexShaderSource = new StringBuilder();
         StringBuilder fragmentShaderSource = new StringBuilder();
@@ -284,7 +284,12 @@ public class GVRShader
         }
         String vshader = replaceTransforms(getSegment("VertexTemplate"));
         String fshader = replaceTransforms(getSegment("FragmentTemplate"));
-
+        if (material != null)
+        {
+            String mtlLayout = material.makeShaderLayout();
+            vshader = vshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
+            fshader = fshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
+        }
         vertexShaderSource.append(vshader);
         fragmentShaderSource.append(fshader);
         int nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,
@@ -314,7 +319,7 @@ public class GVRShader
         GVRMaterialShaderManager shaderManager = context.getMaterialShaderManager();
         synchronized (shaderManager)
         {
-            int nativeShader = addShader(shaderManager, signature);
+            int nativeShader = addShader(shaderManager, signature, null);
             if (nativeShader > 0)
             {
                 rdata.setShader(nativeShader);
@@ -343,7 +348,7 @@ public class GVRShader
 
         synchronized (shaderManager)
         {
-            int nativeShader = addShader(shaderManager, signature);
+            int nativeShader = addShader(shaderManager, signature, material);
             return nativeShader;
         }
     }
@@ -373,7 +378,7 @@ public class GVRShader
         {
             if (nativeShader == 0)
             {
-                nativeShader = addShader(shaderManager, signature);
+                nativeShader = addShader(shaderManager, signature, null);
             }
             return nativeShader;
         }

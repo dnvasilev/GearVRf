@@ -15,14 +15,9 @@
 
 package org.gearvrf;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import org.gearvrf.utility.Colors;
-import org.gearvrf.utility.Threads;
 import org.gearvrf.utility.Log;
 
-import static org.gearvrf.utility.Assert.*;
 import android.graphics.Color;
 
 /**
@@ -123,13 +118,19 @@ public class GVRMaterial extends  GVRShaderData
             public static final GVRShaderId ID = new GVRShaderId(GVRLightmapShader.class);
         }
 
-        public abstract static class BeingGenerated {
-            public static final GVRShaderId ID = GVRShaderType.Phong.ID;
-        }
-
         public abstract static class PhongLayered {
             public static final GVRShaderId ID = new GVRShaderId(GVRPhongLayeredShader.class);
-        }    };
+        }
+
+        public abstract static class VerticalFlip {
+            public static final GVRShaderId ID = new GVRShaderId(GVRVerticalFlipShader.class);
+        }
+
+        public abstract static class ColorBlend {
+            public static final GVRShaderId ID = new GVRShaderId(GVRColorBlendShader.class);
+        }
+
+    };
 
     /**
      * A new holder for a shader's uniforms.

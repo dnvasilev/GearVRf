@@ -471,13 +471,8 @@ void Renderer::updateTransforms(RenderState& rstate, UniformBlock* transform_ubo
 void Renderer::renderPostEffectData(RenderState& rstate, Texture* render_texture, ShaderData* post_effect_data)
 {
     Shader* shader = rstate.shader_manager->getShader(post_effect_data->getNativeShader());
-    RenderData* rdata = post_effect_render_data();
 
-    if (!rdata->get_shader(0))
-    {
-        post_effect_data->setTexture("u_texture", render_texture);
-        rdata->set_shader(0, post_effect_data->getNativeShader());
-    }
+    post_effect_data->setTexture("u_texture", render_texture);
     renderWithShader(rstate, shader, post_effect_render_data(), post_effect_data, 0);
 }
 
