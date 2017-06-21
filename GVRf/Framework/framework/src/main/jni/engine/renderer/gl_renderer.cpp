@@ -214,10 +214,7 @@ namespace gvr
             GL(glBindFramebuffer(GL_FRAMEBUFFER, target_texture->getFrameBufferId()));
             GL(glViewport(0, 0, target_texture->width(), target_texture->height()));
             GL(clearBuffers(*camera));
-            for (auto it = render_data_vector.begin(); it != render_data_vector.end(); ++it)
-            {
-                renderRenderData(rstate, *it);
-            }
+            renderRenderDataVector(rstate);
 
             GL(glDisable(GL_DEPTH_TEST));
             GL(glDisable(GL_CULL_FACE));
@@ -233,7 +230,7 @@ namespace gvr
                     target_texture = static_cast<GLRenderTexture*>(post_effect_render_texture_a);
                 }
                 GL(glBindFramebuffer(GL_FRAMEBUFFER, target_texture->getFrameBufferId()));
-                GL(glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
+                GL(glViewport(0, 0, target_texture->width(), target_texture->height()));
                 GL(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
                 GL(renderPostEffectData(rstate, input_texture, post_effects[i]));
             }
