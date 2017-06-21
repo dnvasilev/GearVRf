@@ -15,19 +15,17 @@ layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec2 a_texcoord;
 
 #if defined(HAS_a_normal) && defined(HAS_LIGHTSOURCES)
-layout(location = 5) in vec3 a_normal;
+layout(location = 2) in vec3 a_normal;
 #endif
 
 
 #ifdef HAS_VertexSkinShader
-
-layout (std140) uniform Bones_ubo
-{
-    mat4 u_bone_matrix[60];
-};
+#ifdef HAS_a_bone_weights
+@BONES_UNIFORMS
 
 layout(location = 6) in vec4 a_bone_weights;
 layout(location = 7) in ivec4 a_bone_indices;
+#endif
 #endif
 
 #ifdef HAS_VertexNormalShader

@@ -7,20 +7,19 @@ namespace gvr {
 
 class VKFramebuffer {
     vkImageBase *mAttachments[3];
-    VkRenderPass *mRenderpass;
+    VkRenderPass mRenderpass;
     int mWidth;
     int mHeight;
     VkFramebuffer mFramebuffer;
 public:
     ~VKFramebuffer() {
-        delete mRenderpass;
         delete mAttachments[COLOR_IMAGE];
         delete mAttachments[DEPTH_IMAGE];
     }
     void setImage(ImageType type, vkImageBase* image){
         mAttachments[type] = image;
     }
-    VKFramebuffer(int width, int height) : mRenderpass(NULL), mWidth(width), mHeight(height), mAttachments{
+    VKFramebuffer(int width, int height) : mRenderpass(0), mWidth(width), mHeight(height), mAttachments{
             nullptr, nullptr, nullptr} {}
     int getWidth() {
         return mWidth;
@@ -30,11 +29,11 @@ public:
         return mHeight;
     }
 
-    void addRenderPass(VkRenderPass *renderpass) {
+    void addRenderPass(VkRenderPass renderpass) {
         mRenderpass = renderpass;
     }
 
-    const VkRenderPass *getRenderPass() {
+    VkRenderPass getRenderPass() {
         return mRenderpass;
     }
 

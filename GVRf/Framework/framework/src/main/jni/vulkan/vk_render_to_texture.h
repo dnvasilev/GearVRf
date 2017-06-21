@@ -43,7 +43,7 @@ public:
     virtual bool readRenderResult(unsigned int *readback_buffer, long capacity) {
     }
     bool readVkRenderResult(uint8_t **readback_buffer, VkCommandBuffer& cmd_buffer,VkFence& fence);
-    const VkRenderPass* getRenderPass(){
+    VkRenderPass getRenderPass(){
         if(fbo == nullptr)
             bind();
 

@@ -22,14 +22,14 @@ namespace gvr {
 
         virtual bool    updateGPU(Renderer*, IndexBuffer*, Shader*);
         virtual void    bindToShader(Shader*r, IndexBuffer*) { }
-        const GVR_VK_Vertices& getVKVertices() const  { return m_vertices; }
+        const GVR_VK_Vertices* getVKVertices(Shader* shader);
         void    generateVKBuffers(VulkanCore* vulkanCore, Shader* shader);
 
     protected:
         void    freeGPUResources();
         VkFormat getDataType(const std::string& type);
-
-        GVR_VK_Vertices m_vertices;
+        std::unordered_map<Shader*,std::shared_ptr<GVR_VK_Vertices>> mVerticesMap;
+     //   GVR_VK_Vertices m_vertices;
     };
 
 } // end gvrf

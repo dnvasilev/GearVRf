@@ -1,3 +1,6 @@
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 precision highp float;
 #ifdef HAS_MULTIVIEW
 #extension GL_OVR_multiview2 : enable
@@ -20,10 +23,8 @@ layout(location = 5) in vec3 a_normal;
 layout(location = 6) in vec4 a_bone_weights;
 layout(location = 7) in ivec4 a_bone_indices;
 
-layout (std140) uniform Bones_ubo
-{
-    mat4 u_bone_matrix[60];
-};
+@BONES_UNIFORMS
+
 #endif
 #endif
 

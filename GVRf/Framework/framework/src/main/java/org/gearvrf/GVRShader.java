@@ -83,6 +83,17 @@ public class GVRShader
             + "     mat4 u_view_i;\n"
             + "     float u_right;\n"
             + "};\n";
+    protected static String sBonesUBOCode = "" +
+            "layout (std140) uniform Bones_ubo\n" +
+            "{\n" +
+            "    mat4 u_bone_matrix[60];\n" +
+            "};\n";
+
+    protected static String sBonesVkUBOCode = "" +
+            "layout (std140, set = 0, binding = 2) uniform Bones_ubo\n" +
+            "{\n" +
+            "    mat4 u_bone_matrix[60];\n" +
+            "};\n";
 
     protected static String sTransformVkUBOCode = "layout (std140, set = 0, binding = 0) uniform Transform_ubo {\n "
             + "     mat4 u_view;\n"
@@ -290,6 +301,7 @@ public class GVRShader
             vshader = vshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
             fshader = fshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
         }
+        vshader = replaceBones(vshader);
         vertexShaderSource.append(vshader);
         fragmentShaderSource.append(fshader);
         int nativeShader = shaderManager.addShader(signature, mUniformDescriptor, mTextureDescriptor,
@@ -397,6 +409,19 @@ public class GVRShader
 
         return code.replace("@MATRIX_UNIFORMS", sTransformUniformCode);
         //return code.replace("@MATRIX_UNIFORMS", sTransformUBOCode);
+    }
+    /**
+     * Replaces @BONES_UNIFORMS in shader source with the
+     * proper transform uniform declarations.
+     * @param code shader source code
+     * @return shader source with transform uniform declarations added
+     */
+    protected String replaceBones(String code)
+    {
+        if(isVulkanInstance())
+            return code.replace("@BONES_UNIFORMS", sBonesVkUBOCode);
+
+        return code.replace("@BONES_UNIFORMS", sBonesUBOCode);
     }
 
     /**

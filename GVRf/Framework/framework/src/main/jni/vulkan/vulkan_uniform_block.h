@@ -63,8 +63,10 @@ namespace gvr {
         GVR_Uniform& getBuffer() { return m_bufferInfo; }
 
         GVR_Uniform m_bufferInfo;
-        VkWriteDescriptorSet& getDescriptorSet();
-
+        const VkWriteDescriptorSet& getDescriptorSet();
+        void setDescriptorSet(VkDescriptorSet descriptorSet){
+            writeDescriptorSet.dstSet = descriptorSet;
+        }
     protected:
         void createBuffer(VulkanCore*);
         void updateBuffer(VulkanCore* vk);

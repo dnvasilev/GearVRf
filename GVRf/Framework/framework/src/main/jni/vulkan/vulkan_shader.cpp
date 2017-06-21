@@ -16,7 +16,7 @@
 /***************************************************************************
  * A shader which an user can add in run-time.
  ***************************************************************************/
-
+#define TEXTURE_BIND_START 4
 #include "vulkan/vulkan_shader.h"
 #include "vulkan/vulkan_material.h"
 #include "engine/renderer/vulkan_renderer.h"
@@ -41,19 +41,42 @@ void VulkanShader::initialize()
 
 int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index, VulkanRenderData* vkdata)
 {
+    VkDescriptorSetLayoutBinding dummy_binding =vkdata->getTransformUbo().getVulkanDescriptor()->getLayoutBinding() ;
     if (usesMatrixUniforms()) {
         VkDescriptorSetLayoutBinding &transform_uniformBinding = vkdata->getTransformUbo().getVulkanDescriptor()->getLayoutBinding();
         samplerBinding.push_back(transform_uniformBinding);
-        index++;
+    }
+    else {
+        dummy_binding.binding = 0;
+        samplerBinding.push_back(dummy_binding);
     }
 
     if (getUniformDescriptor().getNumEntries() > 0)
     {
         VkDescriptorSetLayoutBinding &material_uniformBinding = reinterpret_cast<VulkanUniformBlock&>(vkMtl.uniforms()).getVulkanDescriptor()->getLayoutBinding();
         samplerBinding.push_back(material_uniformBinding);
-        index++;
+    }
+    else{
+        dummy_binding.binding = 1;
+        samplerBinding.push_back(dummy_binding);
     }
 
+    if(vkdata->mesh()->hasBones()){
+       VkDescriptorSetLayoutBinding &bones_uniformBinding = reinterpret_cast<VulkanUniformBlock*>(vkdata->getBonesUbo())->getVulkanDescriptor()->getLayoutBinding();
+       samplerBinding.push_back(bones_uniformBinding);
+   }
+    else{
+        dummy_binding.binding = 2;
+        samplerBinding.push_back(dummy_binding);
+    }
+    // Right now, we dont' have support for shadow map, so add dummy binding for it
+    dummy_binding.binding = 3;
+    samplerBinding.push_back(dummy_binding);
+
+    /*
+     * TODO :: if has shadowmap, create binding for it
+     */
+    index = TEXTURE_BIND_START;
     vkMtl.forEachTexture([this, &samplerBinding, index](const char* texname, Texture* t) mutable
     {
         const DataDescriptor::DataEntry* entry = mTextureDesc.find(texname);

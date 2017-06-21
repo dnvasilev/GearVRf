@@ -309,7 +309,7 @@ class FenceCreateInfo final
     {
         VkFramebufferCreateInfo mInfo;
     public:
-        explicit FramebufferCreateInfo(VkFramebufferCreateFlags flags, VkRenderPass &renderPass, uint32_t attachmentCount, const VkImageView* pAttachments, uint32_t width, uint32_t height, uint32_t layers);
+        explicit FramebufferCreateInfo(VkFramebufferCreateFlags flags, VkRenderPass renderPass, uint32_t attachmentCount, const VkImageView* pAttachments, uint32_t width, uint32_t height, uint32_t layers);
 
         operator const VkFramebufferCreateInfo*() const
         {

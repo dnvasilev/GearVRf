@@ -368,7 +368,9 @@ public:
     int stencil_op_sfail() { return stencilOpSfail_; }
     int stencil_op_dpfail() { return stencilOpDpfail_; }
     int stencil_op_dppass() { return stencilOpDppass_; }
-
+    UniformBlock* getBonesUbo(){
+        return bones_ubo_;
+    }
 private:
     //  RenderData(const RenderData& render_data);
     RenderData(RenderData&& render_data);

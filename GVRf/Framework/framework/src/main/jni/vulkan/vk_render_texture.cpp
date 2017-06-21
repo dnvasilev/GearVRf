@@ -17,7 +17,7 @@ void VkRenderTexture::bind() {
 }
 void VkRenderTexture::createRenderPass(){
     VulkanRenderer* vk_renderer= reinterpret_cast<VulkanRenderer*>(Renderer::getInstance());
-    VkRenderPass* renderPass = vk_renderer->getCore()->createVkRenderPass(NORMAL_RENDERPASS, mSampleCount);
+    VkRenderPass renderPass = vk_renderer->getCore()->createVkRenderPass(NORMAL_RENDERPASS, mSampleCount);
     fbo->addRenderPass(renderPass);
 }
 void VkRenderTexture::endRendering(Renderer* renderer) {
@@ -39,7 +39,7 @@ void VkRenderTexture::beginRendering(Renderer* renderer){
     VkRenderPassBeginInfo rp_begin = {};
     rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rp_begin.pNext = nullptr;
-    rp_begin.renderPass = *(fbo->getRenderPass());
+    rp_begin.renderPass = fbo->getRenderPass();
     rp_begin.framebuffer = fbo->getFramebuffer();
     rp_begin.renderArea.offset.x = 0;
     rp_begin.renderArea.offset.y = 0;

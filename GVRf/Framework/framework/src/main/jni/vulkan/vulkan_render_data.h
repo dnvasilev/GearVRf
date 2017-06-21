@@ -30,44 +30,9 @@
 typedef unsigned long Long;
 namespace gvr
 {
-class VulkanRenderPass : public RenderPass
+struct VulkanRenderPass : public RenderPass
 {
-public:
-    VkPipeline getVKPipeline() const
-    {
-        return m_pipeline;
-    }
-
-    VkDescriptorPool getDescriptorPool() const
-    {
-        return m_descriptorPool;
-    }
-
-    VkDescriptorSet getDescriptorSet() const
-    {
-        return m_descriptorSet;
-    }
-
-    bool isDescriptorSetNull() const{
-        return descriptorSetNull;
-    }
-    void setDescriptorSetNull(bool flag){
-        descriptorSetNull = flag;
-    }
-    void setPipeline(VkPipeline pipeline){
-        m_pipeline = pipeline;
-    }
-    void setDescriptorPool(VkDescriptorPool descriptorPool){
-        m_descriptorPool = descriptorPool;
-    }
-    void setDescriptorSet(VkDescriptorSet descriptorSet){
-        m_descriptorSet = descriptorSet;
-    }
-
-
-private:
-
-    bool descriptorSetNull = false;
+    bool descriptorSetNull = true;
     VkDescriptorPool m_descriptorPool;
     VkPipeline m_pipeline;
     VkDescriptorSet m_descriptorSet;
@@ -95,25 +60,39 @@ private:
         VulkanUniformBlock& getTransformUbo(){
             return ubo;
         }
+        VkPipeline getVKPipeline(int pass)
+        {
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            return renderPass->m_pipeline;
 
+        }
+        bool isDescriptorSetNull(int pass){
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            return renderPass->descriptorSetNull;
+        }
+        VkDescriptorSet getDescriptorSet(int pass)
+        {
+            VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
+            return renderPass->m_descriptorSet;
+        }
         void setPipeline(VkPipeline pipeline, int pass){
             VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
-            renderPass->setPipeline(pipeline);
+            renderPass->m_pipeline = pipeline;
 
         }
         void setDescriptorPool(VkDescriptorPool descriptorPool, int pass){
             VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
-            renderPass->setDescriptorPool(descriptorPool);
+            renderPass->m_descriptorPool= descriptorPool;
 
         }
         void setDescriptorSet(VkDescriptorSet descriptorSet, int pass){
             VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
-            renderPass->setDescriptorSet(descriptorSet);
+            renderPass->m_descriptorSet= descriptorSet;
 
         }
         void setDescriptorSetNull(bool flag, int pass){
             VulkanRenderPass* renderPass = static_cast<VulkanRenderPass*>(render_pass_list_[pass]);
-            renderPass->setDescriptorSetNull(flag);
+            renderPass->descriptorSetNull = flag;
 
         }
         void generateVbos(const std::string& descriptor, VulkanRenderer* renderer, Shader* shader){
@@ -135,7 +114,6 @@ private:
 
     private:
         VulkanUniformBlock ubo;
-        bool m_pipelineInit = false;
 
     };
 

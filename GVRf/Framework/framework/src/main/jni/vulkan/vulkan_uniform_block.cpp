@@ -36,7 +36,7 @@ namespace gvr {
         writeDescriptorSet = *writeInfo;
 
     }
-    VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
+    const VkWriteDescriptorSet& VulkanUniformBlock::getDescriptorSet() {
           return writeDescriptorSet;
     }
 
@@ -89,7 +89,6 @@ namespace gvr {
         VkDevice& device = vk->getDevice();
         VkResult ret = VK_SUCCESS;
         uint8_t *pData;
-      //  std::string data = toString().c_str();
         ret = vkMapMemory(device, m_bufferInfo.mem, 0, m_bufferInfo.allocSize, 0, (void **) &pData);
         assert(!ret);
 

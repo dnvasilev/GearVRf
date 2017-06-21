@@ -107,19 +107,20 @@ namespace gvr {
         VulkanRenderData* vkRdata = static_cast<VulkanRenderData*>(rdata);
         UniformBlock& transformUBO = vkRdata->getTransformUbo();
         VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(shaderData);
+
         if (shader->usesMatrixUniforms())
         {
             updateTransforms(rstate, &transformUBO, t);
         }
+        rdata->updateGPU(this,shader);
 
-            // only need to call when binding is changed
-            vulkanCore_->InitLayoutRenderData(*vkmtl, vkRdata, shader);
+        vulkanCore_->InitLayoutRenderData(*vkmtl, vkRdata, shader);
 
-            // if texture or binding, material is changed, call this
-            if(vkRdata->isDirty(0xFFFF))
-                vulkanCore_->InitDescriptorSetForRenderData(this, pass, shader, vkRdata);
+        if(vkRdata->isHashCodeDirty() || vkRdata->isDirty(0xFFFF) || vkRdata->isDescriptorSetNull(pass)) {
 
-        vkRdata->createPipeline(shader,this, pass);
+            vulkanCore_->InitDescriptorSetForRenderData(this, pass, shader, vkRdata);
+            vkRdata->createPipeline(shader, this, pass);
+        }
         shader->useShader();
         return true;
     }
@@ -135,7 +136,7 @@ namespace gvr {
             vulkanCore_->initVulkanCore();
 
         std::vector<RenderData*> render_data_list;
-
+        vulkanCore_->AcquireNextImage();
         RenderState rstate;
         rstate.shadow_map = false;
         rstate.material_override = NULL;
@@ -149,6 +150,8 @@ namespace gvr {
 
         for (auto &rdata : render_data_vector)
         {
+            if (!(rstate.render_mask & rdata->render_mask()))
+                continue;
 
             for(int curr_pass =0; curr_pass< rdata->pass_count(); curr_pass++) {
 
@@ -163,10 +166,13 @@ namespace gvr {
                     curr_material = rstate.material_override;
                 }
                 if (!renderWithShader(rstate, shader, rdata, curr_material, curr_pass))
-                    continue;
-                render_data_list.push_back(rdata);
+                    break;
+
+                if(curr_pass == rdata->pass_count()-1)
+                    render_data_list.push_back(rdata);
             }
         }
+
         vulkanCore_->BuildCmdBufferForRenderData(render_data_list,camera, shader_manager);
         vulkanCore_->DrawFrameForRenderData();
     }
