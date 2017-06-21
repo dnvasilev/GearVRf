@@ -415,6 +415,8 @@ public class GVRCubeSceneObject extends GVRSceneObject {
     {
         GVRMesh mesh = new GVRMesh(gvrContext, descriptor);
         float[] vertices = SIMPLE_VERTICES;
+        boolean hasNormals = descriptor.contains("normal");
+        boolean hasTexcoords = descriptor.contains("texcoord");
 
         if (dimensions != null)
         {
@@ -426,18 +428,29 @@ public class GVRCubeSceneObject extends GVRSceneObject {
                 vertices[i + 2] = SIMPLE_VERTICES[i + 2] * dimensions.z;
             }
         }
+        mesh.setVertices(vertices);
         if (facingOut)
         {
-            mesh.setVertices(vertices);
-            mesh.setNormals(SIMPLE_OUTWARD_NORMALS);
-            mesh.setTexCoords(SIMPLE_OUTWARD_TEXCOORDS);
+            if (hasNormals)
+            {
+                mesh.setNormals(SIMPLE_OUTWARD_NORMALS);
+            }
+            if (hasTexcoords)
+            {
+                mesh.setTexCoords(SIMPLE_OUTWARD_TEXCOORDS);
+            }
             mesh.setTriangles(SIMPLE_OUTWARD_INDICES);
         }
         else
         {
-            mesh.setVertices(vertices);
-            mesh.setNormals(SIMPLE_INWARD_NORMALS);
-            mesh.setTexCoords(SIMPLE_INWARD_TEXCOORDS);
+            if (hasNormals)
+            {
+                mesh.setNormals(SIMPLE_INWARD_NORMALS);
+            }
+            if (hasTexcoords)
+            {
+                mesh.setTexCoords(SIMPLE_INWARD_TEXCOORDS);
+            }
             mesh.setTriangles(SIMPLE_INWARD_INDICES);
         }
         return mesh;

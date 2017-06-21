@@ -257,8 +257,28 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
      */
     public GVRSceneObject(GVRContext gvrContext, float width, float height,
             GVRTexture texture, GVRShaderId shaderId) {
-        this(gvrContext, gvrContext.createQuad(width, height), texture,
-                shaderId);
+        this(gvrContext, GVRMesh.createQuad(gvrContext, "float3 a_position float2 a_texcoord float3 a_normal", width, height), texture, shaderId);
+    }
+
+    /**
+     * Create a standard, rectangular texture object, using a non-default shader
+     * to apply complex visual affects.
+     *
+     * @param gvrContext
+     *            current {@link GVRContext}
+     * @param width
+     *            the rectangle's width
+     * @param height
+     *            the rectangle's height
+     * @param meshDesc
+     *            string describing vertex format of mesh {@link GVRVertexBuffer()}
+     * @param material
+     *            {@link GVRMaterial} with material properties
+     */
+    public GVRSceneObject(GVRContext gvrContext, float width, float height,
+                          String meshDesc, GVRMaterial material)
+    {
+        this(gvrContext, GVRMesh.createQuad(gvrContext, meshDesc, width, height), material);
     }
 
     /**
