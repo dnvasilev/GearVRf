@@ -159,6 +159,12 @@ namespace gvr {
         if (srcStride == 0)
         {
             srcStride = attrStride;
+            nverts = srcSize / srcStride;           // # of vertices in input array
+            if (!setVertexCount(nverts))
+            {
+                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+                return false;
+            }
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
@@ -171,10 +177,9 @@ namespace gvr {
             LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
             return false;
         }
-        if (!setVertexCount(nverts))
+        else if (mVertexCount == 0)
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
-            return false;
+            setVertexCount(nverts);
         }
         dest = reinterpret_cast<float*>(mVertexData) + attr->Offset / sizeof(float);
         dstStride = getTotalSize() / sizeof(float);
@@ -279,6 +284,12 @@ namespace gvr {
         if (srcStride == 0)
         {
             srcStride = attrStride;
+            nverts = srcSize / srcStride;           // # of vertices in input array
+            if (!setVertexCount(nverts))
+            {
+                LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
+                return false;
+            }
         }
         else if (attrStride > srcStride)            // stride too small for this attribute?
         {
@@ -291,10 +302,9 @@ namespace gvr {
             LOGE("VertexBuffer: cannot copy to vertex array %s, not enough vertices in source", attributeName);
             return false;
         }
-        if (!setVertexCount(nverts))
+        else if (mVertexCount == 0)
         {
-            LOGE("VertexBuffer: cannot enlarge vertex array %s, vertex count mismatch", attributeName);
-            return false;
+            setVertexCount(nverts);
         }
         dest = reinterpret_cast<int*>(mVertexData) + attr->Offset / sizeof(int);
         dstStride = getTotalSize() / sizeof(int);

@@ -906,11 +906,11 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
 	 * @param visitor ComponentVisitor interface implementing "visit" function
 	 * @param componentType type of component to find
 	 *
-	 * @see children
-	 * @see getChildren
+	 * @see GVRSceneObject#children()
+	 * @see GVRSceneObject#getChildren()
 	 * @see SceneVisitor
-	 * @see forAllDescendants
-	 * @see getComponent
+	 * @see GVRSceneObject#forAllDescendants(SceneVisitor)
+	 * @see GVRSceneObject#getComponent(long)
 	 */    
     public void forAllComponents(ComponentVisitor visitor, long componentType) {
         GVRComponent comp = getComponent(componentType);
@@ -934,11 +934,11 @@ public class GVRSceneObject extends GVRHybridObject implements PrettyPrint, IScr
 	 *
 	 * @param visitor ComponentVisitor interface implementing "visit" function
 	 *
-	 * @see children
-	 * @see getChildren
-	 * @see SceneVisitor
-	 * @see forAllDescendants
-	 * @see getComponent
+     * @see GVRSceneObject#children()
+     * @see GVRSceneObject#getChildren()
+     * @see SceneVisitor
+     * @see GVRSceneObject#forAllDescendants(SceneVisitor)
+     * @see GVRSceneObject#getComponent(long)
 	 */  
     public void forAllComponents(ComponentVisitor visitor) {
         for (GVRComponent comp : mComponents.values()) {
