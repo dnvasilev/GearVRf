@@ -17,6 +17,8 @@
 #include "util/gvr_log.h"
 #include <assert.h>
 #include <cstring>
+#include <cstdlib>
+using namespace std;
 
 VulkanCore* VulkanCore::theInstance = NULL;
 

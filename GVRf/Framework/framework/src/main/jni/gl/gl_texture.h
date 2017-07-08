@@ -30,12 +30,14 @@
 
 #include "util/gvr_log.h"
 #include <cstdlib>
+#include <cstring>
 
 #include "objects/gl_pending_task.h"
 
 #define MAX_TEXTURE_PARAM_NUM 10
 
 namespace gvr {
+using namespace std;
 class GLTexture : public GLPendingTask {
 public:
     explicit GLTexture(GLenum target)
