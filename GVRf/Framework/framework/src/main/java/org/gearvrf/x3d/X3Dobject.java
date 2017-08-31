@@ -151,13 +151,6 @@ public class X3Dobject {
     // this variable will be the active ScriptObject being built
     private ScriptObject currentScriptObject = null;
 
-    // Since GVRShapeObject contains LOD range, 'shapeLODSceneObj' is used only
-    // when it's embedded into a Level-of-Detail
-    private GVRSceneObject shapeLODSceneObject = null;
-    // The GVRSceneObject created when there is an LOD (lvel-of-detail) node.
-    // Has the LOD component attached to it.
-    private GVRSceneObject transformLODSceneObject = null;
-
     // points to a sensor that wraps around other nodes.
     private Sensor currentSensor = null;
 
@@ -303,7 +296,7 @@ public class X3Dobject {
             cameraRigAtRoot.attachCenterCamera(centerCamera);
             gvrContext.getMainScene().setBackgroundColor(0, 0, 0, 1);  // black background default
 
-            lodManager = new LODmanager();
+            lodManager = new LODmanager( root );
 
             animationInteractivityManager = new AnimationInteractivityManager(
                     this, gvrContext, root, mDefinedItems, interpolators,
@@ -715,46 +708,6 @@ public class X3Dobject {
 
         } // end AddGVRSceneObject
 
-        // Add the currentSceneObject to an active Level-of-Detail
-        private void AddLODSceneObject() {
-            if (transformLODSceneObject != null) {
-                GVRSceneObject levelOfDetailSceneObject = null;
-                if ( currentSceneObject.getParent() == transformLODSceneObject) {
-                    levelOfDetailSceneObject = currentSceneObject;
-                }
-                else {
-                    GVRSceneObject lodSceneObj = root.getSceneObjectByName((currentSceneObject.getName() + TRANSFORM_TRANSLATION_));
-                    if ( lodSceneObj != null ) {
-                        if (lodSceneObj.getParent() == transformLODSceneObject) {
-                            levelOfDetailSceneObject = lodSceneObj;
-                        }
-                    }
-                    if (levelOfDetailSceneObject == null) {
-                        lodSceneObj = root.getSceneObjectByName((currentSceneObject.getName() + TRANSFORM_ROTATION_));
-                        if ( lodSceneObj != null ) {
-                            if (lodSceneObj.getParent() == transformLODSceneObject) {
-                                levelOfDetailSceneObject = lodSceneObj;
-                            }
-                        }
-                    }
-                    if (levelOfDetailSceneObject == null) {
-                        lodSceneObj = root.getSceneObjectByName((currentSceneObject.getName() + TRANSFORM_SCALE_));
-                        if ( lodSceneObj != null ) {
-                            if (lodSceneObj.getParent() == transformLODSceneObject) {
-                                levelOfDetailSceneObject = lodSceneObj;
-                            }
-                        }
-                    }
-
-                }
-                if ( levelOfDetailSceneObject != null) {
-                    final GVRLODGroup lodGroup = (GVRLODGroup) transformLODSceneObject.getComponent(GVRLODGroup.getComponentType());
-                    lodGroup.addRange(lodManager.getMinRange(), levelOfDetailSceneObject);
-                    lodManager.increment();
-                }
-            }
-        }
-
         /**
          * Called by the Java SAX parser implementation
          * to parse the X3D nodes.
@@ -927,9 +880,9 @@ public class X3Dobject {
                     } // end if DEF name and thus possible animation / interactivity
 
                     // Check if there is an active Level-of-Detail (LOD)
-                    // and if so test if this currentSceneObject if is
+                    // and if so add this currentSceneObject if is
                     // a direct child of this LOD.
-                    if (lodManager.isActive()) AddLODSceneObject();
+                    if (lodManager.isActive()) lodManager.AddLODSceneObject( currentSceneObject );
 
                 } // not a 'Transform USE="..."' node
 
@@ -958,9 +911,9 @@ public class X3Dobject {
                     }
 
                     // Check if there is an active Level-of-Detail (LOD)
-                    // and if so test if this currentSceneObject if is
+                    // and add this currentSceneObject if is
                     // a direct child of this LOD.
-                    if (lodManager.isActive()) AddLODSceneObject();
+                    if (lodManager.isActive()) lodManager.AddLODSceneObject( currentSceneObject );
                 }
 
             } // end <Group> node
@@ -977,17 +930,17 @@ public class X3Dobject {
                 gvrRenderData.setShaderTemplate(GVRPhongShader.class);
 
                 // Check if this Shape node is part of a Level-of-Detail
-                // Check if there is an active Level-of-Detail (LOD)
-                // and if so test if this Shape node is
+                // If there is an active Level-of-Detail (LOD)
+                // add this Shape node to new GVRSceneObject as a
                 // a direct child of this LOD.
                 if (lodManager.isActive()) {
-                    if ( transformLODSceneObject == currentSceneObject ) {
+                    if ( lodManager.transformLODSceneObject == currentSceneObject ) {
                         // <Shape> node not under a <Transform> inside a LOD node
                         // so we need to attach it to a GVRSceneObject, and
                         // then attach it to the LOD
-                        shapeLODSceneObject = AddGVRSceneObject();
-                        currentSceneObject = shapeLODSceneObject;
-                        AddLODSceneObject();
+                        lodManager.shapeLODSceneObject = AddGVRSceneObject();
+                        currentSceneObject = lodManager.shapeLODSceneObject;
+                        lodManager.AddLODSceneObject( currentSceneObject );
                     }
 
                 }
@@ -2499,9 +2452,8 @@ public class X3Dobject {
                     if (attributeValue != null) {
                         //url = parseMFString(attributeValue);
                         url[0] = attributeValue;
-                        GVRSceneObject inlineGVRSceneObject = currentSceneObject; // preserve
-                        // the
-                        // currentSceneObject
+                        GVRSceneObject inlineGVRSceneObject = currentSceneObject;
+                        // preserve the currentSceneObject
                         if (lodManager.isActive()) {
                             inlineGVRSceneObject = AddGVRSceneObject();
                             inlineGVRSceneObject.setName("inlineGVRSceneObject"
@@ -2554,10 +2506,10 @@ public class X3Dobject {
 
                     // LOD has it's own GVRSceneObject which has a
                     // GVRLODGroup component attached
-                    if (transformLODSceneObject == null) {
-                        transformLODSceneObject = AddGVRSceneObject();
-                        transformLODSceneObject.attachComponent(new GVRLODGroup(gvrContext));
-                        currentSceneObject = transformLODSceneObject;
+                    if (lodManager.transformLODSceneObject == null) {
+                        lodManager.transformLODSceneObject = AddGVRSceneObject();
+                        lodManager.transformLODSceneObject.attachComponent(new GVRLODGroup(gvrContext));
+                        currentSceneObject = lodManager.transformLODSceneObject;
                     }
 
                 } // end <LOD> Level-of-Detail node
@@ -3366,13 +3318,13 @@ public class X3Dobject {
                     currentSceneObject.attachRenderData(gvrRenderData);
 
 
-                if (shapeLODSceneObject != null) {
+                if (lodManager.shapeLODSceneObject != null) {
                     // if this Shape node was a direct child of a
                     // Level-of-Detial (LOD),then restore the parent object
                     // since we had to add a GVRSceneObject to support
                     // the Shape node's attachement to LOD.
                     currentSceneObject = currentSceneObject.getParent();
-                    shapeLODSceneObject = null;
+                    lodManager.shapeLODSceneObject = null;
                 }
 
                 gvrMaterialUSEd = false; // for DEFine and USE, true if we encounter a
@@ -3455,10 +3407,10 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("LOD")) {
                 // End of LOD so go to the parent of the current
                 // GVRSceneObject which was added to support LOD
-                if (currentSceneObject == transformLODSceneObject) {
+                if (currentSceneObject == lodManager.transformLODSceneObject) {
                     currentSceneObject = currentSceneObject.getParent();
                 }
-                transformLODSceneObject = null;
+                lodManager.transformLODSceneObject = null;
             } else if (qName.equalsIgnoreCase("Switch")) {
                 // Verify the Switch index is between 0 and (max number of children - 1)
                 // if it is not, then no object should appear per the X3D spec.
