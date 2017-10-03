@@ -20,8 +20,6 @@
 #include "objects/scene.h"
 #include "shaders/shader.h"
 
-#define VERBOSE_DEBUG 0
-
 namespace gvr {
 
 RenderData::~RenderData() {
