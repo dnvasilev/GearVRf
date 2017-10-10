@@ -716,6 +716,9 @@ public class X3Dobject {
     // references to texture map file names (plus their own sub-directory.
     private String inlineSubdirectory = "";
 
+    private String indexedSetDEFName = "";
+    private String indexedSetUSEName = "";
+
 
 
     // The Text_Font Params class and Reset() function handle
@@ -1380,6 +1383,9 @@ public class X3Dobject {
                         gvrRenderData.setMesh(gvrRenderDataDEFined.getMesh());
                         gvrRenderingDataUSEd = true;
                     }
+                    else {
+                        Log.e(TAG, "Shape USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                    }
                 } else {
 
                     attributeValue = attributes.getValue("DEF");
@@ -1412,6 +1418,9 @@ public class X3Dobject {
                         gvrMaterialUSEd = true; // for DEFine and USE, we encounter a USE,
                         // and thus have set the material
                     }
+                    else {
+                        Log.e(TAG, "Appearance USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                    }
                 } else {
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
@@ -1439,6 +1448,10 @@ public class X3Dobject {
                         gvrMaterialUSEd = true; // for DEFine and USE, we encounter a USE,
                         // and thus have set the material
                     }
+                    else {
+                        Log.e(TAG, "Material USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                    }
+
                 } else {
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
@@ -1502,6 +1515,10 @@ public class X3Dobject {
                     }
                     if (useItem != null) {
                         gvrTexture = useItem.getGVRTexture();
+                        shaderSettings.setTexture(gvrTexture);
+                    }
+                    else {
+                        Log.e(TAG, "ImageTexture USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
                     }
                 } else {
                     gvrTextureParameters = new GVRTextureParameters(gvrContext);
@@ -1586,25 +1603,13 @@ public class X3Dobject {
 
             else if (qName.equalsIgnoreCase("IndexedFaceSet")) {
                 attributeValue = attributes.getValue("USE");
-                    if (attributeValue != null) { // shared GVRIndexBuffer
-                    DefinedItem useItem = null;
-                    for (DefinedItem definedItem : mDefinedItems) {
-                        if (attributeValue.equals(definedItem.getName())) {
-                            useItem = definedItem;
-                            break;
-                        }
-                    }
-                    if (useItem != null) {
-                            gvrIndexBuffer = useItem.getIndexBuffer();
-                    }
+                if (attributeValue != null) { // shared GVRIndexBuffer / GVRMesh
+                    indexedSetUSEName = attributeValue;
                 } else {
-                        gvrIndexBuffer = new GVRIndexBuffer(gvrContext, 4, 0);
+                    gvrIndexBuffer = new GVRIndexBuffer(gvrContext, 4, 0);
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
-                        DefinedItem definedItem = new DefinedItem(attributeValue);
-                            definedItem.setIndexBuffer(gvrIndexBuffer);
-                        mDefinedItems.add(definedItem); // Array list of DEFined items
-                        // Clones objects with USE
+                        indexedSetDEFName = attributeValue;
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
@@ -1650,6 +1655,7 @@ public class X3Dobject {
                         parseNumbersString(texCoordIndexAttribute,
                                 X3Dobject.textureIndexComponent, 3);
                     }
+                    Log.e("X3DDBG", "END of IFS");
                 }
 
             } // end <IndexedFaceSet> node
@@ -1822,6 +1828,9 @@ public class X3Dobject {
                                             definedPtLight.getAttenuationQuadratic());
                             newPtLight.enable();
                         }
+                        else {
+                            Log.e(TAG, "PointLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        }
                     } // end reuse a PointLight
                     else {
                         // add a new PointLight
@@ -1964,6 +1973,9 @@ public class X3Dobject {
                                     attribute[2], 1);
                             newDirectLight.enable();
                         }
+                        else {
+                            Log.e(TAG, "DirectionalLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        }
                     } // end reuse a DirectionalLight
                     else {
                         // add a new DirectionalLight
@@ -2101,6 +2113,9 @@ public class X3Dobject {
                             newSpotLight
                                     .setOuterConeAngle(definedSpotLight.getOuterConeAngle());
                             newSpotLight.enable();
+                        }
+                        else {
+                            Log.e(TAG, "SpotLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
                         }
                     } // end reuse a SpotLight
                     else {
@@ -2683,6 +2698,9 @@ public class X3Dobject {
                             Text_FontParams.spacing = gvrTextViewSceneObject.getLineSpacing();
                             Text_FontParams.size = gvrTextViewSceneObject.getSize();
                             Text_FontParams.style = gvrTextViewSceneObject.getStyleType();
+                        }
+                        else {
+                            Log.e(TAG, "FontStyle USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
                         }
                     }
                     else {
@@ -3627,16 +3645,42 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("TextureTransform")) {
                 ;
             } else if (qName.equalsIgnoreCase("IndexedFaceSet")) {
-                if (reorganizeVerts) {
-                    gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer, true);
-                    reorganizeVerts = false;
+                if (indexedSetUSEName.length() > 0) {
+                    //Using previously defined mesh
+                    DefinedItem useItem = null;
+                    for (DefinedItem definedItem : mDefinedItems) {
+                        if (indexedSetUSEName.equals(definedItem.getName())) {
+                            useItem = definedItem;
+                            break;
+                        }
+                    }
+                    if (useItem != null) {
+                        gvrRenderData.setMesh( useItem.getGVRMesh() );
+                    }
+                    else {
+                        Log.e(TAG, "IndexedFaceSet USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                    }
                 }
-                GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
-                gvrRenderData.setMesh(mesh);
-                mesh.setIndexBuffer(gvrIndexBuffer);
-                mesh.setVertexBuffer(gvrVertexBuffer);
+                else {
+                    if (reorganizeVerts) {
+                        gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer, true);
+                        reorganizeVerts = false;
+                    }
+                    GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
+                    if (indexedSetDEFName.length() > 0) {
+                        // Save GVRMesh since it may be reused later.
+                        DefinedItem definedItem = new DefinedItem(indexedSetDEFName);
+                        definedItem.setGVRMesh(mesh);
+                        mDefinedItems.add(definedItem); // Array list of DEFined items
+                    }
+                    gvrRenderData.setMesh(mesh);
+                    mesh.setIndexBuffer(gvrIndexBuffer);
+                    mesh.setVertexBuffer(gvrVertexBuffer);
+                }
                 gvrVertexBuffer = null;
                 gvrIndexBuffer = null;
+                indexedSetDEFName = "";
+                indexedSetUSEName = "";
             } else if (qName.equalsIgnoreCase("Coordinate")) {
                 // vertices.clear(); // clean up this Vector<Vertex> list.
             } else if (qName.equalsIgnoreCase("TextureCoordinate")) {
