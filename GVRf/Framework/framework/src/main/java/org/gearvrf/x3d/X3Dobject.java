@@ -1384,7 +1384,7 @@ public class X3Dobject {
                         gvrRenderingDataUSEd = true;
                     }
                     else {
-                        Log.e(TAG, "Shape USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        Log.e(TAG, "Error: Shape USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                     }
                 } else {
 
@@ -1419,7 +1419,7 @@ public class X3Dobject {
                         // and thus have set the material
                     }
                     else {
-                        Log.e(TAG, "Appearance USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        Log.e(TAG, "Error: Appearance USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                     }
                 } else {
                     attributeValue = attributes.getValue("DEF");
@@ -1449,7 +1449,7 @@ public class X3Dobject {
                         // and thus have set the material
                     }
                     else {
-                        Log.e(TAG, "Material USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        Log.e(TAG, "Error: Material USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                     }
 
                 } else {
@@ -1518,7 +1518,7 @@ public class X3Dobject {
                         shaderSettings.setTexture(gvrTexture);
                     }
                     else {
-                        Log.e(TAG, "ImageTexture USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        Log.e(TAG, "Error: ImageTexture USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                     }
                 } else {
                     gvrTextureParameters = new GVRTextureParameters(gvrContext);
@@ -1655,7 +1655,6 @@ public class X3Dobject {
                         parseNumbersString(texCoordIndexAttribute,
                                 X3Dobject.textureIndexComponent, 3);
                     }
-                    Log.e("X3DDBG", "END of IFS");
                 }
 
             } // end <IndexedFaceSet> node
@@ -1829,7 +1828,7 @@ public class X3Dobject {
                             newPtLight.enable();
                         }
                         else {
-                            Log.e(TAG, "PointLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                            Log.e(TAG, "Error: PointLight USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                         }
                     } // end reuse a PointLight
                     else {
@@ -1974,7 +1973,7 @@ public class X3Dobject {
                             newDirectLight.enable();
                         }
                         else {
-                            Log.e(TAG, "DirectionalLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                            Log.e(TAG, "Error: DirectionalLight USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                         }
                     } // end reuse a DirectionalLight
                     else {
@@ -2115,7 +2114,7 @@ public class X3Dobject {
                             newSpotLight.enable();
                         }
                         else {
-                            Log.e(TAG, "SpotLight USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                            Log.e(TAG, "Error: SpotLight USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                         }
                     } // end reuse a SpotLight
                     else {
@@ -2700,7 +2699,7 @@ public class X3Dobject {
                             Text_FontParams.style = gvrTextViewSceneObject.getStyleType();
                         }
                         else {
-                            Log.e(TAG, "FontStyle USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                            Log.e(TAG, "Error: FontStyle USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                         }
                     }
                     else {
@@ -3658,7 +3657,7 @@ public class X3Dobject {
                         gvrRenderData.setMesh( useItem.getGVRMesh() );
                     }
                     else {
-                        Log.e(TAG, "IndexedFaceSet USE='" + attributeValue + ": No matching DEF='" + attributeValue + "'.");
+                        Log.e(TAG, "Error: IndexedFaceSet USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                     }
                 }
                 else {
