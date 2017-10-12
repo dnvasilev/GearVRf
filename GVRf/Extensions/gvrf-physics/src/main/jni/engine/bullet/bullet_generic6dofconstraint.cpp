@@ -143,34 +143,34 @@ namespace gvr {
         }
     }
 
-    void BulletGeneric6dofConstraint::updateConstructionInfo() {
-        if (mGeneric6DofConstraint != 0) {
-            delete (mGeneric6DofConstraint);
-        }
-
-        btRigidBody *rbA = ((BulletRigidBody*)owner_object()->
-                getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
-
-        btVector3 p(mPosition.x, mPosition.y, mPosition.z);
-        btMatrix3x3 m(mRotationA.vec[0], mRotationA.vec[1], mRotationA.vec[2], mRotationA.vec[3],
-                      mRotationA.vec[4], mRotationA.vec[5], mRotationA.vec[6], mRotationA.vec[7],
-                      mRotationA.vec[8]);
-        btTransform fA(m, p);
-
-        p = rbA->getWorldTransform().getOrigin() + p;
-        p -= mRigidBodyB->getRigidBody()->getWorldTransform().getOrigin();
-        m.setValue(mRotationB.vec[0], mRotationB.vec[1], mRotationB.vec[2], mRotationB.vec[3],
-                   mRotationB.vec[4], mRotationB.vec[5], mRotationB.vec[6], mRotationB.vec[7],
-                   mRotationB.vec[8]);
-        btTransform fB(m, p);
-
-        mGeneric6DofConstraint =
-                new btGeneric6DofConstraint(*rbA, *mRigidBodyB->getRigidBody(), fA, fB, false);
-
-        mGeneric6DofConstraint->setLinearLowerLimit(Common2Bullet(mLinearLowerLimits));
-        mGeneric6DofConstraint->setLinearUpperLimit(Common2Bullet(mLinearUpperLimits));
-        mGeneric6DofConstraint->setAngularLowerLimit(Common2Bullet(mAngularLowerLimits));
-        mGeneric6DofConstraint->setAngularUpperLimit(Common2Bullet(mAngularUpperLimits));
-        mGeneric6DofConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+void BulletGeneric6dofConstraint::updateConstructionInfo() {
+    if (mGeneric6DofConstraint != 0) {
+        delete (mGeneric6DofConstraint);
     }
+
+    btRigidBody *rbA = ((BulletRigidBody*)owner_object()->
+            getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
+
+    btVector3 p(mPosition.x, mPosition.y, mPosition.z);
+    btMatrix3x3 m(mRotationA.vec[0], mRotationA.vec[1], mRotationA.vec[2], mRotationA.vec[3],
+                  mRotationA.vec[4], mRotationA.vec[5], mRotationA.vec[6], mRotationA.vec[7],
+                  mRotationA.vec[8]);
+    btTransform fA(m, p);
+
+    p = rbA->getWorldTransform().getOrigin() + p;
+    p -= mRigidBodyB->getRigidBody()->getWorldTransform().getOrigin();
+    m.setValue(mRotationB.vec[0], mRotationB.vec[1], mRotationB.vec[2], mRotationB.vec[3],
+               mRotationB.vec[4], mRotationB.vec[5], mRotationB.vec[6], mRotationB.vec[7],
+               mRotationB.vec[8]);
+    btTransform fB(m, p);
+
+    mGeneric6DofConstraint =
+            new btGeneric6DofConstraint(*rbA, *mRigidBodyB->getRigidBody(), fA, fB, false);
+
+    mGeneric6DofConstraint->setLinearLowerLimit(Common2Bullet(mLinearLowerLimits));
+    mGeneric6DofConstraint->setLinearUpperLimit(Common2Bullet(mLinearUpperLimits));
+    mGeneric6DofConstraint->setAngularLowerLimit(Common2Bullet(mAngularLowerLimits));
+    mGeneric6DofConstraint->setAngularUpperLimit(Common2Bullet(mAngularUpperLimits));
+    mGeneric6DofConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+}
 }

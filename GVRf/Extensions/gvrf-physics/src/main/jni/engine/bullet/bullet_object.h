@@ -19,6 +19,7 @@
 
 class SceneObject;
 namespace gvr {
+
     class BulletObject {
     public:
     };

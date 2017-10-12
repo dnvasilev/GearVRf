@@ -75,7 +75,7 @@ BulletRigidBody::SimulationType BulletRigidBody::getSimulationType() const
 
 void BulletRigidBody::updateConstructionInfo() {
     bool isDynamic = (getMass() != 0.f);
-    Collider* collider = owner_object_->collider();
+    Collider* collider = (Collider*)owner_object_->getComponent(COMPONENT_TYPE_COLLIDER);
     RenderData* rdata = owner_object_->render_data();
     if (mConstructionInfo.m_collisionShape) {
         delete mConstructionInfo.m_collisionShape;

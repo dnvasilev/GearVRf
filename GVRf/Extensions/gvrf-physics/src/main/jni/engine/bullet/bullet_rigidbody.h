@@ -138,12 +138,13 @@ class BulletRigidBody : public PhysicsRigidBody,
 
     void updateConstructionInfo();
 
- private:
+private:
     void initialize();
 
     void finalize();
 
     void updateColisionShapeLocalScaling();
+
 
 private:
     btRigidBody *mRigidBody;

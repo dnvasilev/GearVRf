@@ -133,25 +133,25 @@ namespace gvr {
         }
     }
 
-    void BulletSliderConstraint::updateConstructionInfo() {
-        if (mSliderConstraint != 0) {
-            delete (mSliderConstraint);
-        }
-
-        btRigidBody* rbA = ((BulletRigidBody*)this->owner_object()->getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
-
-        btTransform frameInA, frameInB;
-        frameInA = btTransform::getIdentity();
-        frameInB = btTransform::getIdentity();
-
-        mSliderConstraint = new btSliderConstraint(*rbA, *mRigidBodyB->getRigidBody(), frameInA,
-                                                   frameInB, true);
-
-        mSliderConstraint->setLowerAngLimit(mLowerAngularLimit);
-        mSliderConstraint->setUpperAngLimit(mUpperAngularLimit);
-        mSliderConstraint->setLowerLinLimit(mLowerLinearLimit);
-        mSliderConstraint->setUpperLinLimit(mUpperLinearLimit);
-        mSliderConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+void BulletSliderConstraint::updateConstructionInfo() {
+    if (mSliderConstraint != 0) {
+        delete (mSliderConstraint);
     }
+
+    btRigidBody* rbA = ((BulletRigidBody*)this->owner_object()->getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
+
+    btTransform frameInA, frameInB;
+    frameInA = btTransform::getIdentity();
+    frameInB = btTransform::getIdentity();
+
+    mSliderConstraint = new btSliderConstraint(*rbA, *mRigidBodyB->getRigidBody(), frameInA,
+                                               frameInB, true);
+
+    mSliderConstraint->setLowerAngLimit(mLowerAngularLimit);
+    mSliderConstraint->setUpperAngLimit(mUpperAngularLimit);
+    mSliderConstraint->setLowerLinLimit(mLowerLinearLimit);
+    mSliderConstraint->setUpperLinLimit(mUpperLinearLimit);
+    mSliderConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+}
 
 }

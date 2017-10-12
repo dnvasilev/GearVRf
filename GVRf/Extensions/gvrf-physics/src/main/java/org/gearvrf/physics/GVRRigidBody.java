@@ -176,11 +176,11 @@ public class GVRRigidBody extends GVRPhysicsWorldObject {
      * @param z factor on the 'Z' axis.
      */
     public void applyCentralForce(final float x, final float y, final float z) {
-        mPhysicsContext.runOnPhysicsThread(new Runnable() {
+                mPhysicsContext.runOnPhysicsThread(new Runnable() {
             @Override
-            public void run() {
-                Native3DRigidBody.applyCentralForce(getNative(), x, y, z);
-            }
+           public void run() {
+                                Native3DRigidBody.applyCentralForce(getNative(), x, y, z);
+                           }
         });
     }
 
@@ -192,14 +192,13 @@ public class GVRRigidBody extends GVRPhysicsWorldObject {
      * @param z factor on the 'Z' axis.
      */
     public void applyTorque(final float x, final float y, final float z) {
-        mPhysicsContext.runOnPhysicsThread(new Runnable() {
+                mPhysicsContext.runOnPhysicsThread(new Runnable() {
             @Override
             public void run() {
-                Native3DRigidBody.applyTorque(getNative(), x, y, z);
-            }
+                                Native3DRigidBody.applyTorque(getNative(), x, y, z);
+                            }
         });
     }
-
     /**
      * Sets a particular acceleration vector [X, Y, Z] on this {@linkplain GVRRigidBody rigid body}
      *

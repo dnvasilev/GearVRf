@@ -62,6 +62,7 @@ namespace gvr {
         void updateConstructionInfo();
 
     private:
+
         btGeneric6DofConstraint *mGeneric6DofConstraint;
         BulletRigidBody *mRigidBodyB;
 

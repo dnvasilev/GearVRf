@@ -61,7 +61,6 @@ namespace gvr {
 
         void updateConstructionInfo();
 
-    private:
         btSliderConstraint *mSliderConstraint;
         BulletRigidBody *mRigidBodyB;
 

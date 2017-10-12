@@ -53,6 +53,7 @@ namespace gvr {
         PhysicsVec3 getPivotInB() const { return mPivotInB; }
 
         void updateConstructionInfo();
+
     private:
         btPoint2PointConstraint *mPoint2PointConstraint;
         BulletRigidBody *mRigidBodyB;

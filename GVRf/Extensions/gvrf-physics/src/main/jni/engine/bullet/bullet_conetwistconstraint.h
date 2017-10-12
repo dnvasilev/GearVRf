@@ -55,7 +55,6 @@ namespace gvr {
         float getBreakingImpulse() const;
 
         void updateConstructionInfo();
-
     private:
 
         btConeTwistConstraint *mConeTwistConstraint;

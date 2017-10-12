@@ -58,19 +58,20 @@ namespace gvr {
         }
     }
 
-    void BulletPoint2PointConstraint::updateConstructionInfo() {
-        if (mPoint2PointConstraint != 0) {
-            delete (mPoint2PointConstraint);
-        }
 
-        btVector3 pivotInA(mPivotInA.x, mPivotInA.y, mPivotInA.z);
-        btVector3 pivotInB(mPivotInB.x, mPivotInB.y, mPivotInB.z);
-        btRigidBody* rbA = ((BulletRigidBody*)owner_object()->
-                getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
-
-        mPoint2PointConstraint = new btPoint2PointConstraint(*rbA, *mRigidBodyB->getRigidBody(),
-                                                             pivotInA, pivotInB);
-        mPoint2PointConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+void BulletPoint2PointConstraint::updateConstructionInfo() {
+    if (mPoint2PointConstraint != 0) {
+        delete (mPoint2PointConstraint);
     }
+
+    btVector3 pivotInA(mPivotInA.x, mPivotInA.y, mPivotInA.z);
+    btVector3 pivotInB(mPivotInB.x, mPivotInB.y, mPivotInB.z);
+    btRigidBody* rbA = ((BulletRigidBody*)owner_object()->
+            getComponent(COMPONENT_TYPE_PHYSICS_RIGID_BODY))->getRigidBody();
+
+    mPoint2PointConstraint = new btPoint2PointConstraint(*rbA, *mRigidBodyB->getRigidBody(),
+                                                         pivotInA, pivotInB);
+    mPoint2PointConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
+}
 
 }

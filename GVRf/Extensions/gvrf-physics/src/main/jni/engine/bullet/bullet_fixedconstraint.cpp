@@ -52,5 +52,4 @@ void BulletFixedConstraint::updateConstructionInfo() {
                                              rbA->getWorldTransform());
     mFixedConstraint->setBreakingImpulseThreshold(mBreakingImpulse);
 }
-
 }
