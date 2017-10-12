@@ -59,19 +59,19 @@ import static android.opengl.GLES20.glTexParameteri;
  * <table>
  *  <tr>
  *      <td>GVRBitmapTexture</td>
- *      <tc>uncompressed RGB or RGBA bitmap data</tc>
+ *      <td>uncompressed RGB or RGBA bitmap data</td>
  *  </tr>
  * <tr>
  *      <td>GVRCompressedTexture</td>
- *      <tc>compressed bitmap data</tc>
+ *      <td>compressed bitmap data</td>
  * </tr>
  *  <tr>
  *      <td>GVRCubemapTexture</td>
- *      <tc>uncompressed cubemap data (6 bitmaps)</tc>
+ *      <td>uncompressed cubemap data (6 bitmaps)</td>
  *  </tr>
  * <tr>
  *      <td>GVRCompressedCubemapTexture</td>
- *      <tc>compressed cubemmap data (6 compressed bitmaps)</tc>
+ *      <td>compressed cubemmap data (6 compressed bitmaps)</td>
  * </tr>
  * <tr>
  *     <td>GVRFloatTexture</td>
