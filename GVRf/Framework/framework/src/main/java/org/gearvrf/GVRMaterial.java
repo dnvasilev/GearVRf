@@ -21,20 +21,15 @@ import org.gearvrf.utility.Log;
 import android.graphics.Color;
 
 /**
- * Encapsulates the data needed for shading, including textures and shader uniforms.
- * 
- * You can have invisible {@linkplain GVRSceneObject scene objects:} these have
- * a location and a set of child objects. This can be useful, to move a set of
- * scene objects as a unit, preserving their relative geometry. Invisible scene
- * objects don't need any {@linkplain GVRSceneObject#getRenderData() render
- * data.}
- * 
+ * Encapculates data to be sent to a vertex or fragment shader.
+ * It contains a list of key / value pairs which can specify arbitrary length
+ * float or int vectors. It also has key / value pairs for the texture
+ * samplers to be used with the shader.
  * <p>
  * Visible scene objects must have render data
  * {@linkplain GVRSceneObject#attachRenderData(GVRRenderData) attached.} Each
- * {@link GVRRenderData} has a {@link GVRMesh GL mesh} that defines its
+ * {@link GVRRenderData} has a {@link GVRMesh} that defines its
  * geometry, and a {@link GVRMaterial} that defines its surface.
- * 
  * <p>
  * Each {@link GVRMaterial} contains two main things:
  * <ul>
@@ -48,8 +43,8 @@ import android.graphics.Color;
  * <p>
  * The simplest way to create a {@link GVRMaterial} is to call the
  * {@linkplain GVRMaterial#GVRMaterial(GVRContext) constructor that takes only a
- * GVRContext.} Then you just {@link GVRMaterial#setMainTexture(GVRTexture)
- * setMainTexture()} and you're ready to draw with the default shader, which is
+ * GVRContext.} Then you just {@link GVRMaterial#setTexture(String, GVRTexture)}
+ * and you're ready to draw with the default shader, which is
  * called 'unlit' because it simply drapes the texture over the mesh, without
  * any lighting or reflection effects.
  * 
@@ -57,7 +52,7 @@ import android.graphics.Color;
  * {@code}
  * // for example
  * GVRMaterial material = new GVRMaterial(gvrContext);
- * material.setMainTexture(texture);
+ * material.setTexture("u_texture", texture);
  * }
  * </pre>
  */
@@ -162,9 +157,9 @@ public class GVRMaterial extends  GVRShaderData
 
     /**
      * The {@link GVRTexture texture} currently bound to the
-     * {@code main_texture} shader uniform.
+     * <li>u_texture</li> shader uniform.
      *
-     * With most shaders, this is the texture that is actually displayed.
+     * With most built-in shaders, this is the texture that is actually displayed.
      *
      * @return The {@linkplain GVRTexture main texture}
      */
@@ -173,7 +168,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Bind a different {@link GVRTexture texture} to the {@code main_texture}
+     * Bind a different {@link GVRTexture texture} to the <li>u_texture</li>
      * shader uniform.
      *
      * @param texture
@@ -185,7 +180,7 @@ public class GVRMaterial extends  GVRShaderData
 
 
     /**
-     * Set the baked light map texture
+     * Set the baked light map texture, the <i>lightmap_texture</i> uniform.
      *
      * @param texture
      *            Texture with baked light map
@@ -279,7 +274,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the {@code color} uniform.
+     * Get the {@code u_color} uniform.
      * 
      * By convention, some of the GVRF shaders can use a {@code vec3} uniform named
      * {@code color}. With the default {@linkplain GVRShaderType.Texture 'texture'
@@ -301,7 +296,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the {@code color} uniform.
+     * Set the {@code u_color} uniform.
      * 
      * By convention, GVRF shaders can use a {@code vec3} uniform named
      * {@code color}. With the default {@linkplain GVRShaderType.Texture 'texture'
@@ -333,7 +328,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the {@code materialAmbientColor} uniform.
+     * Get the {@code amgient_color} uniform.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialAmbientColor}. With the default {@linkplain GVRShaderType.Texture 'texture'
@@ -347,7 +342,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the {@code materialAmbientColor} uniform for lighting.
+     * Set the {@code ambient_color} uniform for lighting.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialAmbientColor}. With the {@linkplain GVRShaderType.Texture
@@ -369,7 +364,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the {@code materialDiffuseColor} uniform.
+     * Get the {@code diffuse_color} uniform.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialDiffuseColor}. With the {@linkplain GVRShaderType.Texture
@@ -384,7 +379,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the {@code materialDiffuseColor} uniform for lighting.
+     * Set the {@code diffuse_color} uniform for lighting.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialDiffuseColor}. With the {@linkplain GVRShaderType.Texture
@@ -406,7 +401,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the {@code materialSpecularColor} uniform.
+     * Get the {@code specular_color} uniform.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialSpecularColor}. With the {@linkplain GVRShaderType.Texture
@@ -421,7 +416,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the {@code materialSpecularColor} uniform for lighting.
+     * Set the {@code specular_color} uniform for lighting.
      * 
      * By convention, GVRF shaders can use a {@code vec4} uniform named
      * {@code materialSpecularColor}. With the {@linkplain GVRShaderType.Texture
@@ -443,7 +438,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the {@code materialSpecularExponent} uniform.
+     * Get the {@code specular_exponent} uniform.
      * 
      * By convention, GVRF shaders can use a {@code float} uniform named
      * {@code materialSpecularExponent}. With the {@linkplain GVRShaderType.Texture
@@ -458,7 +453,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the {@code materialSpecularExponent} uniform for lighting.
+     * Set the {@code specular_exponent} uniform for lighting.
      * 
      * By convention, GVRF shaders can use a {@code float} uniform named
      * {@code materialSpecularExponent}. With the {@linkplain GVRShaderType.Texture
@@ -474,7 +469,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Get the opacity.
+     * Get the {@code u_opacity} uniform.
      * 
      * This method returns the {@code opacity} uniform.
      * 
@@ -488,7 +483,7 @@ public class GVRMaterial extends  GVRShaderData
     }
 
     /**
-     * Set the opacity, in a complicated way.
+     * Set the opacity ({@code u_opacity uniform}), in a complicated way.
      * 
      * There are two things you need to know, how opacity is applied, and how
      * opacity is implemented.
