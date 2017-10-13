@@ -37,8 +37,7 @@ void Renderer::initializeStats() {
 Renderer::Renderer() : numberDrawCalls(0),
                        numberTriangles(0),
                        numLights(0),
-                       batch_manager(nullptr),
-                       post_effect_mesh_(nullptr){
+                       batch_manager(nullptr) {
     if(do_batching && !gRenderer->isVulkanInstance()) {
         batch_manager = new BatchManager(BATCH_SIZE, MAX_INDICES);
     }
@@ -148,32 +147,6 @@ bool isRenderPassEqual(RenderData* rdata1, RenderData* rdata2){
     return true;
 }
 
-void Renderer::cull(Scene *scene, Camera *camera,
-        ShaderManager* shader_manager)
-{
-
-    if (camera->owner_object() == 0 || camera->owner_object()->transform() == nullptr)
-    {
-        return;
-    }
-    int nlights = scene->getLightList().size();
-
-    if (nlights != numLights)
-    {
-        numLights = nlights;
-        scene->bindShaders();
-    }
- //   cullFromCamera(scene, camera, shader_manager, &render_data_vector);
-
-    // Note: this needs to be scaled to sort on N states
-    state_sort(&render_data_vector);
-
-    if (do_batching && !gRenderer->isVulkanInstance())
-    {
-        batch_manager->batchSetup(render_data_vector);
-    }
-}
-
 /*
  * Perform view frustum culling from a specific camera viewpoint
  */
@@ -217,18 +190,6 @@ void Renderer::cullFromCamera(Scene *scene, Camera* camera,
     occlusion_cull(rstate, scene_objects, render_data_vector);
 }
 
-
-void Renderer::renderRenderDataVector(RenderState &rstate) {
-
-    if (!do_batching || gRenderer->isVulkanInstance() ) {
-        for (auto it = render_data_vector.begin();
-                it != render_data_vector.end(); ++it) {
-            GL(renderRenderData(rstate, *it));
-        }
-    } else {
-         batch_manager->renderBatches(rstate);
-    }
-}
 
 void Renderer::addRenderData(RenderData *render_data, RenderState& rstate, std::vector<RenderData*>& renderList)
 {
