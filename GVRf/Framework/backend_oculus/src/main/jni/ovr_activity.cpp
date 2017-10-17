@@ -24,6 +24,7 @@
 #include <objects/textures/render_texture.h>
 #include "engine/renderer/renderer.h"
 #include <VrApi_Types.h>
+#include <engine/renderer/vulkan_renderer.h>
 
 static const char* activityClassName = "org/gearvrf/GVRActivity";
 static const char* viewManagerClassName = "org/gearvrf/OvrViewManager";
@@ -209,7 +210,25 @@ void GVRActivity::onSurfaceChanged(JNIEnv &env) {
         texCoordsTanAnglesMatrix_ = ovrMatrix4f_TanAngleMatrixFromProjection(&projectionMatrix_);
     }
 }
+void GVRActivity::copyVulkanTexture(int texSwapChainIndex, int eye){
+    RenderTarget* renderTarget = gRenderer->getRenderTarget(texSwapChainIndex, use_multiview ? 2 : eye);
+    if(renderTarget)
+        reinterpret_cast<VulkanRenderer*>(gRenderer)->renderToOculus(renderTarget);
 
+    glBindTexture(GL_TEXTURE_2D,vrapi_GetTextureSwapChainHandle(frameBuffer_[eye].mColorTextureSwapChain, texSwapChainIndex));
+    glTexSubImage2D(   GL_TEXTURE_2D,
+                       0,
+                       0,
+                       0,
+                       mWidthConfiguration,
+                       mHeightConfiguration,
+                       GL_RGBA,
+                       GL_UNSIGNED_BYTE,
+                       oculusTexData);
+    glFlush();
+    frameBuffer_[eye].advance();
+
+}
 void GVRActivity::onDrawFrame(jobject jViewManager) {
         ovrFrameParms parms = vrapi_DefaultFrameParms(&oculusJavaGlThread_, VRAPI_FRAME_INIT_DEFAULT, vrapi_GetTimeInSeconds(),
                                                       NULL);
@@ -266,19 +285,9 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
                 beginRenderingEye(eye);
             }
             oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye, textureSwapChainIndex, use_multiview);
-            if(r->isVulkanInstance()){
-                glBindTexture(GL_TEXTURE_2D,vrapi_GetTextureSwapChainHandle(frameBuffer_[eye].mColorTextureSwapChain, textureSwapChainIndex));
-                glTexSubImage2D(   GL_TEXTURE_2D,
-                                   0,
-                                   0,
-                                   0,
-                                   mWidthConfiguration,
-                                   mHeightConfiguration,
-                                   GL_RGBA,
-                                   GL_UNSIGNED_BYTE,
-                                   oculusTexData);
-                glFlush();
-                frameBuffer_[eye].advance();
+
+            if(gRenderer->isVulkanInstance()){
+                copyVulkanTexture(textureSwapChainIndex,eye);
             }
             else {
                 endRenderingEye(eye);

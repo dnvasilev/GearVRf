@@ -61,6 +61,7 @@ final class GVRRenderBundle implements IRenderBundle {
             for(int i=0; i< 3; i++){
                 mMultiviewRenderTarget[i] = new GVRRenderTarget(new GVRRenderTexture(mGVRContext,  mWidth, mHeight,
                         getRenderTexture(mGVRContext.getActivity().getNative(), GVRViewManager.EYE.MULTIVIEW.ordinal(), i)), mGVRContext.getMainScene(), true);
+                addRenderTarget(mMultiviewRenderTarget[i].getNative(), GVRViewManager.EYE.MULTIVIEW.ordinal(), i);
             }
             for(int i=0; i< 3; i++){
                 int index = (i+1) % 3;
@@ -68,13 +69,13 @@ final class GVRRenderBundle implements IRenderBundle {
             }
         }
         else {
-
             for (int i = 0; i < 3; i++) {
                 mLeftEyeRenderTarget[i] = new GVRRenderTarget(new GVRRenderTexture(mGVRContext, mWidth, mHeight,
                         getRenderTexture(mGVRContext.getActivity().getNative(), GVRViewManager.EYE.LEFT.ordinal(), i)), mGVRContext.getMainScene());
-
+                addRenderTarget(mLeftEyeRenderTarget[i].getNative(), GVRViewManager.EYE.LEFT.ordinal(), i);
                 mRightEyeRenderTarget[i] = new GVRRenderTarget(new GVRRenderTexture(mGVRContext, mWidth, mHeight,
                         getRenderTexture(mGVRContext.getActivity().getNative(), GVRViewManager.EYE.RIGHT.ordinal(), i)), mGVRContext.getMainScene(), mLeftEyeRenderTarget[i]);
+                addRenderTarget(mRightEyeRenderTarget[i].getNative(), GVRViewManager.EYE.RIGHT.ordinal(), i);
             }
             for (int i = 0; i < 3; i++) {
                 int index = (i + 1) % 3;
@@ -160,4 +161,5 @@ final class GVRRenderBundle implements IRenderBundle {
     }
 
     protected native long getRenderTexture(long activity, int eye, int index);
+    protected native void addRenderTarget(long renderTarget, int eye, int index);
 }
