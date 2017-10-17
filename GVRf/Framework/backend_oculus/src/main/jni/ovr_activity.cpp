@@ -211,9 +211,10 @@ void GVRActivity::onSurfaceChanged(JNIEnv &env) {
     }
 }
 void GVRActivity::copyVulkanTexture(int texSwapChainIndex, int eye){
-    RenderTarget* renderTarget = gRenderer->getRenderTarget(texSwapChainIndex, use_multiview ? 2 : eye);
+    Renderer* r = Renderer::getInstance();
+    RenderTarget* renderTarget = r->getRenderTarget(texSwapChainIndex, use_multiview ? 2 : eye);
     if(renderTarget)
-        reinterpret_cast<VulkanRenderer*>(gRenderer)->renderToOculus(renderTarget);
+        reinterpret_cast<VulkanRenderer*>(r)->renderToOculus(renderTarget);
 
     glBindTexture(GL_TEXTURE_2D,vrapi_GetTextureSwapChainHandle(frameBuffer_[eye].mColorTextureSwapChain, texSwapChainIndex));
     glTexSubImage2D(   GL_TEXTURE_2D,
@@ -286,7 +287,7 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
             }
             oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye, textureSwapChainIndex, use_multiview);
 
-            if(gRenderer->isVulkanInstance()){
+            if(r->isVulkanInstance()){
                 copyVulkanTexture(textureSwapChainIndex,eye);
             }
             else {
