@@ -25,6 +25,7 @@ final class GVRRenderBundle implements IRenderBundle {
     private  GVRRenderTexture mPostEffectRenderTextureA = null;
     private  GVRRenderTexture mPostEffectRenderTextureB = null;
     private  GVRRenderTarget mEyeCaptureRenderTarget = null;
+    private  GVRRenderer mRenderer = null;
 
     private int  mSampleCount;
     private int mWidth, mHeight;
@@ -51,7 +52,7 @@ final class GVRRenderBundle implements IRenderBundle {
         }
         mWidth = mGVRContext.getActivity().getAppSettings().getEyeBufferParams().getResolutionWidth();
         mHeight = mGVRContext.getActivity().getAppSettings().getEyeBufferParams().getResolutionHeight();
-
+        mRenderer = new GVRRenderer(gvrContext, mMaterialShaderManager);
        // createRenderTargetChain(mGVRContext.getActivity().getAppSettings().isMultiviewSet());
     }
 
@@ -153,5 +154,10 @@ final class GVRRenderBundle implements IRenderBundle {
 
         return mPostEffectRenderTextureB;
     }
+
+    public GVRRenderer getRenderer() {
+        return mRenderer;
+    }
+
     protected native long getRenderTexture(long activity, int eye, int index);
 }
