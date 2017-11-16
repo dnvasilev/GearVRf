@@ -25,12 +25,8 @@
 
 namespace gvr {
 
-class TiledRenderingEnhancer {
-private:
-    TiledRenderingEnhancer() = delete;
-
-public:
-    static void start(GLuint x, GLuint y, GLuint width, GLuint height,
+namespace TiledRenderingEnhancer {
+    void start(GLuint x, GLuint y, GLuint width, GLuint height,
             GLbitfield preserveMask) {
         PFNGLSTARTTILINGQCOMPROC start =
                 reinterpret_cast<PFNGLSTARTTILINGQCOMPROC>(eglGetProcAddress(
@@ -38,14 +34,14 @@ public:
         start(x, y, width, height, preserveMask);
     }
 
-    static void end(GLbitfield preserveMask) {
+    void end(GLbitfield preserveMask) {
         PFNGLENDTILINGQCOMPROC end =
                 reinterpret_cast<PFNGLENDTILINGQCOMPROC>(eglGetProcAddress(
                         "glEndTilingQCOM"));
         end(preserveMask);
     }
 
-    static bool available() {
+    bool available() {
         PFNGLSTARTTILINGQCOMPROC start =
                 reinterpret_cast<PFNGLSTARTTILINGQCOMPROC>(eglGetProcAddress(
                         "glStartTilingQCOM"));
