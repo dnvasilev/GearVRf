@@ -204,8 +204,15 @@ namespace gvr
                             RenderTexture* post_effect_render_texture_a,
                             RenderTexture* post_effect_render_texture_b)
     {
+        LOGE("GLRenderer::renderRenderTarget %p->(%p,%p,%p,%p,%p,%p)",this,scene,javaSceneObject,renderTarget,shader_manager,post_effect_render_texture_a,post_effect_render_texture_b);
 
         resetStats();
+
+        struct exitprint {
+            GLRenderer *p;
+            exitprint(GLRenderer *x):p(x) {}
+            ~exitprint() {LOGE("renderRenderTarget done with %d %d",p->getNumberDrawCalls(), p->getNumberTriangles());}
+        } xp(this);
 
         glDepthMask(GL_TRUE);
         GL(glEnable(GL_DEPTH_TEST));

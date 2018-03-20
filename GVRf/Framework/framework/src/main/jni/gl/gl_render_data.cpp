@@ -35,18 +35,22 @@ namespace gvr
                                      programId, this, vertexCount, indexCount);
         mesh_->getVertexBuffer()->bindToShader(shader, mesh_->getIndexBuffer());
         checkGLError("renderMesh::mesh_->getVertexBuffer()->bindToShader(");
+        renderer->incrementDrawCalls();
         switch (mesh_->getIndexSize())
         {
             case 2:
             glDrawElements(mode, indexCount, GL_UNSIGNED_SHORT, 0);
+            renderer->incrementTriangles(indexCount);
             break;
 
             case 4:
             glDrawElements(mode, indexCount, GL_UNSIGNED_INT, 0);
+            renderer->incrementTriangles(indexCount);
             break;
 
             default:
             glDrawArrays(mode, 0, vertexCount);
+            renderer->incrementTriangles(vertexCount);
             break;
         }
        // LOGE("Roshan calling draw for %s", owner_object()->name().c_str());
