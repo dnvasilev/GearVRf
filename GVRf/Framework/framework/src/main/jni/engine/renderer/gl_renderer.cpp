@@ -204,7 +204,7 @@ namespace gvr
                             RenderTexture* post_effect_render_texture_a,
                             RenderTexture* post_effect_render_texture_b)
     {
-        LOGE("GLRenderer::renderRenderTarget %d)",renderTarget->getTexture()->getId());
+        LOGE("GLRenderer::renderRenderTarget %d",renderTarget->getTexture()->getId());
 
         resetStats();
 
